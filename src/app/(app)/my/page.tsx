@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyState } from "@/components/rps/empty-state";
 import {
   CalendarClock,
   ChevronRight,
@@ -114,7 +115,7 @@ export default async function MyJobsPage() {
               <div
                 key={t.label}
                 className={cn(
-                  "rounded-2xl border bg-white p-4 shadow-card",
+                  "rounded-2xl border bg-card p-4 shadow-card",
                   t.highlight ? "border-2 border-gold" : "border-line",
                 )}
               >
@@ -123,21 +124,21 @@ export default async function MyJobsPage() {
                 </div>
                 <div className="text-2xl font-extrabold tracking-tight text-ink">{t.value}</div>
                 <div className="text-xs font-bold text-ink">{t.label}</div>
-                <div className="mt-1 text-[11px] text-muted-foreground">{t.note}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{t.note}</div>
               </div>
             ))}
           </div>
-          <div className="rounded-2xl bg-brand p-5 text-white shadow-logo">
-            <div className="text-xs font-bold uppercase tracking-wider text-white/70">My money</div>
+          <div className="rounded-2xl bg-brand p-5 text-on-brand shadow-logo">
+            <div className="text-xs font-bold uppercase tracking-wider text-on-brand/80">My money</div>
             <div className="mt-3 flex items-baseline justify-between gap-2">
-              <span className="text-sm text-white/80">You owe</span>
+              <span className="text-sm text-on-brand/85">You owe</span>
               <span className="text-2xl font-extrabold">{peso.format(sum.owes)}</span>
             </div>
             <div className="mt-2 flex items-baseline justify-between gap-2">
-              <span className="text-sm text-white/80">The co-op will pay you</span>
+              <span className="text-sm text-on-brand/85">The co-op will pay you</span>
               <span className="text-2xl font-extrabold">{peso.format(sum.toReceive)}</span>
             </div>
-            <p className="mt-3 text-[11px] leading-relaxed text-white/70">
+            <p className="mt-3 text-xs leading-relaxed text-on-brand/80">
               Fees count once the co-op accepts your request. Sales count once the chairperson
               approves them.
             </p>
@@ -146,15 +147,18 @@ export default async function MyJobsPage() {
       )}
 
       {loads.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-line bg-white px-6 py-14 text-center shadow-card">
-          <span className="grid size-14 place-items-center rounded-2xl bg-brand-soft text-brand">
-            <ClipboardList className="size-7" aria-hidden />
-          </span>
-          <p className="font-extrabold text-ink">No requests yet</p>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Ask the co-op to dry or mill your palay. You can follow every step from here.
-          </p>
-        </div>
+        <EmptyState
+          icon={ClipboardList}
+          title="No requests yet"
+          action={
+            <Link href="/my/request" className={buttonVariants({ size: "lg" })}>
+              <Plus className="size-5" aria-hidden />
+              Request a service
+            </Link>
+          }
+        >
+          Ask the co-op to dry or mill your palay. You can follow every step from here.
+        </EmptyState>
       ) : (
         <ul className="grid gap-3 md:grid-cols-2">
           {loads.map((load) => {
@@ -166,7 +170,7 @@ export default async function MyJobsPage() {
               <li key={load.id}>
                 <Link
                   href={`/my/${load.id}`}
-                  className="flex h-full flex-col gap-3 rounded-2xl border border-line bg-white p-5 shadow-card transition hover:border-brand/40"
+                  className="flex h-full flex-col gap-3 rounded-2xl border border-line bg-card p-5 shadow-card transition hover:border-brand/40"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>

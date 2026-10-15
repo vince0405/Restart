@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { Notice } from "@/components/rps/notice";
 import { BadgeCheck, UserPlus } from "lucide-react";
 import { Badge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorNote } from "@/components/rps/error-note";
@@ -44,19 +45,15 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
       />
 
       {added && (
-        <p className="mb-4 rounded-xl border-l-4 border-brand bg-brand-soft p-3 text-sm font-semibold text-brand">
-          Account created. Give the person their mobile number and starting password, and ask
-          them to change the password under Account after signing in.
-        </p>
+        <Notice tone="success">Account created. Give the person their mobile number and starting password, and ask
+          them to change the password under Account after signing in.</Notice>
       )}
       {saved && (
-        <p className="mb-4 rounded-xl border-l-4 border-brand bg-brand-soft p-3 text-sm font-semibold text-brand">
-          Saved.
-        </p>
+        <Notice tone="success">Saved.</Notice>
       )}
       <ErrorNote code={error} />
 
-      <section className="mb-6 rounded-2xl border border-line bg-white p-5 shadow-card md:p-6">
+      <section className="mb-6 rounded-2xl border border-line bg-card p-5 shadow-card md:p-6">
         <div className="mb-4 flex items-center gap-3">
           <div className="grid size-10 place-items-center rounded-xl bg-brand-soft text-brand">
             <UserPlus className="size-5" aria-hidden />
@@ -108,7 +105,7 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
               id="add-role"
               name="role"
               defaultValue="operator"
-              className="min-h-12 rounded-xl border border-line bg-white px-3 text-sm font-semibold text-ink"
+              className="min-h-12 rounded-xl border border-field bg-card px-3 text-sm font-semibold text-ink"
             >
               {ROLES.map((r) => (
                 <option key={r} value={r}>
@@ -121,10 +118,10 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
             <input type="checkbox" name="is_member" className="size-5 accent-[var(--brand)]" />
             Co-op member
           </label>
-          <Button type="submit" size="lg" className="md:col-span-2 md:justify-self-start">
+          <SubmitButton size="lg" className="md:col-span-2 md:justify-self-start">
             <UserPlus className="size-5" aria-hidden />
             Create account
-          </Button>
+          </SubmitButton>
         </form>
       </section>
 
@@ -133,7 +130,7 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
           href="/people"
           className={cn(
             "rounded-full border px-3 py-1.5 text-xs font-bold",
-            !filter ? "border-brand bg-brand-soft text-brand" : "border-line bg-white text-muted-foreground",
+            !filter ? "border-brand bg-brand-soft text-brand" : "border-line bg-card text-muted-foreground",
           )}
         >
           Everyone ({everyone.length})
@@ -144,7 +141,7 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
             href={`/people?role=${r}`}
             className={cn(
               "rounded-full border px-3 py-1.5 text-xs font-bold",
-              filter === r ? "border-brand bg-brand-soft text-brand" : "border-line bg-white text-muted-foreground",
+              filter === r ? "border-brand bg-brand-soft text-brand" : "border-line bg-card text-muted-foreground",
             )}
           >
             {ROLE_LABELS[r]} ({count(r)})
@@ -152,7 +149,7 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
         ))}
       </div>
 
-      <section className="rounded-2xl border border-line bg-white p-2 shadow-card md:p-3">
+      <section className="rounded-2xl border border-line bg-card p-2 shadow-card md:p-3">
         {people.length === 0 && (
           <p className="px-3 py-6 text-sm text-muted-foreground">Nobody with this role yet.</p>
         )}
@@ -185,7 +182,7 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
                     name="role"
                     defaultValue={p.role}
                     disabled={p.id === user.id}
-                    className="min-h-11 rounded-xl border border-line bg-white px-3 text-sm font-semibold text-ink"
+                    className="min-h-12 rounded-xl border border-field bg-card px-3 text-sm font-semibold text-ink"
                   >
                     {ROLES.map((r) => (
                       <option key={r} value={r}>
@@ -204,9 +201,9 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
                   />
                   Member
                 </label>
-                <Button type="submit" variant="outline">
+                <SubmitButton variant="outline">
                   Save
-                </Button>
+                </SubmitButton>
               </form>
             </li>
           ))}

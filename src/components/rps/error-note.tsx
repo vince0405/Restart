@@ -1,4 +1,5 @@
-import { errorMessage } from "@/lib/errors";
+import { errorMessage, FORM_ERROR_ID } from "@/lib/errors";
+import { Notice } from "./notice";
 
 /**
  * The red alert at the top of a page. Takes a short error CODE (usually
@@ -9,11 +10,8 @@ export function ErrorNote({ code }: { code: unknown }) {
   const message = errorMessage(code);
   if (!message) return null;
   return (
-    <p
-      className="mb-4 rounded-xl border-l-4 border-danger bg-danger-soft p-3 text-sm font-semibold text-danger"
-      role="alert"
-    >
+    <Notice tone="error" id={FORM_ERROR_ID}>
       {message}
-    </p>
+    </Notice>
   );
 }

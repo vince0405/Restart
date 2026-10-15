@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { errorField } from "@/lib/errors";
 import { ArrowRight, Building2 } from "lucide-react";
 import {
   Field,
@@ -8,7 +9,8 @@ import {
   ServicePicker,
 } from "@/components/rps/intake-fields";
 import { PageTitle } from "@/components/rps/page-title";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { ErrorNote } from "@/components/rps/error-note";
 import { isStaff } from "@/lib/roles";
 import { getSettings, requireRole } from "@/lib/session";
@@ -32,13 +34,13 @@ export default async function RequestServicePage({ searchParams }: PageProps<"/m
 
       <form
         action={requestService}
-        className="group rounded-2xl border border-line bg-white p-5 shadow-card md:p-8"
+        className="group rounded-2xl border border-line bg-card p-5 shadow-card md:p-8"
       >
         <ErrorNote code={error} />
 
         <SectionHeading title="Cooperative" text="Where your palay will be processed." />
         <div className="flex items-center gap-4 rounded-2xl border-2 border-brand bg-brand-soft p-4">
-          <span className="grid size-12 place-items-center rounded-xl bg-brand text-white">
+          <span className="grid size-12 place-items-center rounded-xl bg-brand text-on-brand">
             <Building2 className="size-6" aria-hidden />
           </span>
           <div className="flex-1">
@@ -54,7 +56,7 @@ export default async function RequestServicePage({ searchParams }: PageProps<"/m
         <div className="my-8 border-t border-line" />
 
         <ServicePicker text="Choose what the co-op should do with your palay." />
-        <HarvestAddressField />
+        <HarvestAddressField invalidField={errorField(error)} />
 
         <div className="my-8 border-t border-line" />
 
@@ -62,7 +64,7 @@ export default async function RequestServicePage({ searchParams }: PageProps<"/m
           title="Your palay"
           text="Your best estimate is fine. The co-op weighs it properly."
         />
-        <PalayCountFields />
+        <PalayCountFields invalidField={errorField(error)} />
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Preferred date" name="preferred_date" type="date" min={today} />
           <Field
@@ -78,10 +80,10 @@ export default async function RequestServicePage({ searchParams }: PageProps<"/m
           <Link href="/my" className={buttonVariants({ variant: "outline" })}>
             Cancel
           </Link>
-          <Button type="submit" size="lg">
+          <SubmitButton size="lg">
             Send request
             <ArrowRight className="size-[17px]" aria-hidden />
-          </Button>
+          </SubmitButton>
         </div>
       </form>
     </div>

@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { Notice } from "@/components/rps/notice";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/rps/logo";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,23 +58,16 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             </div>
 
             {check && (
-              <p className="rounded-xl border-l-4 border-brand bg-brand-soft p-3 text-sm font-semibold text-brand">
-                Account created, but it still needs to be confirmed. Please ask the co-op.
-              </p>
+              <Notice tone="info" className="mb-0">Account created, but it still needs to be confirmed. Please ask the co-op.</Notice>
             )}
 
             {error && (
-              <p
-                className="rounded-xl border-l-4 border-danger bg-danger-soft p-3 text-sm font-semibold text-danger"
-                role="alert"
-              >
-                Wrong mobile number, email or password. Please try again.
-              </p>
+              <Notice tone="error" className="mb-0">Wrong mobile number, email or password. Please try again.</Notice>
             )}
 
-            <Button type="submit" size="lg">
+            <SubmitButton size="lg">
               Sign in
-            </Button>
+            </SubmitButton>
             <p className="text-center text-sm text-muted-foreground">
               New here?{" "}
               <Link href="/signup" className="font-bold text-brand">

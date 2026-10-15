@@ -11,7 +11,7 @@ export function HarvestAddress({ address }: { address: string | null | undefined
     <div className="flex items-start gap-2 rounded-xl bg-gold-soft p-3 text-sm">
       <MapPin className="mt-0.5 size-4 shrink-0 text-gold-dark" aria-hidden />
       <div className="min-w-0">
-        <div className="text-[10px] font-bold uppercase tracking-wider text-gold-dark">
+        <div className="text-xs font-bold uppercase tracking-wider text-gold-dark">
           Where to harvest
         </div>
         <div className="break-words font-semibold text-ink">{address}</div>

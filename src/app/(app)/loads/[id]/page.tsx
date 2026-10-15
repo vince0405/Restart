@@ -1,12 +1,15 @@
 import Link from "next/link";
+import { Notice } from "@/components/rps/notice";
 import { notFound, redirect } from "next/navigation";
-import type { ReactNode } from "react";
-import { ArrowLeft, BadgeCheck, HandCoins, Scale, Trash2, Warehouse, type LucideIcon } from "lucide-react";
+import { BadgeCheck, HandCoins, Scale, Trash2, Warehouse } from "lucide-react";
 import { Badge, ExpiryBadge, PaidBadge, StageBadge } from "@/components/rps/badge";
 import { HarvestAddress } from "@/components/rps/harvest-address";
+import { Breadcrumbs } from "@/components/rps/breadcrumbs";
 import { PageTitle } from "@/components/rps/page-title";
+import { Fact, MoneyRow, Panel, PanelHead } from "@/components/rps/panel";
 import { Timeline } from "@/components/rps/timeline";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorNote } from "@/components/rps/error-note";
@@ -46,56 +49,6 @@ const kg = new Intl.NumberFormat("en-PH", { maximumFractionDigits: 2 });
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("en-PH", { timeZone: "Asia/Manila", dateStyle: "medium" });
-}
-
-function Fact({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-        {label}
-      </div>
-      <div className="mt-1 text-sm font-extrabold text-ink">{value}</div>
-    </div>
-  );
-}
-
-function Price({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
-  return (
-    <div className={cn("flex justify-between gap-3", bold ? "font-extrabold text-ink" : "text-muted-foreground")}>
-      <span>{label}</span>
-      <span className={bold ? "" : "font-bold text-ink"}>{value}</span>
-    </div>
-  );
-}
-
-function Panel({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <section className={cn("rounded-2xl border border-line bg-white p-5 shadow-card", className)}>
-      {children}
-    </section>
-  );
-}
-
-function PanelHead({
-  icon: Icon,
-  tone,
-  title,
-  right,
-}: {
-  icon: LucideIcon;
-  tone: string;
-  title: string;
-  right?: ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className={cn("grid size-10 place-items-center rounded-xl", tone)}>
-        <Icon className="size-5" aria-hidden />
-      </div>
-      <h2 className="font-extrabold text-ink">{title}</h2>
-      {right && <span className="ml-auto">{right}</span>}
-    </div>
-  );
 }
 
 type Job = LoadRow & {
@@ -174,13 +127,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
 
   return (
     <div>
-      <Link
-        href="/loads"
-        className="mb-4 flex w-fit items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-ink"
-      >
-        <ArrowLeft className="size-4" aria-hidden />
-        All jobs
-      </Link>
+      <Breadcrumbs items={[{ label: "Jobs", href: "/loads" }, { label: `#${jobRef(load.id)}` }]} />
 
       <PageTitle
         eyebrow="Job details"
@@ -191,9 +138,9 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
           !countStep && (
             <form action={moveStage}>
               {stageFields("next")}
-              <Button type="submit" size="lg" className="w-full sm:w-auto">
+              <SubmitButton size="lg" className="w-full sm:w-auto">
                 {next === "Released" ? "Release to customer" : `Move to ${next}`}
-              </Button>
+              </SubmitButton>
             </form>
           )
         }
@@ -202,25 +149,18 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
       <ErrorNote code={error} />
 
       {role === "auditor" && (
-        <p className="mb-4 rounded-xl border-l-4 border-info bg-info-soft p-3 text-sm font-semibold text-info-dark">
-          Read-only: auditors can see everything but change nothing.
-        </p>
+        <Notice tone="info">Read-only: auditors can see everything but change nothing.</Notice>
       )}
 
       {rejected && (
-        <p className="mb-4 rounded-xl border-l-4 border-danger bg-danger-soft p-3 text-sm text-ink">
-          <strong>Request rejected.</strong> {load.reject_reason}
-        </p>
+        <Notice tone="error" title="Request rejected">{load.reject_reason}</Notice>
       )}
 
       {cancelled && (
-        <p className="mb-4 rounded-xl border-l-4 border-line bg-surface p-3 text-sm text-ink">
-          <strong>Cancelled by the customer</strong>
-          {load.cancelled_at ? ` on ${formatDate(new Date(load.cancelled_at))}` : ""}. Nothing to do.
-        </p>
+        <Notice tone="info" title="Cancelled by the customer">Cancelled{load.cancelled_at ? ` on ${formatDate(new Date(load.cancelled_at))}` : ""}. Nothing to do.</Notice>
       )}
 
-      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-white p-4 shadow-card">
+      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-card p-4 shadow-card">
         <div className="grid size-11 place-items-center rounded-full bg-brand-soft font-extrabold text-brand">
           {initials}
         </div>
@@ -307,17 +247,15 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                   />
                 </div>
               </div>
-              <Button type="submit" size="lg" className="w-full sm:w-auto sm:self-start">
+              <SubmitButton size="lg" className="w-full sm:w-auto sm:self-start">
                 Save count and move to {next}
-              </Button>
+              </SubmitButton>
             </form>
           )}
 
           {worker && atReady && weighed && !chosen && (
-            <p className="mt-5 rounded-xl border-l-4 border-gold bg-gold-soft p-3 text-sm text-ink">
-              Weighed. Release and storage unlock once {walkIn ? "the walk-in's" : "the customer's"} keep /
-              sell / split choice is recorded.
-            </p>
+            <Notice tone="warning" className="mb-0 mt-5">Weighed. Release and storage unlock once {walkIn ? "the walk-in's" : "the customer's"} keep /
+              sell / split choice is recorded.</Notice>
           )}
 
           {worker && (prev || canStore) && (
@@ -325,11 +263,11 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
               {canStore && (
                 <form action={storeLoad} className="flex-1">
                   <input type="hidden" name="id" value={load.id} />
-                  <Button type="submit" variant="secondary" size="lg" className="w-full border border-line">
+                  <SubmitButton variant="secondary" size="lg" className="w-full">
                     <Warehouse className="size-5" aria-hidden />
                     Store {product} at the mill
-                  </Button>
-                  <p className="mt-1 text-center text-[11px] text-muted-foreground">
+                  </SubmitButton>
+                  <p className="mt-1 text-center text-xs text-muted-foreground">
                     {kg.format(money.keptKg)} kg kept · stored {product} keeps{" "}
                     {settings.lifeline[product]} days.
                   </p>
@@ -338,9 +276,9 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
               {prev && (
                 <form action={moveStage} className="flex-1">
                   {stageFields("back")}
-                  <Button type="submit" variant="outline" size="lg" className="w-full">
+                  <SubmitButton variant="outline" size="lg" className="w-full">
                     Back one step (to {prev})
-                  </Button>
+                  </SubmitButton>
                 </form>
               )}
             </div>
@@ -358,7 +296,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                 title="Weigh batch"
                 right={weighed ? <Badge tone="green">Weighed</Badge> : <Badge tone="amber">Needed</Badge>}
               />
-              <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3">
+              <dl className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3">
                 <Fact label="Palay in" value={`${kg.format(load.kilos)} kg`} />
                 <Fact
                   label={`${product === "rice" ? "Rice" : "Palay"} out`}
@@ -367,7 +305,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                 {weighed && load.kilos > 0 && (
                   <Fact label="Out ÷ in" value={`${Math.round(((load.output_kg ?? 0) / load.kilos) * 100)}%`} />
                 )}
-              </div>
+              </dl>
               {worker && atReady && !load.disposition && (
                 <form action={recordOutput} className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-end">
                   <input type="hidden" name="id" value={load.id} />
@@ -384,7 +322,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                       required
                     />
                   </div>
-                  <Button type="submit">{weighed ? "Update weight" : "Save weight"}</Button>
+                  <SubmitButton>{weighed ? "Update weight" : "Save weight"}</SubmitButton>
                 </form>
               )}
             </Panel>
@@ -395,8 +333,8 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
               <PanelHead icon={HandCoins} tone="bg-brand-soft text-brand" title="Keep, sell or split" />
               {load.disposition ? (
                 <div className="mt-4 space-y-2 text-sm">
-                  <Price label="Customer keeps" value={`${kg.format(money.keptKg)} kg (${load.keep_percent}%)`} />
-                  <Price label="Offered to the co-op" value={`${kg.format(money.soldKg)} kg`} />
+                  <MoneyRow label="Customer keeps" value={`${kg.format(money.keptKg)} kg (${load.keep_percent}%)`} />
+                  <MoneyRow label="Offered to the co-op" value={`${kg.format(money.soldKg)} kg`} />
                 </div>
               ) : walkIn && manager ? (
                 <form action={setDisposition} className="mt-4 flex flex-col gap-3">
@@ -432,7 +370,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                       placeholder="70"
                     />
                   </div>
-                  <Button type="submit">Save choice</Button>
+                  <SubmitButton>Save choice</SubmitButton>
                 </form>
               ) : (
                 <p className="mt-4 text-sm text-muted-foreground">
@@ -471,20 +409,20 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                 }
               />
               <div className="mt-4 space-y-3 text-sm">
-                <Price
+                <MoneyRow
                   label={`${product === "rice" ? "Rice" : "Palay"} offered`}
                   value={`${kg.format(money.soldKg)} kg`}
                 />
                 {load.buyout_status === "approved" && (
                   <>
-                    <Price label="Price per kg" value={peso.format(Number(load.price_per_kg ?? 0))} />
-                    <Price label="Sale value" value={peso.format(money.saleValue)} />
-                    <Price label="Processing fee still owed" value={`− ${peso.format(money.feeOwed)}`} />
+                    <MoneyRow label="Price per kg" value={peso.format(Number(load.price_per_kg ?? 0))} />
+                    <MoneyRow label="Sale value" value={peso.format(money.saleValue)} />
+                    <MoneyRow label="Processing fee still owed" value={`− ${peso.format(money.feeOwed)}`} />
                     <div className={cn("rounded-xl p-3", money.payout > 0 ? "bg-brand-soft" : "bg-gold-soft")}>
                       {money.payout > 0 ? (
-                        <Price label="Net payout to customer" value={peso.format(money.payout)} bold />
+                        <MoneyRow label="Net payout to customer" value={peso.format(money.payout)} strong />
                       ) : (
-                        <Price label="Customer still owes" value={peso.format(money.stillOwes)} bold />
+                        <MoneyRow label="Customer still owes" value={peso.format(money.stillOwes)} strong />
                       )}
                     </div>
                     {load.payout_done_at && (
@@ -516,13 +454,13 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                         required
                       />
                     </div>
-                    <Button type="submit">Approve buyout</Button>
+                    <SubmitButton>Approve buyout</SubmitButton>
                   </form>
                   <form action={declineBuyout}>
                     <input type="hidden" name="id" value={load.id} />
-                    <Button type="submit" variant="outline" className="w-full text-danger hover:text-danger">
+                    <SubmitButton variant="outline" className="w-full text-danger hover:text-danger">
                       Decline
-                    </Button>
+                    </SubmitButton>
                   </form>
                 </div>
               )}
@@ -534,9 +472,9 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
               {chair && load.buyout_status === "approved" && !load.payout_done_at && money.payout > 0 && (
                 <form action={markPayoutDone} className="mt-4">
                   <input type="hidden" name="id" value={load.id} />
-                  <Button type="submit" className="w-full">
+                  <SubmitButton className="w-full">
                     Mark {peso.format(money.payout)} as paid out
-                  </Button>
+                  </SubmitButton>
                 </form>
               )}
             </Panel>
@@ -556,18 +494,28 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                   )
                 }
               />
-              <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
+              <dl className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
                 <Fact label="Stored" value={product === "rice" ? "Rice" : "Palay"} />
                 <Fact label="Since" value={formatDate(storedAt)} />
                 <Fact label="Expires" value={formatDate(expires)} />
                 <Fact label="Lifeline" value={`${settings.lifeline[product]} days`} />
-              </div>
+              </dl>
             </Panel>
           )}
 
           <Panel>
-            <PanelHead icon={Scale} tone="bg-brand-soft text-brand" title="Intake summary" />
-            <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <details className="group/details">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand">
+                  <Scale className="size-5" aria-hidden />
+                </span>
+                <span className="text-base font-extrabold text-ink">Intake details</span>
+                <span className="ml-auto text-sm font-bold text-brand">
+                  <span className="group-open/details:hidden">Show</span>
+                  <span className="hidden group-open/details:inline">Hide</span>
+                </span>
+              </summary>
+            <dl className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
               <Fact label="Sacks" value={load.sacks || load.kilos ? `${load.sacks} sacks` : "Not counted yet"} />
               <Fact label="Weight" value={load.sacks || load.kilos ? `${kg.format(load.kilos)} kg` : "Not weighed yet"} />
               <Fact label="Service" value={load.service_type} />
@@ -579,7 +527,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                   timeStyle: "short",
                 })}
               />
-            </div>
+            </dl>
             {load.harvest_address && (
               <div className="mt-4">
                 <HarvestAddress address={load.harvest_address} />
@@ -596,23 +544,24 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                 {load.customer_note && <p className="mt-1 text-ink">&ldquo;{load.customer_note}&rdquo;</p>}
               </div>
             )}
+            </details>
           </Panel>
         </div>
 
         {!closed && (
-          <section className="rounded-2xl border border-line bg-white p-5 shadow-card xl:self-start">
+          <section className="rounded-2xl border border-line bg-card p-5 shadow-card xl:self-start">
             <h2 className="font-extrabold text-ink">Billing summary</h2>
             <div className="mt-4 space-y-3 text-sm">
-              <Price label="Processing fee" value={peso.format(load.agreed_price)} bold />
-              <Price label="Paid in cash" value={peso.format(money.paidCash)} />
+              <MoneyRow label="Processing fee" value={peso.format(load.agreed_price)} strong />
+              <MoneyRow label="Paid in cash" value={peso.format(money.paidCash)} />
               {load.buyout_status === "approved" && (
-                <Price
+                <MoneyRow
                   label="Covered by the buyout"
                   value={peso.format(Math.min(money.saleValue, money.feeOwed))}
                 />
               )}
               <div className={cn("rounded-xl p-3", money.stillOwes > 0 ? "bg-gold-soft" : "bg-brand-soft")}>
-                <Price label="Balance due" value={peso.format(money.stillOwes)} bold />
+                <MoneyRow label="Balance due" value={peso.format(money.stillOwes)} strong />
               </div>
             </div>
 
@@ -620,9 +569,9 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
               (load.is_paid ? (
                 <form action={markNotPaid} className="mt-4">
                   <input type="hidden" name="id" value={load.id} />
-                  <Button type="submit" variant="outline" className="w-full">
+                  <SubmitButton variant="outline" className="w-full">
                     Mark not paid
-                  </Button>
+                  </SubmitButton>
                 </form>
               ) : (
                 <form action={markPaid} className="mt-4 flex flex-col gap-3">
@@ -640,9 +589,9 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                       required
                     />
                   </div>
-                  <Button type="submit" size="lg" className="w-full">
+                  <SubmitButton size="lg" className="w-full">
                     Mark paid
-                  </Button>
+                  </SubmitButton>
                 </form>
               ))}
           </section>
@@ -652,7 +601,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
       {/* Delete: the first tap only asks "Are you sure?" (?confirm=delete);
           the job is removed only by the "Yes, delete" button. */}
       {manager && (
-        <section className="mt-6 rounded-2xl border border-line bg-white p-5 shadow-card">
+        <section className="mt-6 rounded-2xl border border-line bg-card p-5 shadow-card">
           {confirmingDelete ? (
             <div className="rounded-xl border-l-4 border-danger bg-danger-soft p-4">
               <p className="font-extrabold text-ink">Delete this job?</p>
@@ -663,10 +612,10 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
               <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                 <form action={deleteLoad}>
                   <input type="hidden" name="id" value={load.id} />
-                  <Button type="submit" variant="destructive" className="w-full sm:w-auto">
+                  <SubmitButton variant="destructive" className="w-full sm:w-auto">
                     <Trash2 className="size-4" aria-hidden />
                     Yes, delete
-                  </Button>
+                  </SubmitButton>
                 </form>
                 <Link
                   href={`/loads/${load.id}`}

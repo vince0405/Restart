@@ -1,5 +1,6 @@
 import { PageTitle } from "@/components/rps/page-title";
-import { Button } from "@/components/ui/button";
+import { Notice } from "@/components/rps/notice";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { canManagePeople } from "@/lib/roles";
@@ -28,17 +29,13 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
       />
 
       {saved && (
-        <p className="mb-4 rounded-xl border-l-4 border-brand bg-brand-soft p-3 text-sm font-semibold text-brand">
-          Saved.
-        </p>
+        <Notice tone="success">Saved.</Notice>
       )}
       {typeof error === "string" && (
-        <p className="mb-4 rounded-xl border-l-4 border-danger bg-danger-soft p-3 text-sm font-semibold text-danger" role="alert">
-          {MESSAGES[error] ?? "Could not save."}
-        </p>
+        <Notice tone="error">{MESSAGES[error] ?? "Could not save."}</Notice>
       )}
 
-      <form action={updateSettings} className="flex flex-col gap-5 rounded-2xl border border-line bg-white p-5 shadow-card md:p-7">
+      <form action={updateSettings} className="flex flex-col gap-5 rounded-2xl border border-line bg-card p-5 shadow-card md:p-7">
         <div className="flex flex-col gap-2">
           <Label htmlFor="coop_name">Cooperative name</Label>
           <Input id="coop_name" name="coop_name" defaultValue={settings.coop_name} maxLength={120} required />
@@ -84,9 +81,9 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           warning at {settings.warning_days} days left. These become Admin settings in Phase 2.
         </div>
 
-        <Button type="submit" size="lg" className="self-start">
+        <SubmitButton size="lg" className="self-start">
           Save settings
-        </Button>
+        </SubmitButton>
       </form>
     </div>
   );

@@ -66,3 +66,23 @@ export function codeForDbError(error: { message?: string } | null): ErrorCode {
   }
   return "save_failed";
 }
+
+/** The form field an error is about, so that field can be marked invalid. */
+const ERROR_FIELDS: Partial<Record<ErrorCode, string>> = {
+  name_required: "customer_name",
+  sacks_invalid: "sacks",
+  kilos_invalid: "kilos",
+  service_invalid: "service_type",
+  price_invalid: "agreed_price",
+  address_required: "harvest_address",
+};
+
+/** Which field (by name) the error code in the address is about, if any. */
+export function errorField(code: unknown): string | null {
+  return typeof code === "string" && code in ERROR_FIELDS
+    ? (ERROR_FIELDS[code as ErrorCode] ?? null)
+    : null;
+}
+
+/** The id of the page's error message, for aria-describedby. */
+export const FORM_ERROR_ID = "form-error";

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyState } from "@/components/rps/empty-state";
 import { ChevronRight, ClipboardList, Plus } from "lucide-react";
 import { ExpiryBadge, PaidBadge, StageBadge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
@@ -49,18 +50,12 @@ export default async function JobsPage() {
       <ErrorNote code={error ? "load_failed" : null} />
 
       {loads.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-line bg-white px-6 py-14 text-center shadow-card">
-          <span className="grid size-14 place-items-center rounded-2xl bg-brand-soft text-brand">
-            <ClipboardList className="size-7" aria-hidden />
-          </span>
-          <p className="font-extrabold text-ink">No loads yet</p>
-          <p className="text-sm text-muted-foreground">
-            Tap &ldquo;New load&rdquo; when a customer&rsquo;s job starts.
-          </p>
-        </div>
+        <EmptyState icon={ClipboardList} title="No jobs yet">
+          Accepted requests and walk-in jobs show up here.
+        </EmptyState>
       ) : (
-        <section className="rounded-2xl border border-line bg-white p-2 shadow-card md:p-3">
-          <div className="hidden grid-cols-[0.9fr_1.5fr_1.1fr_0.8fr_1.6fr_auto] gap-3 border-b border-line px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground md:grid">
+        <section className="rounded-2xl border border-line bg-card p-2 shadow-card md:p-3">
+          <div className="hidden grid-cols-[0.9fr_1.5fr_1.1fr_0.8fr_1.6fr_auto] gap-3 border-b border-line px-3 pb-2 pt-1 text-xs font-bold uppercase tracking-wider text-muted-foreground md:grid">
             <span>Job ID</span>
             <span>Customer</span>
             <span>Service</span>

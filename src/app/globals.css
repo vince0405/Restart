@@ -1,24 +1,36 @@
 @import "tailwindcss";
 
-/* Design tokens. Change these to re-skin the whole app at once —
-   every component reads from them. Colours come from the RPS1 design. */
+/* Dark mode follows a .dark class on <html> (set before paint by the script
+   in layout.tsx, from the saved choice or the phone's own setting). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Design tokens. Change these to re-skin the whole app at once — every
+   component reads from them. Colours keep the RPS1 green/gold identity and
+   are checked for WCAG AA contrast in BOTH themes:
+     text on its background   >= 4.5:1
+     borders, focus ring      >= 3:1                                       */
 :root {
+  color-scheme: light;
+
   /* RPS1 palette */
-  --brand: #1b5e20;
+  --brand: #1b5e20;          /* green: primary actions, accents      */
+  --on-brand: #ffffff;       /* text/icons on a brand background     */
   --brand-dark: #124517;
-  --brand-soft: #e8f3e8;
-  --gold: #f9a825;
-  --gold-dark: #9a6307;
-  --gold-soft: #fff4d8;
-  --canvas: #faf7f0;
-  --surface: #f7f5ef;
-  --ink: #20251f;
-  --line: #e7e5dc;
-  --danger: #c83b31;
-  --danger-soft: #fde9e7;
-  --info: #4489c7;
-  --info-dark: #2366a1;
-  --info-soft: #e8f1fa;
+  --brand-soft: #e6f2e6;
+  --gold: #f9a825;           /* gold: rice, highlights               */
+  --on-gold: #2b1d00;        /* text/icons on a gold background      */
+  --gold-dark: #7d4f00;      /* amber text                           */
+  --gold-soft: #fff3d6;
+  --canvas: #faf7f0;         /* page background                      */
+  --surface: #f5f2ea;        /* quiet panels inside cards            */
+  --ink: #1c211b;            /* main text                            */
+  --line: #e4e1d7;           /* dividers and card edges              */
+  --field: #8b9188;          /* input borders (3:1 so fields show in sun) */
+  --danger: #b42a22;
+  --danger-soft: #fde8e6;
+  --info: #3f7fbf;
+  --info-dark: #1f5a91;
+  --info-soft: #e6f0fa;
 
   /* Names the UI building blocks in src/components/ui use */
   --background: var(--canvas);
@@ -26,30 +38,69 @@
   --card: #ffffff;
   --card-foreground: var(--ink);
   --primary: var(--brand);
-  --primary-foreground: #ffffff;
+  --primary-foreground: var(--on-brand);
   --secondary: var(--surface);
   --secondary-foreground: var(--ink);
   --muted: var(--surface);
-  --muted-foreground: #6f766e;
+  --muted-foreground: #555c54;
   --destructive: var(--danger);
   --destructive-foreground: #ffffff;
   --border: var(--line);
-  --input: var(--line);
+  --input: var(--field);
   --ring: var(--brand);
   --radius: 0.75rem;
+
+  /* One elevation scale */
+  --elev-1: 0 1px 2px rgb(31 41 31 / 5%), 0 8px 24px rgb(31 41 31 / 5%);
+  --elev-2: 0 6px 14px rgb(27 94 32 / 22%);
+  --elev-up: 0 -6px 24px rgb(31 41 31 / 8%);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --brand: #7bd389;
+  --on-brand: #06210b;
+  --brand-dark: #a6e5ae;
+  --brand-soft: #16301b;
+  --gold: #f2b53a;
+  --on-gold: #2b1d00;
+  --gold-dark: #f3c56a;
+  --gold-soft: #33280e;
+  --canvas: #0f1410;
+  --surface: #161c17;
+  --ink: #e8ece6;
+  --line: #2b342c;
+  --field: #6b7569;
+  --danger: #ff8b80;
+  --danger-soft: #3a1714;
+  --info: #6aa7e3;
+  --info-dark: #93c4f3;
+  --info-soft: #132739;
+
+  --card: #1b221c;
+  --muted-foreground: #a9b2a7;
+  --destructive-foreground: #1c0605;
+
+  --elev-1: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 30%);
+  --elev-2: 0 6px 14px rgb(0 0 0 / 45%);
+  --elev-up: 0 -6px 24px rgb(0 0 0 / 45%);
 }
 
 @theme inline {
   --color-brand: var(--brand);
+  --color-on-brand: var(--on-brand);
   --color-brand-dark: var(--brand-dark);
   --color-brand-soft: var(--brand-soft);
   --color-gold: var(--gold);
+  --color-on-gold: var(--on-gold);
   --color-gold-dark: var(--gold-dark);
   --color-gold-soft: var(--gold-soft);
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
   --color-ink: var(--ink);
   --color-line: var(--line);
+  --color-field: var(--field);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-info: var(--info);
@@ -73,9 +124,14 @@
   --color-ring: var(--ring);
   --radius-base: var(--radius);
 
-  --shadow-card: 0 1px 2px rgb(31 41 31 / 4%), 0 8px 24px rgb(31 41 31 / 4%);
-  --shadow-logo: 0 6px 14px rgb(27 94 32 / 20%);
-  --shadow-up: 0 -6px 24px rgb(31 41 31 / 8%);
+  /* Elevation: shadow-card (cards), shadow-logo (raised green), shadow-up */
+  --shadow-card: var(--elev-1);
+  --shadow-logo: var(--elev-2);
+  --shadow-up: var(--elev-up);
+
+  /* Type: nothing on screen is smaller than text-xs (12px). Spacing follows
+     Tailwind's 4px steps; use 1/2/3/4/6/8 (4/8/12/16/24/32px). Radii:
+     rounded-xl for controls, rounded-2xl for cards, rounded-full for pills. */
 
   /* Inter is loaded in layout.tsx and exposed as --font-inter */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
@@ -89,11 +145,29 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* One clear, high-contrast focus ring for every keyboard-reachable thing. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
 /* Stops iPhones zooming in when a form field is tapped. */
 @media (max-width: 640px) {
   input,
   select,
   textarea {
     font-size: 16px;
+  }
+}
+
+/* People who ask their phone for less motion get none. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

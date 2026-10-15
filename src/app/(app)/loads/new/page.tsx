@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { errorField } from "@/lib/errors";
 import { ArrowRight } from "lucide-react";
 import {
   Field,
@@ -8,7 +9,8 @@ import {
   ServicePicker,
 } from "@/components/rps/intake-fields";
 import { PageTitle } from "@/components/rps/page-title";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { ErrorNote } from "@/components/rps/error-note";
 import { canManage } from "@/lib/roles";
 import { requireRole } from "@/lib/session";
@@ -29,7 +31,7 @@ export default async function NewLoadPage({ searchParams }: PageProps<"/loads/ne
 
       <form
         action={createLoad}
-        className="group rounded-2xl border border-line bg-white p-5 shadow-card md:p-8"
+        className="group rounded-2xl border border-line bg-card p-5 shadow-card md:p-8"
       >
         <ErrorNote code={error} />
 
@@ -37,6 +39,7 @@ export default async function NewLoadPage({ searchParams }: PageProps<"/loads/ne
         <Field
           label="Customer name"
           name="customer_name"
+          invalid={errorField(error) === "customer_name"}
           type="text"
           placeholder="e.g. Rogelio Cruz"
           autoComplete="off"
@@ -46,16 +49,17 @@ export default async function NewLoadPage({ searchParams }: PageProps<"/loads/ne
         <div className="my-8 border-t border-line" />
 
         <ServicePicker text="The job will only show the steps this service has." />
-        <HarvestAddressField />
+        <HarvestAddressField invalidField={errorField(error)} />
 
         <div className="my-8 border-t border-line" />
 
         <SectionHeading title="Intake details" text="Record the palay received and the agreed price." />
-        <PalayCountFields weightLabel="Total weight" />
+        <PalayCountFields weightLabel="Total weight" invalidField={errorField(error)} />
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field
             label="Agreed price"
             name="agreed_price"
+            invalid={errorField(error) === "agreed_price"}
             type="number"
             inputMode="decimal"
             min={0}
@@ -70,10 +74,10 @@ export default async function NewLoadPage({ searchParams }: PageProps<"/loads/ne
           <Link href="/loads" className={buttonVariants({ variant: "outline" })}>
             Cancel
           </Link>
-          <Button type="submit" size="lg">
+          <SubmitButton size="lg">
             Create job
             <ArrowRight className="size-[17px]" aria-hidden />
-          </Button>
+          </SubmitButton>
         </div>
       </form>
     </div>

@@ -1,8 +1,9 @@
 import { BadgeCheck, CalendarDays, Inbox, Phone } from "lucide-react";
+import { EmptyState } from "@/components/rps/empty-state";
 import { Badge } from "@/components/rps/badge";
 import { HarvestAddress } from "@/components/rps/harvest-address";
 import { PageTitle } from "@/components/rps/page-title";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { ErrorNote } from "@/components/rps/error-note";
 import { jobRef } from "@/lib/loads";
 import { canManage } from "@/lib/roles";
@@ -61,17 +62,13 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
       <ErrorNote code={loadError ? "load_failed" : error} />
 
       {requests.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-line bg-white px-6 py-14 text-center shadow-card">
-          <span className="grid size-14 place-items-center rounded-2xl bg-brand-soft text-brand">
-            <Inbox className="size-7" aria-hidden />
-          </span>
-          <p className="font-extrabold text-ink">No requests waiting</p>
-          <p className="text-sm text-muted-foreground">You&rsquo;re all caught up.</p>
-        </div>
+        <EmptyState icon={Inbox} title="No requests waiting">
+          You&rsquo;re all caught up. New requests from customers appear here.
+        </EmptyState>
       ) : (
         <ul className="grid gap-4 lg:grid-cols-2">
           {requests.map((r) => (
-            <li key={r.id} className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-5 shadow-card">
+            <li key={r.id} className="flex flex-col gap-4 rounded-2xl border border-line bg-card p-5 shadow-card">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-brand">#{jobRef(r.id)}</div>
@@ -98,15 +95,15 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
 
               <div className="grid grid-cols-3 gap-2 rounded-xl bg-surface p-3 text-center">
                 <div>
-                  <div className="text-[10px] font-bold uppercase text-muted-foreground">Service</div>
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Service</div>
                   <div className="mt-1 text-xs font-extrabold text-ink">{r.service_type}</div>
                 </div>
                 <div className="border-x border-line">
-                  <div className="text-[10px] font-bold uppercase text-muted-foreground">Sacks</div>
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Sacks</div>
                   <div className="mt-1 text-xs font-extrabold text-ink">{r.sacks || r.kilos ? r.sacks : "After harvest"}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold uppercase text-muted-foreground">Est. weight</div>
+                  <div className="text-xs font-bold uppercase text-muted-foreground">Est. weight</div>
                   <div className="mt-1 text-xs font-extrabold text-ink">{r.sacks || r.kilos ? `${kg.format(r.kilos)} kg` : "After harvest"}</div>
                 </div>
               </div>
@@ -137,9 +134,9 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
                       min={0}
                       step={0.01}
                       required
-                      className="min-h-11 rounded-xl border border-line px-3 text-base outline-none focus:border-brand md:text-sm"
+                      className="min-h-12 rounded-xl border border-field bg-card px-3 text-base text-ink focus-visible:border-brand md:text-sm"
                     />
-                    <Button type="submit">Accept</Button>
+                    <SubmitButton>Accept</SubmitButton>
                   </form>
                   <form action={rejectRequest} className="flex flex-col gap-2">
                     <input type="hidden" name="id" value={r.id} />
@@ -153,11 +150,11 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
                       maxLength={300}
                       required
                       placeholder="e.g. dryer fully booked this week"
-                      className="min-h-11 rounded-xl border border-line px-3 text-base outline-none focus:border-brand md:text-sm"
+                      className="min-h-12 rounded-xl border border-field bg-card px-3 text-base text-ink focus-visible:border-brand md:text-sm"
                     />
-                    <Button type="submit" variant="outline" className="text-danger hover:text-danger">
+                    <SubmitButton variant="outline" className="text-danger hover:text-danger">
                       Reject
-                    </Button>
+                    </SubmitButton>
                   </form>
                 </div>
               )}

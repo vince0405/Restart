@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ChevronRight, Leaf, Package } from "lucide-react";
+import { EmptyState } from "@/components/rps/empty-state";
+import { ChevronRight, Leaf, Package, Warehouse } from "lucide-react";
 import { Badge, ExpiryBadge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
 import { ErrorNote } from "@/components/rps/error-note";
@@ -78,10 +79,10 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
           href={filter === "palay" ? "/storage" : "/storage?type=palay"}
           className={cn(
             "flex items-center gap-4 rounded-2xl border-2 p-4 text-left transition",
-            filter === "palay" ? "border-brand bg-brand-soft" : "border-line bg-white",
+            filter === "palay" ? "border-brand bg-brand-soft" : "border-line bg-card",
           )}
         >
-          <div className="grid size-11 place-items-center rounded-xl bg-brand text-white">
+          <div className="grid size-11 place-items-center rounded-xl bg-brand text-on-brand">
             <Leaf className="size-5" aria-hidden />
           </div>
           <div className="flex-1">
@@ -98,10 +99,10 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
           href={filter === "rice" ? "/storage" : "/storage?type=rice"}
           className={cn(
             "flex items-center gap-4 rounded-2xl border-2 p-4 text-left transition",
-            filter === "rice" ? "border-gold bg-gold-soft" : "border-line bg-white",
+            filter === "rice" ? "border-gold bg-gold-soft" : "border-line bg-card",
           )}
         >
-          <div className="grid size-11 place-items-center rounded-xl bg-gold text-white">
+          <div className="grid size-11 place-items-center rounded-xl bg-gold text-on-gold">
             <Package className="size-5" aria-hidden />
           </div>
           <div className="flex-1">
@@ -131,12 +132,10 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
         </div>
 
         {shown.length === 0 ? (
-          <div className="rounded-2xl border border-line bg-white p-10 text-center shadow-card">
-            <p className="font-bold text-ink">Nothing in storage</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              When a load is Ready, open it and tap &ldquo;Store at the mill&rdquo;.
-            </p>
-          </div>
+          <EmptyState icon={Warehouse} title="Nothing in storage">
+            When a job is Ready and the customer keeps some grain, open it and tap &ldquo;Store at
+            the mill&rdquo;.
+          </EmptyState>
         ) : (
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {shown.map(({ load, product, left, storedAt, keptKg }) => {
@@ -148,7 +147,7 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
                 <Link
                   key={load.id}
                   href={`/loads/${load.id}`}
-                  className="rounded-2xl border border-line bg-white p-5 shadow-card transition hover:border-brand/40"
+                  className="rounded-2xl border border-line bg-card p-5 shadow-card transition hover:border-brand/40"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -163,7 +162,7 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
                   </div>
                   <div className="my-4 grid grid-cols-2 gap-2 rounded-xl bg-surface p-3 text-center">
                     <div>
-                      <div className="text-[10px] font-bold uppercase text-muted-foreground">
+                      <div className="text-xs font-bold uppercase text-muted-foreground">
                         Quantity
                       </div>
                       <div className="mt-1 text-xs font-extrabold text-ink">
@@ -171,7 +170,7 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
                       </div>
                     </div>
                     <div className="border-l border-line">
-                      <div className="text-[10px] font-bold uppercase text-muted-foreground">
+                      <div className="text-xs font-bold uppercase text-muted-foreground">
                         Age
                       </div>
                       <div className="mt-1 text-xs font-extrabold text-ink">

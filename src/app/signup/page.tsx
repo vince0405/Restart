@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { Notice } from "@/components/rps/notice";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/rps/logo";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,17 +79,12 @@ export default async function SignUpPage({ searchParams }: PageProps<"/signup">)
             </div>
 
             {message && (
-              <p
-                className="rounded-xl border-l-4 border-danger bg-danger-soft p-3 text-sm font-semibold text-danger"
-                role="alert"
-              >
-                {message}
-              </p>
+              <Notice tone="error" className="mb-0">{message}</Notice>
             )}
 
-            <Button type="submit" size="lg">
+            <SubmitButton size="lg">
               Create account
-            </Button>
+            </SubmitButton>
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
               <Link href="/login" className="font-bold text-brand">

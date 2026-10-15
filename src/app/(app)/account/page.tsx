@@ -1,6 +1,8 @@
 import { ErrorNote } from "@/components/rps/error-note";
+import { Notice } from "@/components/rps/notice";
 import { PageTitle } from "@/components/rps/page-title";
-import { Button } from "@/components/ui/button";
+import { ThemeChoice } from "@/components/rps/theme-toggle";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatPhMobile, isPhoneSignInEmail } from "@/lib/phone";
@@ -28,7 +30,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         }
       />
 
-      <div className="mb-6 rounded-2xl border border-line bg-white p-5 text-sm shadow-card">
+      <div className="mb-6 rounded-2xl border border-line bg-card p-5 text-sm shadow-card">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Role</span>
           <span className="font-bold text-ink">{ROLE_LABELS[profile.role]}</span>
@@ -43,13 +45,24 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
       </div>
 
       {saved && (
-        <p className="mb-4 rounded-xl border-l-4 border-brand bg-brand-soft p-3 text-sm font-semibold text-brand">
-          Password changed.
-        </p>
+        <Notice tone="success">Password changed.</Notice>
       )}
       <ErrorNote code={error} />
 
-      <form action={changePassword} className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-5 shadow-card">
+      <section
+        aria-labelledby="appearance"
+        className="mb-6 rounded-2xl border border-line bg-card p-5 shadow-card"
+      >
+        <h2 id="appearance" className="font-extrabold text-ink">
+          Appearance
+        </h2>
+        <p className="mb-3 mt-1 text-sm text-muted-foreground">
+          Dark mode is easier on the eyes at night. &ldquo;Phone setting&rdquo; follows your phone.
+        </p>
+        <ThemeChoice />
+      </section>
+
+      <form action={changePassword} className="flex flex-col gap-4 rounded-2xl border border-line bg-card p-5 shadow-card">
         <h2 className="font-extrabold text-ink">Change password</h2>
         <div className="flex flex-col gap-2">
           <Label htmlFor="password">New password</Label>
@@ -59,9 +72,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           <Label htmlFor="confirm">Type it again</Label>
           <Input id="confirm" name="confirm" type="password" minLength={8} autoComplete="new-password" required />
         </div>
-        <Button type="submit" className="self-start">
+        <SubmitButton className="self-start">
           Save new password
-        </Button>
+        </SubmitButton>
       </form>
     </div>
   );

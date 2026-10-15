@@ -1,7 +1,16 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import {
+  Banknote,
+  ChevronRight,
+  CircleCheck,
+  HandCoins,
+  Package,
+  ReceiptText,
+  Wallet,
+} from "lucide-react";
 import { Badge, PaidBadge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
+import { StatCard } from "@/components/rps/stat-card";
 import { ErrorNote } from "@/components/rps/error-note";
 import { jobRef, type LoadRow, moneySummary, settlement } from "@/lib/loads";
 import { canSeeMoney } from "@/lib/roles";
@@ -25,16 +34,30 @@ export default async function MoneyPage() {
   const m = moneySummary(loads);
 
   const cards = [
-    { label: "Cash received (fees)", value: peso.format(m.cashReceived), tone: "bg-brand-soft text-brand" },
-    { label: "Fees taken from buyouts", value: peso.format(m.feesCoveredByBuyouts), tone: "bg-brand-soft text-brand" },
-    { label: "Customers still owe", value: peso.format(m.owedByCustomers), tone: "bg-gold-soft text-gold-dark" },
-    { label: "Payouts made", value: peso.format(m.payoutsMade), tone: "bg-info-soft text-info-dark" },
-    { label: "Payouts still to make", value: peso.format(m.payoutsToMake), tone: "bg-danger-soft text-danger" },
+    { label: "Cash received (fees)", value: peso.format(m.cashReceived), icon: Banknote, tone: "green" as const },
+    { label: "Fees taken from buyouts", value: peso.format(m.feesCoveredByBuyouts), icon: HandCoins, tone: "green" as const },
+    {
+      label: "Customers still owe",
+      value: peso.format(m.owedByCustomers),
+      icon: ReceiptText,
+      tone: "amber" as const,
+      attention: m.owedByCustomers > 0,
+    },
+    { label: "Payouts made", value: peso.format(m.payoutsMade), icon: CircleCheck, tone: "blue" as const },
+    {
+      label: "Payouts still to make",
+      value: peso.format(m.payoutsToMake),
+      icon: Wallet,
+      tone: "red" as const,
+      attention: m.payoutsToMake > 0,
+    },
     {
       label: "Co-op stock (bought)",
-      value: `${kg.format(m.stockRiceKg)} kg rice`,
+      value: kg.format(m.stockRiceKg),
+      unit: "kg rice",
       note: `${kg.format(m.stockPalayKg)} kg palay`,
-      tone: "bg-gold-soft text-gold-dark",
+      icon: Package,
+      tone: "amber" as const,
     },
   ];
 
@@ -56,16 +79,11 @@ export default async function MoneyPage() {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {cards.map((c) => (
-          <div key={c.label} className="rounded-2xl border border-line bg-white p-4 shadow-card">
-            <div className="text-xs font-semibold text-muted-foreground">{c.label}</div>
-            <div className="mt-2 text-xl font-extrabold tracking-tight text-ink md:text-2xl">{c.value}</div>
-            {c.note && <div className="mt-1 text-[11px] font-semibold text-muted-foreground">{c.note}</div>}
-            <div className={`mt-3 h-1.5 w-10 rounded-full ${c.tone}`} />
-          </div>
+          <StatCard key={c.label} {...c} />
         ))}
       </div>
 
-      <section className="mt-6 rounded-2xl border border-line bg-white p-2 shadow-card md:p-3">
+      <section className="mt-6 rounded-2xl border border-line bg-card p-2 shadow-card md:p-3">
         <div className="px-3 pb-3 pt-2">
           <h2 className="font-extrabold text-ink">Open money</h2>
           <p className="text-xs text-muted-foreground">Balances due, payouts to make and buyouts to decide.</p>

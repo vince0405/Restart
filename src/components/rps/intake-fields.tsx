@@ -1,5 +1,6 @@
 import type { InputHTMLAttributes } from "react";
 import { Cog, Droplet, Leaf, Package, type LucideIcon } from "lucide-react";
+import { FORM_ERROR_ID } from "@/lib/errors";
 import { type ServiceType, stepsFor } from "@/lib/loads";
 
 // Pieces shared by the staff walk-in form and the customer request form.
@@ -16,8 +17,11 @@ export function Field({
   label,
   name,
   suffix,
+  invalid,
   ...input
 }: {
+  /** The server said this field is wrong: red edge + linked message. */
+  invalid?: boolean;
   label: string;
   name: string;
   suffix?: string;
@@ -25,9 +29,11 @@ export function Field({
   return (
     <label className="block">
       <span className="mb-2 block text-xs font-bold text-ink">{label}</span>
-      <span className="flex min-h-12 items-center rounded-xl border border-line bg-white px-3 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
+      <span className={`flex min-h-12 items-center rounded-xl border bg-card px-3 focus-within:border-brand ${invalid ? "border-2 border-danger" : "border-field"} focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand`}>
         <input
           name={name}
+          aria-invalid={invalid || undefined}
+          aria-describedby={invalid ? FORM_ERROR_ID : undefined}
           className="min-w-0 flex-1 bg-transparent py-2 text-base text-ink outline-none placeholder:text-muted-foreground/70 md:text-sm"
           {...input}
         />
@@ -73,17 +79,17 @@ export function ServicePicker({ text }: { text: string }) {
               required
               className="peer sr-only"
             />
-            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-surface text-gold-dark peer-checked:bg-brand peer-checked:text-white">
+            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-surface text-gold-dark peer-checked:bg-brand peer-checked:text-on-brand">
               <s.icon className="size-6" aria-hidden />
             </span>
             <span className="flex-1">
               <span className="block font-extrabold text-ink">{s.name}</span>
               <span className="mt-1 block text-xs text-muted-foreground">{s.description}</span>
-              <span className="mt-2 block text-[11px] font-bold text-brand">
+              <span className="mt-2 block text-xs font-bold text-brand">
                 {stepsFor(s.name).join(" → ")}
               </span>
             </span>
-            <span className="grid size-5 shrink-0 place-items-center rounded-full border-2 border-line text-[10px] text-white peer-checked:border-brand peer-checked:bg-brand">
+            <span className="grid size-5 shrink-0 place-items-center rounded-full border-2 border-field text-xs text-on-brand peer-checked:border-brand peer-checked:bg-brand">
               ✓
             </span>
           </label>
@@ -94,12 +100,13 @@ export function ServicePicker({ text }: { text: string }) {
 }
 
 /** Where to harvest. Needed for Package Deal and Harvesting + Drying. */
-export function HarvestAddressField() {
+export function HarvestAddressField({ invalidField }: { invalidField?: string | null }) {
   return (
     <div className="mt-5">
       <Field
         label="Farm address — where to harvest"
         name="harvest_address"
+        invalid={invalidField === "harvest_address"}
         type="text"
         maxLength={300}
         autoComplete="street-address"
@@ -125,13 +132,20 @@ const HARVEST_PICKED_SHOW =
  * Sacks and weight. Required for Drying only and Milling only (checked on
  * the server); for harvesting services they are counted after the harvest.
  */
-export function PalayCountFields({ weightLabel = "Estimated weight" }: { weightLabel?: string }) {
+export function PalayCountFields({
+  weightLabel = "Estimated weight",
+  invalidField,
+}: {
+  weightLabel?: string;
+  invalidField?: string | null;
+}) {
   return (
     <>
       <div className={`grid gap-4 sm:grid-cols-2 ${HARVEST_PICKED_HIDE}`}>
         <Field
           label="Number of sacks"
           name="sacks"
+          invalid={invalidField === "sacks"}
           type="number"
           inputMode="numeric"
           min={0}
@@ -142,6 +156,7 @@ export function PalayCountFields({ weightLabel = "Estimated weight" }: { weightL
         <Field
           label={weightLabel}
           name="kilos"
+          invalid={invalidField === "kilos"}
           type="number"
           inputMode="decimal"
           min={0}

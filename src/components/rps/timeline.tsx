@@ -30,8 +30,8 @@ export function Timeline({ steps, current }: { steps: readonly string[]; current
             <div
               className={cn(
                 "relative z-10 grid size-8 shrink-0 place-items-center rounded-full text-xs font-bold md:mx-auto",
-                done && "bg-brand text-white",
-                isCurrent && "bg-gold text-white ring-4 ring-gold-soft",
+                done && "bg-brand text-on-brand",
+                isCurrent && "bg-gold text-on-gold ring-4 ring-gold-soft",
                 !done && !isCurrent && "bg-surface text-muted-foreground",
               )}
             >
@@ -39,7 +39,7 @@ export function Timeline({ steps, current }: { steps: readonly string[]; current
             </div>
             <div className="md:mt-3 md:text-center">
               <div className="text-xs font-extrabold text-ink">{step}</div>
-              <div className="mt-1 text-[10px] text-muted-foreground">
+              <div className="mt-1 text-xs text-muted-foreground">
                 {done
                   ? "Done"
                   : isCurrent

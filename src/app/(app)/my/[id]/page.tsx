@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Scale, Warehouse } from "lucide-react";
+import { Scale, Warehouse } from "lucide-react";
 import { Badge, ExpiryBadge } from "@/components/rps/badge";
 import { HarvestAddress } from "@/components/rps/harvest-address";
+import { Breadcrumbs } from "@/components/rps/breadcrumbs";
 import { PageTitle } from "@/components/rps/page-title";
+import { MoneyRow } from "@/components/rps/panel";
 import { Timeline } from "@/components/rps/timeline";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { ErrorNote } from "@/components/rps/error-note";
 import {
   describeCount,
@@ -38,14 +41,6 @@ function formatDateTime(date: Date) {
   return date.toLocaleString("en-PH", { timeZone: "Asia/Manila", dateStyle: "medium", timeStyle: "short" });
 }
 
-function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
-  return (
-    <div className={cn("flex justify-between gap-3", bold ? "font-extrabold text-ink" : "text-muted-foreground")}>
-      <span>{label}</span>
-      <span className={bold ? "" : "font-bold text-ink"}>{value}</span>
-    </div>
-  );
-}
 
 const CHOICES = [
   { value: "keep", title: "Keep 100%", text: "Take all of it home. You pay the processing fee." },
@@ -82,13 +77,7 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
 
   return (
     <div>
-      <Link
-        href="/my"
-        className="mb-4 flex w-fit items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-ink"
-      >
-        <ArrowLeft className="size-4" aria-hidden />
-        My jobs
-      </Link>
+      <Breadcrumbs items={[{ label: "My jobs", href: "/my" }, { label: `#${jobRef(load.id)}` }]} />
 
       <PageTitle
         eyebrow="My job"
@@ -125,9 +114,9 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <form action={cancelRequest}>
                       <input type="hidden" name="id" value={load.id} />
-                      <Button type="submit" variant="destructive" className="w-full sm:w-auto">
+                      <SubmitButton variant="destructive" className="w-full sm:w-auto">
                         Yes, cancel request
-                      </Button>
+                      </SubmitButton>
                     </form>
                     <Link
                       href={`/my/${load.id}`}
@@ -179,14 +168,14 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
       )}
 
       {load.request_status === "accepted" && (
-        <section className="rounded-2xl border border-line bg-white p-5 shadow-card md:p-7">
+        <section className="rounded-2xl border border-line bg-card p-5 shadow-card md:p-7">
           <h2 className="mb-6 font-extrabold text-ink">Processing timeline</h2>
           <Timeline steps={steps} current={load.stage} />
         </section>
       )}
 
       {canChoose && (
-        <section className="mt-6 rounded-2xl border-2 border-brand bg-white p-5 shadow-card md:p-7">
+        <section className="mt-6 rounded-2xl border-2 border-brand bg-card p-5 shadow-card md:p-7">
           <h2 className="text-lg font-extrabold text-ink">Your {product} is ready</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             It weighed {kg.format(load.output_kg ?? 0)} kg. What would you like to do with it?
@@ -209,7 +198,7 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
               <span className="mb-2 block text-xs font-bold text-ink">
                 If splitting: how much do you keep?
               </span>
-              <span className="flex min-h-12 items-center rounded-xl border border-line bg-white px-3 focus-within:border-brand">
+              <span className="flex min-h-12 items-center rounded-xl border border-field bg-card px-3 focus-within:border-brand focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand">
                 <input
                   name="keep_percent"
                   type="number"
@@ -225,16 +214,16 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
                 </span>
               </span>
             </label>
-            <Button type="submit" size="lg" className="w-full sm:w-auto">
+            <SubmitButton size="lg" className="w-full sm:w-auto">
               Confirm my choice
-            </Button>
+            </SubmitButton>
           </form>
         </section>
       )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {load.request_status === "accepted" && (
-          <section className="rounded-2xl border border-line bg-white p-5 shadow-card">
+          <section className="rounded-2xl border border-line bg-card p-5 shadow-card">
             <div className="flex items-center gap-3">
               <div className="grid size-10 place-items-center rounded-xl bg-brand-soft text-brand">
                 <Scale className="size-5" aria-hidden />
@@ -242,15 +231,15 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
               <h2 className="font-extrabold text-ink">Weight breakdown</h2>
             </div>
             <div className="mt-4 space-y-3 text-sm">
-              <Row label="Palay (latest count)" value={load.sacks || load.kilos ? `${load.sacks} sacks · ${kg.format(load.kilos)} kg` : "Counted after harvest"} />
-              <Row
+              <MoneyRow label="Palay (latest count)" value={load.sacks || load.kilos ? `${load.sacks} sacks · ${kg.format(load.kilos)} kg` : "Counted after harvest"} />
+              <MoneyRow
                 label={`${product === "rice" ? "Rice" : "Palay"} out`}
                 value={load.output_kg != null ? `${kg.format(load.output_kg)} kg` : "Not weighed yet"}
               />
               {load.disposition && (
                 <>
-                  <Row label="You keep" value={`${kg.format(money.keptKg)} kg (${load.keep_percent}%)`} />
-                  {money.soldKg > 0 && <Row label="Offered to the co-op" value={`${kg.format(money.soldKg)} kg`} />}
+                  <MoneyRow label="You keep" value={`${kg.format(money.keptKg)} kg (${load.keep_percent}%)`} />
+                  {money.soldKg > 0 && <MoneyRow label="Offered to the co-op" value={`${kg.format(money.soldKg)} kg`} />}
                 </>
               )}
             </div>
@@ -258,11 +247,11 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
         )}
 
         {load.request_status === "accepted" && (
-          <section className="rounded-2xl border border-line bg-white p-5 shadow-card">
+          <section className="rounded-2xl border border-line bg-card p-5 shadow-card">
             <h2 className="font-extrabold text-ink">Money</h2>
             <div className="mt-4 space-y-3 text-sm">
-              <Row label="Processing fee" value={load.agreed_price > 0 ? peso.format(load.agreed_price) : "To be set"} />
-              <Row label="Paid in cash" value={peso.format(money.paidCash)} />
+              <MoneyRow label="Processing fee" value={load.agreed_price > 0 ? peso.format(load.agreed_price) : "To be set"} />
+              <MoneyRow label="Paid in cash" value={peso.format(money.paidCash)} />
               {load.buyout_status === "requested" && (
                 <p className="rounded-xl bg-gold-soft p-3 text-gold-dark">
                   The chairperson is deciding on your sale.
@@ -274,7 +263,7 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
                 </p>
               )}
               {load.buyout_status === "approved" && (
-                <Row
+                <MoneyRow
                   label={`Sale: ${kg.format(money.soldKg)} kg × ${peso.format(Number(load.price_per_kg ?? 0))}`}
                   value={peso.format(money.saleValue)}
                 />
@@ -286,13 +275,13 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
                 )}
               >
                 {money.payout > 0 ? (
-                  <Row
+                  <MoneyRow
                     label={load.payout_done_at ? "Paid out to you" : "The co-op will pay you"}
                     value={peso.format(money.payout)}
-                    bold
+                    strong
                   />
                 ) : (
-                  <Row label="You still owe" value={peso.format(money.stillOwes)} bold />
+                  <MoneyRow label="You still owe" value={peso.format(money.stillOwes)} strong />
                 )}
               </div>
             </div>
@@ -300,7 +289,7 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
         )}
 
         {stored && load.stored_at && left !== null && load.stage === "Stored" && (
-          <section className="rounded-2xl border border-line bg-white p-5 shadow-card lg:col-span-2">
+          <section className="rounded-2xl border border-line bg-card p-5 shadow-card lg:col-span-2">
             <div className="flex items-center gap-3">
               <div className="grid size-10 place-items-center rounded-xl bg-info-soft text-info-dark">
                 <Warehouse className="size-5" aria-hidden />

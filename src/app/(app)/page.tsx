@@ -4,6 +4,7 @@ import {
   CalendarClock,
   ChevronRight,
   ClipboardList,
+  HandCoins,
   Inbox,
   Leaf,
   Plus,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { Badge, PaidBadge, StageBadge, type Tone } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
+import { StatCard } from "@/components/rps/stat-card";
 import { buttonVariants } from "@/components/ui/button";
 import { ErrorNote } from "@/components/rps/error-note";
 import {
@@ -169,7 +171,7 @@ export default async function DashboardPage() {
       {(pendingRequests ?? 0) > 0 && (
         <Link
           href="/requests"
-          className="mb-5 flex items-center gap-3 rounded-2xl border-l-4 border-gold bg-gold-soft p-4 shadow-card"
+          className="mb-5 flex min-h-14 items-center gap-3 rounded-2xl border-l-4 border-gold bg-gold-soft p-4 shadow-card transition-colors hover:border-brand"
         >
           <Inbox className="size-5 shrink-0 text-gold-dark" aria-hidden />
           <span className="flex-1 text-sm font-bold text-ink">
@@ -182,49 +184,23 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {kpis.map((k, i) => (
-          <Link
+          <StatCard
             key={k.label}
+            label={k.label}
+            value={k.value}
+            unit={k.unit}
+            note={k.note}
+            icon={k.icon}
+            tone={k.tone === "gray" ? "green" : k.tone}
             href={k.href}
-            className={cn(
-              "rounded-2xl border border-line bg-white p-4 shadow-card transition hover:border-brand/40",
-              i === 4 && "col-span-2 md:col-span-1",
-            )}
-          >
-            <div className="mb-4 flex items-start justify-between">
-              <div
-                className={cn(
-                  "grid size-10 place-items-center rounded-xl",
-                  k.tone === "green" && "bg-brand-soft text-brand",
-                  k.tone === "amber" && "bg-gold-soft text-gold-dark",
-                  k.tone === "blue" && "bg-info-soft text-info-dark",
-                  k.tone === "red" && "bg-danger-soft text-danger",
-                )}
-              >
-                <k.icon className="size-5" aria-hidden />
-              </div>
-              {k.urgent && (
-                <span className="mt-1 size-2 rounded-full bg-danger ring-4 ring-danger-soft" />
-              )}
-            </div>
-            <div className="text-xs font-semibold text-muted-foreground">{k.label}</div>
-            <div className="mt-1 flex items-baseline gap-1">
-              <span className="text-2xl font-extrabold tracking-tight text-ink">{k.value}</span>
-              {k.unit && <span className="text-xs font-bold text-muted-foreground">{k.unit}</span>}
-            </div>
-            <div
-              className={cn(
-                "mt-2 text-[11px] font-semibold",
-                k.urgent ? "text-danger" : "text-muted-foreground",
-              )}
-            >
-              {k.note}
-            </div>
-          </Link>
+            attention={k.urgent}
+            className={cn(i === 4 && "col-span-2 md:col-span-1")}
+          />
         ))}
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_20rem]">
-        <section className="min-w-0 rounded-2xl border border-line bg-white p-4 shadow-card md:p-5">
+        <section className="min-w-0 rounded-2xl border border-line bg-card p-4 shadow-card md:p-5">
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h2 className="font-extrabold text-ink">Live job board</h2>
@@ -232,25 +208,31 @@ export default async function DashboardPage() {
                 {s.activeJobs} {s.activeJobs === 1 ? "job" : "jobs"} currently in progress
               </p>
             </div>
-            <Link href="/loads" className="flex items-center gap-1 text-xs font-bold text-brand">
-              View all <ArrowRight className="size-[15px]" aria-hidden />
+            <Link href="/loads" className="flex min-h-11 items-center gap-1 px-1 text-sm font-bold text-brand">
+              View all <ArrowRight className="size-4" aria-hidden />
             </Link>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2">
             {BOARD.map((col) => {
               const jobs = loads.filter((l) => l.stage === col.stage);
               return (
-                <div key={col.stage} className="min-w-[13rem] flex-1 rounded-xl bg-surface p-3">
+                <section
+                  key={col.stage}
+                  aria-labelledby={`board-${col.stage}`}
+                  className="min-w-[13rem] flex-1 rounded-xl bg-surface p-3"
+                >
                   <div className="mb-3 flex items-center gap-2">
-                    <span className={cn("size-2 rounded-full", col.dot)} />
-                    <span className="text-xs font-extrabold text-ink">{col.stage}</span>
-                    <span className="ml-auto rounded-md bg-white px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                    <span className={cn("size-2.5 rounded-full", col.dot)} aria-hidden />
+                    <h3 id={`board-${col.stage}`} className="text-sm font-extrabold text-ink">
+                      {col.stage}
+                    </h3>
+                    <span className="ml-auto rounded-md bg-card px-2 py-0.5 text-xs font-bold text-muted-foreground">
                       {jobs.length}
                     </span>
                   </div>
                   <div className="space-y-2">
                     {jobs.length === 0 && (
-                      <p className="px-1 py-3 text-center text-[11px] text-muted-foreground">
+                      <p className="px-1 py-3 text-center text-xs text-muted-foreground">
                         Nothing here
                       </p>
                     )}
@@ -258,14 +240,14 @@ export default async function DashboardPage() {
                       <Link
                         key={job.id}
                         href={`/loads/${job.id}`}
-                        className="block w-full rounded-xl border border-line bg-white p-3 text-left shadow-sm transition hover:border-brand/40"
+                        className="block w-full rounded-xl border border-line bg-card p-3 text-left shadow-sm transition-colors hover:border-brand"
                       >
-                        <div className="text-[11px] font-bold text-brand">#{jobRef(job.id)}</div>
+                        <div className="text-xs font-bold text-brand">#{jobRef(job.id)}</div>
                         <div className="mt-1 truncate text-sm font-bold text-ink">
                           {job.customer_name}
                         </div>
-                        <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-                          <span>{kg.format(job.kilos)} kg</span>
+                        <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{job.sacks || job.kilos ? `${kg.format(job.kilos)} kg` : "Not counted yet"}</span>
                           <ChevronRight className="size-3.5" aria-hidden />
                         </div>
                       </Link>
@@ -273,28 +255,28 @@ export default async function DashboardPage() {
                     {jobs.length > 4 && (
                       <Link
                         href="/loads"
-                        className="block text-center text-[11px] font-bold text-brand"
+                        className="flex min-h-11 items-center justify-center text-sm font-bold text-brand"
                       >
                         +{jobs.length - 4} more
                       </Link>
                     )}
                   </div>
-                </div>
+                </section>
               );
             })}
           </div>
         </section>
 
-        <section className="rounded-2xl border border-line bg-white p-5 shadow-card">
+        <section className="rounded-2xl border border-line bg-card p-5 shadow-card">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-extrabold text-ink">Alerts</h2>
+            <h2 className="text-base font-extrabold text-ink">Alerts</h2>
             {alertCount > 0 ? (
               <Badge tone="red">{alertCount} to check</Badge>
             ) : (
               <Badge tone="green">All clear</Badge>
             )}
           </div>
-          <div className="space-y-3">
+          <div className="space-y-3" aria-live="polite">
             {alertCount === 0 && (
               <p className="text-sm text-muted-foreground">
                 No buyouts to decide, no stored grain close to expiry, and every released load is paid.
@@ -304,12 +286,17 @@ export default async function DashboardPage() {
               <Link
                 key={load.id}
                 href={`/loads/${load.id}`}
-                className="block rounded-xl border-l-4 border-gold bg-gold-soft p-3"
+                className="flex min-h-14 items-start gap-3 rounded-xl border-l-4 p-3 border-gold bg-gold-soft"
               >
-                <div className="text-xs font-bold text-ink">#{jobRef(load.id)} wants to sell to the co-op</div>
-                <div className="mt-1 text-[11px] text-muted-foreground">
-                  {load.customer_name} · {load.keep_percent === 0 ? "sell 100%" : `keep ${load.keep_percent}%`}
-                </div>
+                <HandCoins className="mt-0.5 size-5 shrink-0 text-gold-dark" aria-hidden />
+                <span>
+                  <span className="block text-sm font-bold text-ink">
+                    Buyout to decide · #{jobRef(load.id)}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    {load.customer_name} · {load.keep_percent === 0 ? "sell 100%" : `keep ${load.keep_percent}%`}
+                  </span>
+                </span>
               </Link>
             ))}
             {expiryAlerts.slice(0, 4).map(({ load, left }) => (
@@ -317,35 +304,47 @@ export default async function DashboardPage() {
                 key={load.id}
                 href={`/loads/${load.id}`}
                 className={cn(
-                  "block rounded-xl border-l-4 p-3",
+                  "flex min-h-14 items-start gap-3 rounded-xl border-l-4 p-3",
                   expiryTone(left, warning_days) === "red"
                     ? "border-danger bg-danger-soft"
                     : "border-gold bg-gold-soft",
                 )}
               >
-                <div className="text-xs font-bold text-ink">
-                  {isServiceType(load.service_type) && productFor(load.service_type) === "rice"
-                    ? "Rice"
-                    : "Palay"}{" "}
-                  #{jobRef(load.id)} · {expiryLabel(left).toLowerCase()}
-                </div>
-                <div className="mt-1 text-[11px] text-muted-foreground">
-                  {load.customer_name} · {kg.format(load.kilos)} kg
-                </div>
+                <CalendarClock
+                  className={cn(
+                    "mt-0.5 size-5 shrink-0",
+                    expiryTone(left, warning_days) === "red" ? "text-danger" : "text-gold-dark",
+                  )}
+                  aria-hidden
+                />
+                <span>
+                  <span className="block text-sm font-bold text-ink">
+                    {isServiceType(load.service_type) && productFor(load.service_type) === "rice"
+                      ? "Rice"
+                      : "Palay"}{" "}
+                    {expiryLabel(left).toLowerCase()} · #{jobRef(load.id)}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    {load.customer_name} · {kg.format(settlement(load).keptKg)} kg stored
+                  </span>
+                </span>
               </Link>
             ))}
             {unpaidReleased.slice(0, 3).map(({ load, owes }) => (
               <Link
                 key={load.id}
                 href={`/loads/${load.id}`}
-                className="block rounded-xl border-l-4 border-danger bg-danger-soft p-3"
+                className="flex min-h-14 items-start gap-3 rounded-xl border-l-4 p-3 border-danger bg-danger-soft"
               >
-                <div className="text-xs font-bold text-ink">
-                  #{jobRef(load.id)} released but not paid
-                </div>
-                <div className="mt-1 text-[11px] text-muted-foreground">
-                  {load.customer_name} · owes {peso.format(owes)}
-                </div>
+                <ReceiptText className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden />
+                <span>
+                  <span className="block text-sm font-bold text-ink">
+                    Released, not paid · #{jobRef(load.id)}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    {load.customer_name} · owes {peso.format(owes)}
+                  </span>
+                </span>
               </Link>
             ))}
           </div>
@@ -357,34 +356,34 @@ export default async function DashboardPage() {
           </div>
           <Link
             href="/storage"
-            className="mt-3 block w-full rounded-xl border border-line py-2.5 text-center text-xs font-bold text-brand"
+            className="mt-3 flex min-h-11 w-full items-center justify-center rounded-xl border border-field text-sm font-bold text-brand transition-colors hover:bg-surface"
           >
             View storage
           </Link>
         </section>
       </div>
 
-      <section className="mt-6 rounded-2xl border border-line bg-white p-4 shadow-card md:p-5">
+      <section className="mt-6 rounded-2xl border border-line bg-card p-4 shadow-card md:p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="font-extrabold text-ink">Recent loads</h2>
             <p className="text-xs text-muted-foreground">Latest mill activity</p>
           </div>
-          <Link href="/loads" className="text-xs font-bold text-brand">
+          <Link href="/loads" className="flex min-h-11 items-center px-1 text-sm font-bold text-brand">
             View all
           </Link>
         </div>
         {loads.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            No loads yet. Tap &ldquo;New load&rdquo; when a customer&rsquo;s job starts.
+            No jobs yet. Accepted requests and walk-in jobs show up here.
           </p>
         ) : (
           <>
-            <div className="hidden grid-cols-[1fr_1.4fr_1fr_1fr_1fr] border-b border-line px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground md:grid">
+            <div className="hidden grid-cols-[1fr_1.4fr_1fr_1fr_1fr] border-b border-line px-3 pb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground md:grid">
               <span>Job ID</span>
               <span>Customer</span>
               <span>Service</span>
-              <span>Amount</span>
+              <span className="md:text-right md:pr-4">Fee</span>
               <span>Status</span>
             </div>
             {loads.slice(0, 5).map((load) => (
@@ -401,12 +400,12 @@ export default async function DashboardPage() {
                 </div>
                 <span className="text-sm font-bold text-ink">{load.customer_name}</span>
                 <span className="text-xs text-muted-foreground">{load.service_type}</span>
-                <span className="text-xs font-bold text-ink">{peso.format(load.agreed_price)}</span>
+                <span className="text-sm font-bold tabular-nums text-ink md:text-right md:pr-4">{peso.format(load.agreed_price)}</span>
                 <span className="flex flex-wrap gap-1.5">
                   <span className="hidden md:inline">
                     <StageBadge stage={load.stage} />
                   </span>
-                  <PaidBadge isPaid={load.is_paid} />
+                  <PaidBadge isPaid={load.is_paid} amount={load.amount_paid} />
                 </span>
               </Link>
             ))}
