@@ -225,7 +225,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
       <Breadcrumbs items={[{ label: "Process", href: "/loads" }, { label: `#${jobRef(load.id)}` }]} />
 
       <PageTitle
-        eyebrow="Job details"
+        eyebrow="Transaction details"
         title={`#${jobRef(load.id)}`}
         description={`${load.service_type} · Created ${formatDate(new Date(load.created_at))}`}
         action={
@@ -467,7 +467,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                   load.dryer_load_id ? (
                     <Badge tone="blue">
                       {dryerMates.length
-                        ? `Shared with ${dryerMates.length} other ${dryerMates.length === 1 ? "job" : "jobs"}`
+                        ? `Shared with ${dryerMates.length} other ${dryerMates.length === 1 ? "transaction" : "transactions"}`
                         : "On its own so far"}
                     </Badge>
                   ) : undefined
@@ -476,7 +476,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
               {load.dryer_load_id ? (
                 <div className="mt-4 space-y-3 text-sm">
                   <MoneyRow
-                    label="This job's share of the load fee"
+                    label="This transaction's share of the load fee"
                     value={load.drying_fee != null ? peso.format(Number(load.drying_fee)) : "—"}
                   />
                   <MoneyRow label="Sacks in the load" value={`${dryerSacks} of ${maxSacks}`} />
@@ -511,7 +511,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                 <form action={joinDryerLoad} className="mt-4 flex flex-col gap-3">
                   <input type="hidden" name="id" value={load.id} />
                   <p className="text-sm text-muted-foreground">
-                    Drying with other farmers&rsquo; palay? Put this job ({load.sacks} sacks) in a
+                    Drying with other farmers&rsquo; palay? Put this transaction ({load.sacks} sacks) in a
                     shared load and the {peso.format(settings.rates.dryer_load_fee)} fee is split by
                     sacks. Up to {maxSacks} sacks per load.
                   </p>
@@ -524,7 +524,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                         <input type="radio" name="dryer_load" value={d.id} required />
                         <span>
                           <span className="font-bold text-ink">
-                            Dryer load with {d.jobs} {d.jobs === 1 ? "job" : "jobs"}
+                            Dryer load with {d.jobs} {d.jobs === 1 ? "transaction" : "transactions"}
                           </span>{" "}
                           <span className="text-muted-foreground">
                             · {d.sacks} of {maxSacks} sacks used
@@ -853,7 +853,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                     </>
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      The service can&rsquo;t be changed: work on this job has started.
+                      The service can&rsquo;t be changed: work on this transaction has started.
                     </p>
                   )}
                   <div className="flex flex-col gap-2">
@@ -981,7 +981,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
               </div>
               {payLater && money.stillOwes > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Pay later: the Chairperson trusts this member, so the job can be released before
+                  Pay later: the Chairperson trusts this member, so the transaction can be released before
                   it is fully paid.
                 </p>
               )}
@@ -1108,7 +1108,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                   <p className="text-xs text-muted-foreground">
                     {hasParts
                       ? "A discount or extra charge is kept: the next count adds the new price-list amounts and keeps the same difference."
-                      : "This job has no price-list amounts yet. The harvest count will work the fee out from the price list."}
+                      : "This transaction has no price-list amounts yet. The harvest count will work the fee out from the price list."}
                   </p>
                   <SubmitButton variant="outline">Save fee</SubmitButton>
                 </form>
@@ -1124,7 +1124,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
         <section className="mt-6 rounded-2xl border border-line bg-card p-5 shadow-card">
           {confirmingDelete ? (
             <div className="rounded-xl border-l-4 border-danger bg-danger-soft p-4">
-              <p className="font-extrabold text-ink">Delete this job?</p>
+              <p className="font-extrabold text-ink">Delete this transaction?</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 #{jobRef(load.id)} for {name} will be removed for good. Only do this if it was
                 entered by mistake.
@@ -1156,7 +1156,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                 className={cn(buttonVariants({ variant: "outline" }), "text-danger hover:text-danger")}
               >
                 <Trash2 className="size-4" aria-hidden />
-                Delete job
+                Delete transaction
               </Link>
             </div>
           )}

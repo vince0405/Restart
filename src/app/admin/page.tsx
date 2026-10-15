@@ -188,7 +188,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         <PageTitle
           eyebrow="Main admin"
           title="Cooperatives"
-          description="Every co-op using RPS1. Each one sees only its own people, jobs and money — you add co-ops and their first Chairperson."
+          description="Every co-op using RPS1. Each one sees only its own people, transactions and money — you add co-ops and their first Chairperson."
           action={
             <a href="#add-coop" className={cn(buttonVariants({ size: "lg" }), "w-full sm:w-auto")}>
               <Plus className="size-5" aria-hidden />

@@ -307,7 +307,7 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
 
         {shown.length === 0 ? (
           <EmptyState icon={Warehouse} title="Nothing in storage">
-            When a job is Ready and the customer keeps some grain, open it and tap &ldquo;Store at
+            When a transaction is Ready and the customer keeps some grain, open it and tap &ldquo;Store at
             the mill&rdquo;.
           </EmptyState>
         ) : (

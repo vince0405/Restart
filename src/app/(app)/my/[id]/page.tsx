@@ -89,10 +89,10 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
 
   return (
     <div>
-      <Breadcrumbs items={[{ label: "My jobs", href: "/my" }, { label: `#${jobRef(load.id)}` }]} />
+      <Breadcrumbs items={[{ label: "My transactions", href: "/my" }, { label: `#${jobRef(load.id)}` }]} />
 
       <PageTitle
-        eyebrow="My job"
+        eyebrow="My transaction"
         title={`#${jobRef(load.id)}`}
         description={`${load.service_type} · ${describeCount(load)}`}
         action={<Badge tone={status.tone}>{status.label}</Badge>}

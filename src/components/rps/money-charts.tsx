@@ -114,7 +114,7 @@ export function FeesChart({ points, kind = "bar" }: { points: StatPoint[]; kind?
                 onMouseLeave={() => setActive(null)}
                 onFocus={() => setActive(i)}
                 onBlur={() => setActive(null)}
-                aria-label={`${p.full}: collected ${peso.format(p.collected)}, still owed ${peso.format(p.owed)}, ${p.jobs} ${p.jobs === 1 ? "job" : "jobs"}`}
+                aria-label={`${p.full}: collected ${peso.format(p.collected)}, still owed ${peso.format(p.owed)}, ${p.jobs} ${p.jobs === 1 ? "transaction" : "transactions"}`}
                 // The whole column slot is the hit target, not just the thin bar.
                 className="relative z-10 flex min-w-0 flex-1 cursor-default flex-col items-center justify-end rounded-lg focus-visible:outline-offset-0"
               >
@@ -165,7 +165,7 @@ export function FeesChart({ points, kind = "bar" }: { points: StatPoint[]; kind?
                     )}
                   >
                     <span className="block text-xs font-bold text-muted-foreground">
-                      {p.full} · {p.jobs} {p.jobs === 1 ? "job" : "jobs"}
+                      {p.full} · {p.jobs} {p.jobs === 1 ? "transaction" : "transactions"}
                     </span>
                     <span className="mt-1 flex items-center gap-2">
                       <span className="h-0.5 w-3 bg-chart-1" />
@@ -220,7 +220,7 @@ export function JobsByServiceChart({ rows }: { rows: { service: string; jobs: nu
               />
             </div>
             <span className="w-16 shrink-0 text-sm tabular-nums text-ink">
-              <strong>{r.jobs}</strong> {r.jobs === 1 ? "job" : "jobs"}
+              <strong>{r.jobs}</strong> {r.jobs === 1 ? "transaction" : "transactions"}
             </span>
           </div>
         </li>

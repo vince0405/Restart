@@ -80,14 +80,14 @@ export default async function JobsPage({ searchParams }: PageProps<"/loads">) {
   return (
     <div>
       <PageTitle
-        eyebrow="Job tracking"
+        eyebrow="Transaction tracking"
         title="Process"
-        description="Every accepted job, newest first."
+        description="Every accepted transaction, newest first."
         action={
           canManage(role) && (
             <Link href="/loads/new" className={buttonVariants({ size: "lg" })}>
               <Plus className="size-5" aria-hidden />
-              New walk-in job
+              New walk-in transaction
             </Link>
           )
         }
@@ -101,7 +101,7 @@ export default async function JobsPage({ searchParams }: PageProps<"/loads">) {
             action="/loads"
             q={q}
             placeholder="Search by customer name"
-            label="Search jobs by customer name"
+            label="Search transactions by customer name"
             keep={status !== "all" ? { status } : {}}
           >
             <FilterSelect
@@ -129,7 +129,7 @@ export default async function JobsPage({ searchParams }: PageProps<"/loads">) {
             {filtering ? (
               <EmptyState
                 icon={Search}
-                title="No jobs match"
+                title="No transactions match"
                 action={
                   <Link href="/loads" className={buttonVariants({ variant: "outline" })}>
                     Clear filters
@@ -139,15 +139,15 @@ export default async function JobsPage({ searchParams }: PageProps<"/loads">) {
                 Try another name, service or status.
               </EmptyState>
             ) : (
-              <EmptyState icon={ClipboardList} title="No jobs yet">
-                Accepted requests and walk-in jobs show up here.
+              <EmptyState icon={ClipboardList} title="No transactions yet">
+                Accepted requests and walk-in transactions show up here.
               </EmptyState>
             )}
           </div>
         ) : (
           <>
             <div className="hidden grid-cols-[0.9fr_1.5fr_1.1fr_0.8fr_1.6fr_auto] gap-3 border-b border-line bg-surface px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground md:grid">
-              <span>Job ID</span>
+              <span>Transaction ID</span>
               <span>Customer</span>
               <span>Service</span>
               <span>Weight</span>
@@ -188,7 +188,7 @@ export default async function JobsPage({ searchParams }: PageProps<"/loads">) {
           <Pagination
             {...info}
             total={total}
-            noun={["job", "jobs"]}
+            noun={["transaction", "transactions"]}
             hrefFor={(page) => href({ page })}
           />
         )}

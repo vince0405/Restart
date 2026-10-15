@@ -44,7 +44,7 @@ type NavItem = { label: string; href: string; icon: LucideIcon; mobile: boolean 
 function navFor(role: Role): NavItem[] {
   if (!isStaff(role)) {
     return [
-      { label: "My jobs", href: "/my", icon: ClipboardList, mobile: true },
+      { label: "My transactions", href: "/my", icon: ClipboardList, mobile: true },
       { label: "Request", href: "/my/request", icon: Plus, mobile: true },
       { label: "Account", href: "/account", icon: CircleUser, mobile: false },
     ];
@@ -83,11 +83,11 @@ function isActive(pathname: string, href: string) {
 
 function titleFor(pathname: string) {
   if (pathname === "/") return "Dashboard";
-  if (pathname === "/my") return "My jobs";
+  if (pathname === "/my") return "My transactions";
   if (pathname === "/my/request") return "Request a service";
-  if (pathname.startsWith("/my/")) return "My job";
-  if (pathname === "/loads/new") return "New walk-in job";
-  if (pathname.startsWith("/loads/")) return "Job details";
+  if (pathname.startsWith("/my/")) return "My transaction";
+  if (pathname === "/loads/new") return "New walk-in transaction";
+  if (pathname.startsWith("/loads/")) return "Transaction details";
   if (pathname.startsWith("/loads")) return "Process";
   if (pathname.startsWith("/requests")) return "Requests";
   if (pathname.startsWith("/storage")) return "Storage";
@@ -190,7 +190,7 @@ export function TopBar({ role }: { role: Role }) {
               className="hidden min-h-12 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-bold text-on-brand shadow-logo transition-colors hover:bg-brand-dark active:scale-[0.98] md:flex"
             >
               <Plus className="size-5" aria-hidden />
-              {isStaff(role) ? "New walk-in job" : "Request a service"}
+              {isStaff(role) ? "New walk-in transaction" : "Request a service"}
             </Link>
           )}
           <ThemeButton />
@@ -213,7 +213,7 @@ export function TopBar({ role }: { role: Role }) {
 const tabClass = (active: boolean) =>
   cn(
     // 56px tall, 12px labels; the active tab gets a pill behind its icon.
-    "flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-xs",
+    "flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-center text-xs leading-tight",
     active ? "font-extrabold text-ink" : "font-semibold text-muted-foreground",
   );
 

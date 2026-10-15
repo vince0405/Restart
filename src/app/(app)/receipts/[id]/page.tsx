@@ -52,7 +52,7 @@ export default async function ReceiptPage({ params }: PageProps<"/receipts/[id]"
   });
   const rows: [string, string][] = [
     ["Customer", customer],
-    ["Job", `#${jobRef(receipt.load.id)} · ${receipt.load.service_type}`],
+    ["Transaction", `#${jobRef(receipt.load.id)} · ${receipt.load.service_type}`],
     ["Paid on", paidOn],
     ["Method", paymentMethodLabel(receipt.method)],
     ...(receipt.reference ? ([["Reference", receipt.reference]] as [string, string][]) : []),
@@ -66,7 +66,7 @@ export default async function ReceiptPage({ params }: PageProps<"/receipts/[id]"
           href={staff ? `/loads/${receipt.load.id}` : `/my/${receipt.load.id}`}
           className={buttonVariants({ variant: "outline" })}
         >
-          Back to the job
+          Back to the transaction
         </Link>
         <PrintButton />
       </div>

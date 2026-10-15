@@ -53,7 +53,7 @@ const FIELD_LABELS: Record<string, string> = {
   paid_on: "Paid on",
   method: "Method",
   reference: "Reference",
-  load_id: "Job",
+  load_id: "Transaction",
   recorded_by: "Recorded by",
   pay_later: "Pay later (trusted)",
   harvest_fee_in: "Harvest share paid in",
@@ -67,7 +67,7 @@ const FIELD_LABELS: Record<string, string> = {
 const HIDDEN = new Set(["created_at", "owner_id", "customer_id", "cancelled_by", "cancelled_at", "coop_id"]);
 
 export const TABLE_LABELS: Record<string, string> = {
-  loads: "Job",
+  loads: "Transaction",
   profiles: "Person",
   settings: "Settings",
   payments: "Payment",

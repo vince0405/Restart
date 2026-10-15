@@ -191,7 +191,7 @@ export function PriceList({ rates }: { rates: Rates }) {
         <li>Milling: {peso.format(rates.milling_fee_per_sack)} per sack, counted after drying</li>
       </ul>
       <p className="mt-2">
-        Leave the price empty to use the price list. Harvesting jobs get their fee after the
+        Leave the price empty to use the price list. Harvesting transactions get their fee after the
         harvest count.
       </p>
     </div>

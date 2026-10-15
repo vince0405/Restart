@@ -115,7 +115,7 @@ export default async function DashboardPage() {
     urgent?: boolean;
   }[] = [
     {
-      label: "Active jobs",
+      label: "Active transactions",
       value: String(s.activeJobs),
       note: `+${s.addedToday} today`,
       icon: ClipboardList,
@@ -183,7 +183,7 @@ export default async function DashboardPage() {
           canManage(role) && (
             <Link href="/loads/new" className={cn(buttonVariants(), "md:hidden")}>
               <Plus className="size-[18px]" aria-hidden />
-              New walk-in job
+              New walk-in transaction
             </Link>
           )
         }
@@ -226,9 +226,9 @@ export default async function DashboardPage() {
         <section className="min-w-0 rounded-2xl border border-line bg-card p-4 shadow-card md:p-5">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="font-extrabold text-ink">Live job board</h2>
+              <h2 className="font-extrabold text-ink">Live transaction board</h2>
               <p className="text-xs text-muted-foreground">
-                {s.activeJobs} {s.activeJobs === 1 ? "job" : "jobs"} currently in progress
+                {s.activeJobs} {s.activeJobs === 1 ? "transaction" : "transactions"} currently in progress
               </p>
             </div>
             <Link href="/loads" className="flex min-h-11 items-center gap-1 px-1 text-sm font-bold text-brand">
@@ -389,8 +389,8 @@ export default async function DashboardPage() {
       <section aria-labelledby="recent-title" className="mt-6 rounded-2xl border border-line bg-card shadow-card">
         <div className="flex items-center justify-between gap-3 border-b border-line p-4 md:px-5">
           <div>
-            <h2 id="recent-title" className="font-extrabold text-ink">Recent jobs</h2>
-            <p className="text-xs text-muted-foreground">The latest {Math.min(loads.length, RECENT)} jobs, by the day they came in</p>
+            <h2 id="recent-title" className="font-extrabold text-ink">Recent transactions</h2>
+            <p className="text-xs text-muted-foreground">The latest {Math.min(loads.length, RECENT)} transactions, by the day they came in</p>
           </div>
           <Link href="/loads" className="flex min-h-11 items-center gap-1 px-1 text-sm font-bold text-brand">
             View all
@@ -399,7 +399,7 @@ export default async function DashboardPage() {
         </div>
         {loads.length === 0 ? (
           <p className="p-6 text-center text-sm text-muted-foreground">
-            No jobs yet. Accepted requests and walk-in jobs show up here.
+            No transactions yet. Accepted requests and walk-in transactions show up here.
           </p>
         ) : (
           <div className="divide-y divide-line">

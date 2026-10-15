@@ -64,7 +64,7 @@ export default async function MyJobsPage() {
     {
       label: "Being processed",
       value: String(sum.inProgress),
-      note: sum.inProgress === 1 ? "job" : "jobs",
+      note: sum.inProgress === 1 ? "transaction" : "transactions",
       icon: Scale,
       tone: "bg-brand-soft text-brand",
     },
@@ -97,7 +97,7 @@ export default async function MyJobsPage() {
       <PageTitle
         eyebrow={coop_name}
         title={`Hello, ${profile.full_name.split(" ")[0] || "there"}`}
-        description="Your requests and jobs at the mill."
+        description="Your requests and transactions at the mill."
         action={
           <Link href="/my/request" className={buttonVariants({ size: "lg" })}>
             <Plus className="size-5" aria-hidden />

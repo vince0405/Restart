@@ -118,7 +118,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
       <PageTitle
         eyebrow={role === "auditor" ? "Auditor · read-only" : "Records"}
         title="Statistics"
-        description="Fees, buyouts, payouts and the co-op's own stock, from every accepted job."
+        description="Fees, buyouts, payouts and the co-op's own stock, from every accepted transaction."
         action={m.buyoutsWaiting > 0 ? <Badge tone="amber">{m.buyoutsWaiting} buyout(s) waiting</Badge> : undefined}
       />
 
@@ -140,10 +140,10 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
             </h2>
             <p className="text-sm text-muted-foreground">
               {range === "week"
-                ? "The last 7 days, by the day each job was logged."
+                ? "The last 7 days, by the day each transaction was logged."
                 : range === "month"
-                  ? "The last 30 days, by the day each job was logged."
-                  : "The last 12 months, by the month each job was logged."}
+                  ? "The last 30 days, by the day each transaction was logged."
+                  : "The last 12 months, by the month each transaction was logged."}
             </p>
           </div>
           {/* One filter row, above everything it changes. */}
@@ -166,7 +166,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
         </div>
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard label="Fees for these jobs" value={pesoShort(t.fees)} note={`${peso.format(t.fees)} · ${t.jobs} ${t.jobs === 1 ? "job" : "jobs"}`} icon={ReceiptText} />
+          <StatCard label="Fees for these transactions" value={pesoShort(t.fees)} note={`${peso.format(t.fees)} · ${t.jobs} ${t.jobs === 1 ? "transaction" : "transactions"}`} icon={ReceiptText} />
           {/* Collected share as a meter: same-colour track, filled part = collected. */}
           <div className="rounded-2xl border border-line bg-card p-4 shadow-card">
             <div className="text-sm font-semibold text-muted-foreground">Collected so far</div>
@@ -187,7 +187,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
               {pesoShort(t.collected)} of {pesoShort(t.fees)}
             </div>
           </div>
-          <StatCard label="Average fee per job" value={pesoShort(t.averageFee)} note={peso.format(t.averageFee)} icon={Banknote} tone="blue" />
+          <StatCard label="Average fee per transaction" value={pesoShort(t.averageFee)} note={peso.format(t.averageFee)} icon={Banknote} tone="blue" />
           <StatCard label="Grain bought by the co-op" value={kg.format(t.boughtKg)} unit="kg" icon={Package} tone="amber" />
         </div>
 
@@ -229,7 +229,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
                   <thead>
                     <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-muted-foreground">
                       <th scope="col" className="py-2 pr-3 font-bold">{range === "year" ? "Month" : "Day"}</th>
-                      <th scope="col" className="py-2 pr-3 text-right font-bold">Jobs</th>
+                      <th scope="col" className="py-2 pr-3 text-right font-bold">Transactions</th>
                       <th scope="col" className="py-2 pr-3 text-right font-bold">Collected</th>
                       <th scope="col" className="py-2 text-right font-bold">Still owed</th>
                     </tr>
@@ -253,9 +253,9 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
 
           <section aria-labelledby="by-service" className="rounded-2xl border border-line bg-card p-4 shadow-card sm:p-5">
             <h3 id="by-service" className="text-base font-extrabold text-ink">
-              Jobs by service
+              Transactions by service
             </h3>
-            <p className="mb-4 text-sm text-muted-foreground">Number of jobs, and their fees.</p>
+            <p className="mb-4 text-sm text-muted-foreground">Number of transactions, and their fees.</p>
             <JobsByServiceChart rows={stats.byService} />
           </section>
         </div>
@@ -267,7 +267,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
           <p className="text-xs text-muted-foreground">Balances due, payouts to make and buyouts to decide.</p>
         </div>
         {open.length === 0 ? (
-          <p className="px-3 pb-6 text-sm text-muted-foreground">Nothing open. Every job is settled.</p>
+          <p className="px-3 pb-6 text-sm text-muted-foreground">Nothing open. Every transaction is settled.</p>
         ) : (
           <ul>
             {open.map(({ load, s }) => (

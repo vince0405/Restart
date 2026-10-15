@@ -28,7 +28,7 @@ export default async function NewLoadPage({ searchParams }: PageProps<"/loads/ne
       <PageTitle
         eyebrow="Walk-in customer"
         title="Palay intake"
-        description="For a customer without an account. It starts as an accepted job."
+        description="For a customer without an account. It starts as an accepted transaction."
       />
 
       <form
@@ -50,7 +50,7 @@ export default async function NewLoadPage({ searchParams }: PageProps<"/loads/ne
 
         <div className="my-8 border-t border-line" />
 
-        <ServicePicker text="The job will only show the steps this service has." />
+        <ServicePicker text="The transaction will only show the steps this service has." />
         <HarvestAddressField invalidField={errorField(error)} />
 
         <div className="my-8 border-t border-line" />
@@ -77,7 +77,7 @@ export default async function NewLoadPage({ searchParams }: PageProps<"/loads/ne
             Cancel
           </Link>
           <SubmitButton size="lg">
-            Create job
+            Create transaction
             <ArrowRight className="size-[17px]" aria-hidden />
           </SubmitButton>
         </div>
