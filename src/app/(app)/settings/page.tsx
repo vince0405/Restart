@@ -9,6 +9,7 @@ import { updateSettings } from "../people/actions";
 const MESSAGES: Record<string, string> = {
   price: "Enter a farmgate price of 0 or more.",
   name: "The co-op needs a name.",
+  window: "The cancel window must be a whole number of hours from 1 to 24.",
   save: "Could not save. Only the Chairperson can change settings.",
 };
 
@@ -20,7 +21,11 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
 
   return (
     <div className="mx-auto max-w-2xl">
-      <PageTitle eyebrow="Chairperson" title="Settings" description="Applies to every new buyout." />
+      <PageTitle
+        eyebrow="Chairperson"
+        title="Settings"
+        description="Applies to new buyouts and new cancellations from now on."
+      />
 
       {saved && (
         <p className="mb-4 rounded-xl border-l-4 border-brand bg-brand-soft p-3 text-sm font-semibold text-brand">
@@ -52,6 +57,25 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           />
           <p className="text-xs text-muted-foreground">
             Pre-fills the price when you approve a buyout. You can still change it per buyout.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="cancel_window_hours">Cancel window (hours)</Label>
+          <Input
+            id="cancel_window_hours"
+            name="cancel_window_hours"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={24}
+            step={1}
+            defaultValue={settings.cancel_window_hours}
+            required
+          />
+          <p className="text-xs text-muted-foreground">
+            How long after sending a request a customer may still cancel it — and only while it
+            is still waiting for you. From 1 to 24 hours.
           </p>
         </div>
 

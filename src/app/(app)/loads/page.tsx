@@ -3,6 +3,7 @@ import { ChevronRight, ClipboardList, Plus } from "lucide-react";
 import { ExpiryBadge, PaidBadge, StageBadge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
 import { buttonVariants } from "@/components/ui/button";
+import { ErrorNote } from "@/components/rps/error-note";
 import { jobRef, type LoadRow, storedDaysLeft } from "@/lib/loads";
 import { canManage, isStaff } from "@/lib/roles";
 import { getSettings, requireRole } from "@/lib/session";
@@ -23,7 +24,7 @@ export default async function JobsPage() {
     .eq("request_status", "accepted")
     .order("created_at", { ascending: false });
   const loads = (data ?? []) as LoadRow[];
-  const { lifeline } = await getSettings();
+  const { lifeline, warning_days } = await getSettings();
 
   return (
     <div>
@@ -45,11 +46,7 @@ export default async function JobsPage() {
         }
       />
 
-      {error && (
-        <p className="mb-4 text-sm text-destructive" role="alert">
-          Could not load the list: {error.message}
-        </p>
-      )}
+      <ErrorNote code={error ? "load_failed" : null} />
 
       {loads.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-line bg-white px-6 py-14 text-center shadow-card">
@@ -94,7 +91,7 @@ export default async function JobsPage() {
                     <span className="flex flex-wrap items-center gap-1.5">
                       <StageBadge stage={load.stage} />
                       <PaidBadge isPaid={load.is_paid} amount={load.amount_paid} />
-                      {left !== null && <ExpiryBadge daysLeft={left} />}
+                      {left !== null && <ExpiryBadge daysLeft={left} warningDays={warning_days} />}
                     </span>
                     <ChevronRight
                       className="hidden size-4 text-muted-foreground md:block"

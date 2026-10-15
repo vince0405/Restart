@@ -8,6 +8,7 @@ import { Timeline } from "@/components/rps/timeline";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ErrorNote } from "@/components/rps/error-note";
 import {
   daysLeft,
   expiryDate,
@@ -124,6 +125,9 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
   const chair = canApproveBuyout(role);
 
   const rejected = load.request_status === "rejected";
+  const cancelled = load.request_status === "cancelled";
+  // Rejected or cancelled requests are closed: no work or money buttons.
+  const closed = rejected || cancelled;
   const stored = load.stored_at != null;
   const steps = stepsFor(load.service_type, stored);
   const next = nextStage(load.service_type, load.stage, stored);
@@ -131,14 +135,18 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
   const finished = load.stage === "Released";
   const weighed = load.output_kg != null;
   const atReady = load.stage === "Ready";
-  // Leaving Ready needs the batch weighed first.
-  const canAdvance = worker && !rejected && next !== null && (!atReady || weighed);
+  const chosen = load.disposition != null;
+  const money = settlement(load);
+  // Leaving Ready needs the batch weighed AND the customer's keep / sell /
+  // split choice. Storing also needs something kept. (The database and the
+  // server actions refuse these too.)
+  const canAdvance = worker && !closed && next !== null && (!atReady || (weighed && chosen));
+  const canStore = worker && atReady && !stored && weighed && chosen && money.keptKg > 0;
 
   const product = productFor(load.service_type);
   const storedAt = stored ? new Date(load.stored_at as string) : null;
   const expires = storedAt ? expiryDate(storedAt, load.service_type, settings.lifeline) : null;
   const left = expires ? daysLeft(expires) : null;
-  const money = settlement(load);
   const walkIn = !load.customer_id;
   const name = load.customer?.full_name || load.customer_name;
   const initials = name
@@ -185,11 +193,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
         }
       />
 
-      {typeof error === "string" && (
-        <p className="mb-4 rounded-xl border-l-4 border-danger bg-danger-soft p-3 text-sm font-semibold text-danger" role="alert">
-          {error}
-        </p>
-      )}
+      <ErrorNote code={error} />
 
       {role === "auditor" && (
         <p className="mb-4 rounded-xl border-l-4 border-info bg-info-soft p-3 text-sm font-semibold text-info-dark">
@@ -200,6 +204,13 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
       {rejected && (
         <p className="mb-4 rounded-xl border-l-4 border-danger bg-danger-soft p-3 text-sm text-ink">
           <strong>Request rejected.</strong> {load.reject_reason}
+        </p>
+      )}
+
+      {cancelled && (
+        <p className="mb-4 rounded-xl border-l-4 border-line bg-surface p-3 text-sm text-ink">
+          <strong>Cancelled by the customer</strong>
+          {load.cancelled_at ? ` on ${formatDate(new Date(load.cancelled_at))}` : ""}. Nothing to do.
         </p>
       )}
 
@@ -228,7 +239,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
         </div>
       </div>
 
-      {!rejected && (
+      {!closed && (
         <Panel className="md:p-7">
           <div className="mb-6 flex items-center justify-between">
             <div>
@@ -242,9 +253,16 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
 
           <Timeline steps={steps} current={load.stage} />
 
-          {worker && (prev || (atReady && !stored && weighed)) && (
+          {worker && atReady && weighed && !chosen && (
+            <p className="mt-5 rounded-xl border-l-4 border-gold bg-gold-soft p-3 text-sm text-ink">
+              Weighed. Release and storage unlock once {walkIn ? "the walk-in's" : "the customer's"} keep /
+              sell / split choice is recorded.
+            </p>
+          )}
+
+          {worker && (prev || canStore) && (
             <div className="mt-6 flex flex-col gap-3 border-t border-line pt-5 sm:flex-row">
-              {atReady && !stored && weighed && (
+              {canStore && (
                 <form action={storeLoad} className="flex-1">
                   <input type="hidden" name="id" value={load.id} />
                   <Button type="submit" variant="secondary" size="lg" className="w-full border border-line">
@@ -252,7 +270,8 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                     Store {product} at the mill
                   </Button>
                   <p className="mt-1 text-center text-[11px] text-muted-foreground">
-                    Stored {product} keeps {settings.lifeline[product]} days.
+                    {kg.format(money.keptKg)} kg kept · stored {product} keeps{" "}
+                    {settings.lifeline[product]} days.
                   </p>
                 </form>
               )}
@@ -271,7 +290,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_22rem]">
         <div className="space-y-4">
-          {(atReady || weighed) && !rejected && (
+          {(atReady || weighed) && !closed && (
             <Panel className={cn(atReady && !weighed && "border-2 border-gold")}>
               <PanelHead
                 icon={Scale}
@@ -311,7 +330,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
             </Panel>
           )}
 
-          {weighed && !rejected && (
+          {weighed && !closed && (
             <Panel>
               <PanelHead icon={HandCoins} tone="bg-brand-soft text-brand" title="Keep, sell or split" />
               {load.disposition ? (
@@ -469,7 +488,13 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                 icon={Warehouse}
                 tone="bg-info-soft text-info-dark"
                 title="Storage record"
-                right={finished ? <Badge tone="gray">Released</Badge> : <ExpiryBadge daysLeft={left} />}
+                right={
+                  finished ? (
+                    <Badge tone="gray">Released</Badge>
+                  ) : (
+                    <ExpiryBadge daysLeft={left} warningDays={settings.warning_days} />
+                  )
+                }
               />
               <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
                 <Fact label="Stored" value={product === "rice" ? "Rice" : "Palay"} />
@@ -509,7 +534,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
           </Panel>
         </div>
 
-        {!rejected && (
+        {!closed && (
           <section className="rounded-2xl border border-line bg-white p-5 shadow-card xl:self-start">
             <h2 className="font-extrabold text-ink">Billing summary</h2>
             <div className="mt-4 space-y-3 text-sm">

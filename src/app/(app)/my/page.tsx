@@ -3,11 +3,13 @@ import { ChevronRight, ClipboardList, Plus } from "lucide-react";
 import { Badge, ExpiryBadge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
 import { buttonVariants } from "@/components/ui/button";
-import { customerStatus, jobRef, type LoadRow, storedDaysLeft } from "@/lib/loads";
+import { ErrorNote } from "@/components/rps/error-note";
+import { customerStatus, jobRef, type LoadRow, settlement, storedDaysLeft } from "@/lib/loads";
 import { isStaff } from "@/lib/roles";
 import { getSettings, requireRole } from "@/lib/session";
 
 const kg = new Intl.NumberFormat("en-PH", { maximumFractionDigits: 2 });
+const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-PH", { timeZone: "Asia/Manila", dateStyle: "medium" });
@@ -16,13 +18,13 @@ function formatDate(iso: string) {
 // A customer's home screen: their requests and jobs, newest first.
 export default async function MyJobsPage() {
   const { supabase, profile } = await requireRole((r) => !isStaff(r));
-  const { coop_name, lifeline } = await getSettings();
+  const { coop_name, lifeline, warning_days } = await getSettings();
 
   // RLS only ever returns this customer's own rows.
   const { data, error } = await supabase
     .from("loads")
     .select(
-      "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at, request_status, reject_reason, output_kg, disposition, keep_percent, buyout_status",
+      "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at, request_status, reject_reason, output_kg, disposition, keep_percent, buyout_status, price_per_kg, payout_done_at",
     )
     .order("created_at", { ascending: false });
   const loads = (data ?? []) as LoadRow[];
@@ -41,11 +43,7 @@ export default async function MyJobsPage() {
         }
       />
 
-      {error && (
-        <p className="mb-4 text-sm text-destructive" role="alert">
-          Could not load your jobs: {error.message}
-        </p>
-      )}
+      <ErrorNote code={error ? "load_failed" : null} />
 
       {loads.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-line bg-white px-6 py-14 text-center shadow-card">
@@ -62,6 +60,8 @@ export default async function MyJobsPage() {
           {loads.map((load) => {
             const status = customerStatus(load);
             const left = storedDaysLeft(load, new Date(), lifeline);
+            const money = settlement(load);
+            const accepted = load.request_status === "accepted";
             return (
               <li key={load.id}>
                 <Link
@@ -77,10 +77,32 @@ export default async function MyJobsPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Badge tone={status.tone}>{status.label}</Badge>
-                    {left !== null && <ExpiryBadge daysLeft={left} />}
+                    {left !== null && <ExpiryBadge daysLeft={left} warningDays={warning_days} />}
                   </div>
                   {load.request_status === "rejected" && load.reject_reason && (
                     <p className="text-sm text-danger">{load.reject_reason}</p>
+                  )}
+                  {accepted && (
+                    <div className="grid grid-cols-2 gap-2 rounded-xl bg-surface p-3 text-xs">
+                      <div>
+                        <div className="font-bold uppercase text-muted-foreground">Output</div>
+                        <div className="mt-0.5 font-extrabold text-ink">
+                          {load.output_kg != null ? `${kg.format(load.output_kg)} kg` : "Not weighed yet"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-bold uppercase text-muted-foreground">
+                          {money.payout > 0 ? (load.payout_done_at ? "Paid to you" : "You get") : "You owe"}
+                        </div>
+                        <div className="mt-0.5 font-extrabold text-ink">
+                          {money.payout > 0
+                            ? peso.format(money.payout)
+                            : load.agreed_price > 0
+                              ? peso.format(money.stillOwes)
+                              : "Fee not set yet"}
+                        </div>
+                      </div>
+                    </div>
                   )}
                   <div className="mt-auto text-xs text-muted-foreground">
                     {load.sacks} sacks · {kg.format(load.kilos)} kg ·{" "}

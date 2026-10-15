@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Badge, PaidBadge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
+import { ErrorNote } from "@/components/rps/error-note";
 import { jobRef, type LoadRow, moneySummary, settlement } from "@/lib/loads";
 import { canSeeMoney } from "@/lib/roles";
 import { requireRole } from "@/lib/session";
@@ -51,11 +52,7 @@ export default async function MoneyPage() {
         action={m.buyoutsWaiting > 0 ? <Badge tone="amber">{m.buyoutsWaiting} buyout(s) waiting</Badge> : undefined}
       />
 
-      {error && (
-        <p className="mb-4 text-sm text-destructive" role="alert">
-          Could not load the records: {error.message}
-        </p>
-      )}
+      <ErrorNote code={error ? "load_failed" : null} />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {cards.map((c) => (

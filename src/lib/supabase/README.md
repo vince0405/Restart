@@ -2,8 +2,10 @@
 
 - `client.ts` — use in files that start with `"use client"`
 - `server.ts` — use in server components, route handlers, server actions
+- `new-account.ts` — only for the Chairperson's "Add a person" form: creates
+  someone else's account without signing the Chairperson out
 
-Both use the **anon key**. That is correct and safe.
+All three use the **anon key**. That is correct and safe.
 
 ## The one rule
 

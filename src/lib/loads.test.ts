@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  cancelDeadline,
+  customerStatus,
   daysLeft,
   expiryDate,
   expiryLabel,
@@ -18,6 +20,7 @@ import {
   settlement,
   stepsFor,
   summarize,
+  withinCancelWindow,
 } from "./loads";
 
 describe("service steps", () => {
@@ -202,8 +205,8 @@ describe("dashboard summary", () => {
   };
   const loads: LoadRow[] = [
     { ...base, id: "a", customer_name: "A", service_type: "Package Deal", stage: "Drying", created_at: "2026-10-15T01:00:00Z" },
-    { ...base, id: "b", customer_name: "B", service_type: "Milling only", stage: "Stored", stored_at: "2026-09-20T02:00:00Z", is_paid: true, amount_paid: 1000 },
-    { ...base, id: "c", customer_name: "C", service_type: "Drying only", stage: "Stored", stored_at: "2026-10-10T02:00:00Z", kilos: 800, sacks: 16 },
+    { ...base, id: "b", customer_name: "B", service_type: "Milling only", stage: "Stored", stored_at: "2026-09-20T02:00:00Z", is_paid: true, amount_paid: 1000, output_kg: 320 },
+    { ...base, id: "c", customer_name: "C", service_type: "Drying only", stage: "Stored", stored_at: "2026-10-10T02:00:00Z", kilos: 800, sacks: 16, output_kg: 1000, keep_percent: 70, disposition: "split", buyout_status: "requested" },
     { ...base, id: "d", customer_name: "D", service_type: "Drying only", stage: "Released" },
   ];
 
@@ -211,15 +214,31 @@ describe("dashboard summary", () => {
     expect(summarize(loads, now)).toEqual({
       activeJobs: 1,
       addedToday: 1,
-      palayKg: 800,
-      palaySacks: 16,
-      riceKg: 500,
-      riceSacks: 10,
+      palayKg: 700, // 70% of 1,000 kg output was kept, not the 800 kg brought in
+      palayLots: 1,
+      riceKg: 320,
+      riceLots: 1,
       expiringSoon: 1, // the rice stored 20 Sep expires 20 Oct: 5 days left
       unpaidTotal: 3000,
       unpaidCount: 3,
       releasedUnpaid: 1,
     });
+  });
+
+  it("counts 'expiring soon' with the co-op's own warning days", () => {
+    // The rice in storage has 5 days left: inside a 14-day warning, outside a 3-day one.
+    expect(summarize(loads, now, undefined, 14).expiringSoon).toBe(1);
+    expect(summarize(loads, now, undefined, 3).expiringSoon).toBe(0);
+  });
+
+  it("does not count a fee covered by an approved buyout as unpaid", () => {
+    const sold: LoadRow = {
+      ...base, id: "e", customer_name: "E", service_type: "Milling only", stage: "Released",
+      output_kg: 500, keep_percent: 0, disposition: "sell", buyout_status: "approved", price_per_kg: 40,
+    };
+    const s = summarize([sold], now);
+    expect(s.unpaidCount).toBe(0);
+    expect(s.releasedUnpaid).toBe(0);
   });
 
   it("colours expiry red within a week, amber within two, green after", () => {
@@ -228,6 +247,8 @@ describe("dashboard summary", () => {
     expect(expiryTone(8)).toBe("amber");
     expect(expiryTone(14)).toBe("amber");
     expect(expiryTone(15)).toBe("green");
+    expect(expiryTone(20, 30)).toBe("amber"); // a 30-day warning period
+    expect(expiryTone(5, 3)).toBe("green");   // a 3-day warning period
     expect(expiryLabel(0)).toBe("Expired");
     expect(expiryLabel(1)).toBe("1 day left");
   });
@@ -303,6 +324,13 @@ describe("settlement", () => {
     expect(s.stillOwes).toBe(5000);
   });
 
+  it("gives the customer everything when the buyout is declined", () => {
+    const s = settlement({ ...job, buyout_status: "declined" });
+    expect(s.keptKg).toBe(1000);
+    expect(s.soldKg).toBe(0);
+    expect(s.saleValue).toBe(0);
+  });
+
   it("keeps everything when nothing was chosen yet", () => {
     const s = settlement({ ...job, keep_percent: null, buyout_status: "none" });
     expect(s.keptKg).toBe(1000);
@@ -349,5 +377,23 @@ describe("money summary", () => {
       stockPalayKg: 0,
       buyoutsWaiting: 1,
     });
+  });
+});
+
+describe("cancelling a request", () => {
+  it("allows cancelling until the window closes", () => {
+    expect(cancelDeadline("2026-10-15T02:00:00Z", 2).toISOString()).toBe("2026-10-15T04:00:00.000Z");
+    expect(cancelDeadline("2026-10-15T02:00:00Z", 24).toISOString()).toBe("2026-10-16T02:00:00.000Z");
+    expect(withinCancelWindow("2026-10-15T02:00:00Z", 2, new Date("2026-10-15T03:59:00Z"))).toBe(true);
+    expect(withinCancelWindow("2026-10-15T02:00:00Z", 2, new Date("2026-10-15T04:00:00Z"))).toBe(false);
+  });
+
+  it("tells the customer a cancelled request is cancelled", () => {
+    const load = {
+      id: "x", created_at: "2026-10-15T02:00:00Z", customer_name: "X", sacks: 1, kilos: 1,
+      service_type: "Drying only", stage: "Received", agreed_price: 0, is_paid: false,
+      amount_paid: null, stored_at: null, request_status: "cancelled",
+    };
+    expect(customerStatus(load)).toEqual({ label: "Cancelled", tone: "gray" });
   });
 });

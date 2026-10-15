@@ -1,3 +1,5 @@
+import type { ErrorCode } from "@/lib/errors";
+
 // The fixed vocabulary of the app, in one place so the form, the detail
 // screen and the database all agree.
 
@@ -103,16 +105,21 @@ export function daysLeft(expiry: Date, now: Date = new Date()): number {
   return Math.ceil((expiry.getTime() - now.getTime()) / 86_400_000);
 }
 
-/** Urgent (red) when this many days or fewer are left, or expired. */
-export const EXPIRY_WARNING_DAYS = 7;
+/** The warning point: stored grain with this many days or fewer left
+ *  counts as "expiring soon". The co-op's own number lives in
+ *  settings.warning_days; this is the default (14, from the flowchart). */
+export const EXPIRY_WARNING_DAYS = 14;
 
-/** Worth a heads-up (amber) when this many days or fewer are left. */
-export const EXPIRY_SOON_DAYS = 14;
+/** Urgent (red) in the last week, or once expired. */
+export const EXPIRY_URGENT_DAYS = 7;
 
-/** Red, amber or green for a stored load, by days left. */
-export function expiryTone(days: number): "red" | "amber" | "green" {
-  if (days <= EXPIRY_WARNING_DAYS) return "red";
-  if (days <= EXPIRY_SOON_DAYS) return "amber";
+/** Red (urgent), amber (within the warning period) or green, by days left. */
+export function expiryTone(
+  days: number,
+  warningDays: number = EXPIRY_WARNING_DAYS,
+): "red" | "amber" | "green" {
+  if (days <= Math.min(EXPIRY_URGENT_DAYS, warningDays)) return "red";
+  if (days <= warningDays) return "amber";
   return "green";
 }
 
@@ -153,6 +160,7 @@ export type LoadRow = {
   reject_reason?: string | null;
   preferred_date?: string | null;
   customer_note?: string | null;
+  cancelled_at?: string | null;
 };
 
 /** Days left for a stored load, or null if it is not in storage. */
@@ -172,6 +180,7 @@ export function summarize(
   loads: LoadRow[],
   now: Date = new Date(),
   lifeline: Lifeline = DEFAULT_LIFELINE,
+  warningDays: number = EXPIRY_WARNING_DAYS,
 ) {
   const manilaDay = (d: Date) =>
     d.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
@@ -181,9 +190,9 @@ export function summarize(
     activeJobs: 0,
     addedToday: 0,
     palayKg: 0,
-    palaySacks: 0,
+    palayLots: 0,
     riceKg: 0,
-    riceSacks: 0,
+    riceLots: 0,
     expiringSoon: 0,
     unpaidTotal: 0,
     unpaidCount: 0,
@@ -194,20 +203,25 @@ export function summarize(
     if (load.stage !== "Stored" && load.stage !== "Released") summary.activeJobs++;
     if (manilaDay(new Date(load.created_at)) === today) summary.addedToday++;
 
+    const money = settlement(load);
+
+    // Storage counts what the customer KEPT, by output weight.
     if (load.stage === "Stored" && isServiceType(load.service_type)) {
       if (productFor(load.service_type) === "rice") {
-        summary.riceKg += load.kilos;
-        summary.riceSacks += load.sacks;
+        summary.riceKg += money.keptKg;
+        summary.riceLots++;
       } else {
-        summary.palayKg += load.kilos;
-        summary.palaySacks += load.sacks;
+        summary.palayKg += money.keptKg;
+        summary.palayLots++;
       }
       const left = storedDaysLeft(load, now, lifeline);
-      if (left !== null && left <= EXPIRY_WARNING_DAYS) summary.expiringSoon++;
+      if (left !== null && left <= warningDays) summary.expiringSoon++;
     }
 
-    if (!load.is_paid) {
-      summary.unpaidTotal += load.agreed_price;
+    // "Not yet paid" uses the same maths as the job screen and Money page:
+    // a fee covered by a buyout is not owed.
+    if (money.stillOwes > 0) {
+      summary.unpaidTotal += money.stillOwes;
       summary.unpaidCount++;
       if (load.stage === "Released") summary.releasedUnpaid++;
     }
@@ -216,11 +230,31 @@ export function summarize(
   return summary;
 }
 
+/**
+ * When a pending request stops being cancellable: the moment it was asked
+ * plus the co-op's cancel window. The database checks the same rule with
+ * its own clock; this is only for showing the deadline and hiding the
+ * button once it has passed.
+ */
+export function cancelDeadline(createdAt: string, windowHours: number): Date {
+  return new Date(new Date(createdAt).getTime() + windowHours * 3_600_000);
+}
+
+/** Is a request asked at createdAt still inside the cancel window? */
+export function withinCancelWindow(
+  createdAt: string,
+  windowHours: number,
+  now: Date = new Date(),
+): boolean {
+  return now.getTime() < cancelDeadline(createdAt, windowHours).getTime();
+}
+
 /** What a customer should read about their job, in plain words. */
 export function customerStatus(load: LoadRow): {
   label: string;
   tone: "amber" | "red" | "green" | "blue" | "gray";
 } {
+  if (load.request_status === "cancelled") return { label: "Cancelled", tone: "gray" };
   if (load.request_status === "pending") return { label: "Waiting for the co-op", tone: "amber" };
   if (load.request_status === "rejected") return { label: "Not accepted", tone: "red" };
   if (load.stage === "Released") return { label: "Completed", tone: "gray" };
@@ -258,7 +292,8 @@ export function settlement(load: {
   price_per_kg?: number | null;
 }) {
   const output = load.output_kg ?? 0;
-  const keepPercent = load.keep_percent ?? 100;
+  // A declined buyout means the customer takes everything home.
+  const keepPercent = load.buyout_status === "declined" ? 100 : (load.keep_percent ?? 100);
   const keptKg = round2((output * keepPercent) / 100);
   const soldKg = round2(output - keptKg);
   const approved = load.buyout_status === "approved";
@@ -325,11 +360,11 @@ export function parseDisposition(
   if (choice === "split") {
     const n = Number(String(keepPercentRaw ?? "").trim());
     if (!Number.isInteger(n) || n < 1 || n > 99) {
-      return { ok: false, error: "For a split, keep a whole percentage from 1 to 99." };
+      return { ok: false, error: "split_invalid" };
     }
     return { ok: true, value: { disposition: "split", keep_percent: n, buyout_status: "requested" } };
   }
-  return { ok: false, error: "Choose keep, sell or split." };
+  return { ok: false, error: "choice_required" };
 }
 
 export type LoadInput = {
@@ -342,7 +377,7 @@ export type LoadInput = {
 
 export type ParseResult<T> =
   | { ok: true; value: T }
-  | { ok: false; error: string };
+  | { ok: false; error: ErrorCode };
 
 function parseNumber(value: unknown): number | null {
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
@@ -365,27 +400,27 @@ export function parseLoadInput(raw: {
 }): ParseResult<LoadInput> {
   const customer_name = String(raw.customer_name ?? "").trim();
   if (customer_name.length === 0) {
-    return { ok: false, error: "Customer name is required." };
+    return { ok: false, error: "name_required" };
   }
 
   const sacks = parseNumber(raw.sacks);
   if (sacks === null || !Number.isInteger(sacks) || sacks < 0) {
-    return { ok: false, error: "Sacks must be a whole number of 0 or more." };
+    return { ok: false, error: "sacks_invalid" };
   }
 
   const kilos = parseNumber(raw.kilos);
   if (kilos === null || kilos < 0) {
-    return { ok: false, error: "Kilos must be 0 or more." };
+    return { ok: false, error: "kilos_invalid" };
   }
 
   const service_type = String(raw.service_type ?? "");
   if (!isServiceType(service_type)) {
-    return { ok: false, error: "Choose a service type." };
+    return { ok: false, error: "service_invalid" };
   }
 
   const agreed_price = parseNumber(raw.agreed_price);
   if (agreed_price === null || agreed_price < 0) {
-    return { ok: false, error: "Agreed price must be 0 or more." };
+    return { ok: false, error: "price_invalid" };
   }
 
   return {
@@ -398,7 +433,7 @@ export function parseLoadInput(raw: {
 export function parseAmountPaid(raw: unknown): ParseResult<number> {
   const n = parseNumber(raw);
   if (n === null || n < 0) {
-    return { ok: false, error: "Amount must be 0 or more." };
+    return { ok: false, error: "price_invalid" };
   }
   return { ok: true, value: n };
 }

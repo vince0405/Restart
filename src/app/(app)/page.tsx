@@ -14,13 +14,14 @@ import {
 import { Badge, PaidBadge, StageBadge, type Tone } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
 import { buttonVariants } from "@/components/ui/button";
+import { ErrorNote } from "@/components/rps/error-note";
 import {
-  EXPIRY_SOON_DAYS,
   expiryLabel,
   expiryTone,
   jobRef,
   type LoadRow,
   moneySummary,
+  settlement,
   productFor,
   isServiceType,
   storedDaysLeft,
@@ -74,9 +75,9 @@ export default async function DashboardPage() {
     .select("id", { count: "exact", head: true })
     .eq("request_status", "pending");
 
-  const { lifeline } = await getSettings();
+  const { lifeline, warning_days } = await getSettings();
   const now = new Date();
-  const s = summarize(loads, now, lifeline);
+  const s = summarize(loads, now, lifeline, warning_days);
 
   const kpis: {
     label: string;
@@ -100,7 +101,7 @@ export default async function DashboardPage() {
       label: "Palay in storage",
       value: kg.format(s.palayKg),
       unit: "kg",
-      note: `${s.palaySacks} sacks`,
+      note: `${s.palayLots} ${s.palayLots === 1 ? "lot" : "lots"}`,
       icon: Leaf,
       tone: "amber",
       href: "/storage?type=palay",
@@ -109,7 +110,7 @@ export default async function DashboardPage() {
       label: "Rice in storage",
       value: kg.format(s.riceKg),
       unit: "kg",
-      note: `${s.riceSacks} sacks`,
+      note: `${s.riceLots} ${s.riceLots === 1 ? "lot" : "lots"}`,
       icon: Warehouse,
       tone: "blue",
       href: "/storage?type=rice",
@@ -136,9 +137,13 @@ export default async function DashboardPage() {
   // Alerts: stored grain close to expiry, and rice already released but unpaid.
   const expiryAlerts = loads
     .map((load) => ({ load, left: storedDaysLeft(load, now, lifeline) }))
-    .filter((a): a is { load: LoadRow; left: number } => a.left !== null && a.left <= EXPIRY_SOON_DAYS)
+    .filter((a): a is { load: LoadRow; left: number } => a.left !== null && a.left <= warning_days)
     .sort((a, b) => a.left - b.left);
-  const unpaidReleased = loads.filter((l) => l.stage === "Released" && !l.is_paid);
+  // Released but still owing: same maths as the job screen (a fee covered by
+  // a buyout is not owed).
+  const unpaidReleased = loads
+    .map((load) => ({ load, owes: settlement(load).stillOwes }))
+    .filter(({ load, owes }) => load.stage === "Released" && owes > 0);
   const buyoutsWaiting = loads.filter((l) => l.buyout_status === "requested");
   const alertCount = expiryAlerts.length + unpaidReleased.length + buyoutsWaiting.length;
   const money = moneySummary(loads);
@@ -159,11 +164,7 @@ export default async function DashboardPage() {
         }
       />
 
-      {error && (
-        <p className="mb-4 text-sm text-destructive" role="alert">
-          Could not load your data: {error.message}
-        </p>
-      )}
+      <ErrorNote code={error ? "load_failed" : null} />
 
       {(pendingRequests ?? 0) > 0 && (
         <Link
@@ -317,7 +318,7 @@ export default async function DashboardPage() {
                 href={`/loads/${load.id}`}
                 className={cn(
                   "block rounded-xl border-l-4 p-3",
-                  expiryTone(left) === "red"
+                  expiryTone(left, warning_days) === "red"
                     ? "border-danger bg-danger-soft"
                     : "border-gold bg-gold-soft",
                 )}
@@ -333,7 +334,7 @@ export default async function DashboardPage() {
                 </div>
               </Link>
             ))}
-            {unpaidReleased.slice(0, 3).map((load) => (
+            {unpaidReleased.slice(0, 3).map(({ load, owes }) => (
               <Link
                 key={load.id}
                 href={`/loads/${load.id}`}
@@ -343,7 +344,7 @@ export default async function DashboardPage() {
                   #{jobRef(load.id)} released but not paid
                 </div>
                 <div className="mt-1 text-[11px] text-muted-foreground">
-                  {load.customer_name} · {peso.format(load.agreed_price)}
+                  {load.customer_name} · owes {peso.format(owes)}
                 </div>
               </Link>
             ))}

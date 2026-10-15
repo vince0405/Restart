@@ -4,8 +4,10 @@ import { ArrowLeft, Scale, Warehouse } from "lucide-react";
 import { Badge, ExpiryBadge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
 import { Timeline } from "@/components/rps/timeline";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { ErrorNote } from "@/components/rps/error-note";
 import {
+  cancelDeadline,
   customerStatus,
   expiryDate,
   isServiceType,
@@ -16,17 +18,22 @@ import {
   settlement,
   stepsFor,
   storedDaysLeft,
+  withinCancelWindow,
 } from "@/lib/loads";
 import { isStaff } from "@/lib/roles";
 import { getSettings, requireRole } from "@/lib/session";
 import { cn } from "@/lib/utils";
-import { chooseDisposition } from "../actions";
+import { cancelRequest, chooseDisposition } from "../actions";
 
 const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
 const kg = new Intl.NumberFormat("en-PH", { maximumFractionDigits: 2 });
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("en-PH", { timeZone: "Asia/Manila", dateStyle: "medium" });
+}
+
+function formatDateTime(date: Date) {
+  return date.toLocaleString("en-PH", { timeZone: "Asia/Manila", dateStyle: "medium", timeStyle: "short" });
 }
 
 function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
@@ -46,9 +53,9 @@ const CHOICES = [
 
 export default async function MyJobPage({ params, searchParams }: PageProps<"/my/[id]">) {
   const { supabase } = await requireRole((r) => !isStaff(r));
-  const { lifeline } = await getSettings();
+  const { lifeline, warning_days, cancel_window_hours } = await getSettings();
   const { id } = await params;
-  const { error } = await searchParams;
+  const { error, confirm } = await searchParams;
 
   // RLS: a customer can only ever load their own job. Anyone else's id is
   // simply "not found".
@@ -62,6 +69,9 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
   const steps = stepsFor(load.service_type, stored);
   const money = settlement(load);
   const left = storedDaysLeft(load, new Date(), lifeline);
+  const deadline = cancelDeadline(load.created_at, cancel_window_hours);
+  const canCancel =
+    load.request_status === "pending" && withinCancelWindow(load.created_at, cancel_window_hours);
   const canChoose =
     load.request_status === "accepted" &&
     load.stage === "Ready" &&
@@ -85,11 +95,7 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
         action={<Badge tone={status.tone}>{status.label}</Badge>}
       />
 
-      {typeof error === "string" && (
-        <p className="mb-4 rounded-xl border-l-4 border-danger bg-danger-soft p-3 text-sm font-semibold text-danger" role="alert">
-          {error}
-        </p>
-      )}
+      <ErrorNote code={error} />
 
       {load.request_status === "pending" && (
         <section className="mb-6 rounded-2xl border-l-4 border-gold bg-gold-soft p-5">
@@ -100,6 +106,57 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
               ? ` You asked for ${formatDate(new Date(load.preferred_date))}.`
               : ""}
           </p>
+
+          {/* Cancel: shown only inside the window. The database checks the
+              same rule with its own clock, so this is never the only lock. */}
+          {canCancel && (
+            <div className="mt-4 border-t border-gold/40 pt-4">
+              {confirm === "cancel" ? (
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm font-bold text-ink">Cancel this request?</p>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <form action={cancelRequest}>
+                      <input type="hidden" name="id" value={load.id} />
+                      <Button type="submit" variant="destructive" className="w-full sm:w-auto">
+                        Yes, cancel request
+                      </Button>
+                    </form>
+                    <Link
+                      href={`/my/${load.id}`}
+                      className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}
+                    >
+                      Keep my request
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs text-muted-foreground">
+                    You can cancel until <strong className="text-ink">{formatDateTime(deadline)}</strong>.
+                  </p>
+                  <Link
+                    href={`/my/${load.id}?confirm=cancel`}
+                    className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-danger hover:text-danger")}
+                  >
+                    Cancel request
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      {load.request_status === "cancelled" && (
+        <section className="mb-6 rounded-2xl border-l-4 border-line bg-surface p-5">
+          <h2 className="font-extrabold text-ink">You cancelled this request</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {load.cancelled_at ? `Cancelled ${formatDateTime(new Date(load.cancelled_at))}. ` : ""}
+            Nothing more will happen with it.
+          </p>
+          <Link href="/my/request" className="mt-3 inline-block text-sm font-bold text-brand">
+            Send a new request
+          </Link>
         </section>
       )}
 
@@ -242,7 +299,7 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
               </div>
               <h2 className="font-extrabold text-ink">Stored at the mill</h2>
               <span className="ml-auto">
-                <ExpiryBadge daysLeft={left} />
+                <ExpiryBadge daysLeft={left} warningDays={warning_days} />
               </span>
             </div>
             <p className="mt-3 text-sm text-muted-foreground">

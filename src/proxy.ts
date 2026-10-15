@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Runs before every page request. Its only job is to keep the Monitor's
+ * Runs before every page request. Its only job is to keep each person's
  * login fresh: Supabase login tokens expire after a while, and this swaps
  * an expiring one for a new one and saves it in the browser's cookies.
  *

@@ -9,6 +9,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BadgeCheck,
+  CircleUser,
   ClipboardList,
   Inbox,
   LayoutGrid,
@@ -40,6 +41,7 @@ function navFor(role: Role): NavItem[] {
     return [
       { label: "My jobs", href: "/my", icon: ClipboardList, mobile: true },
       { label: "Request", href: "/my/request", icon: Plus, mobile: true },
+      { label: "Account", href: "/account", icon: CircleUser, mobile: false },
     ];
   }
   const items: NavItem[] = [
@@ -61,6 +63,7 @@ function navFor(role: Role): NavItem[] {
       { label: "Settings", href: "/settings", icon: Settings, mobile: false },
     );
   }
+  items.push({ label: "Account", href: "/account", icon: CircleUser, mobile: false });
   return items;
 }
 
@@ -84,6 +87,7 @@ function titleFor(pathname: string) {
   if (pathname.startsWith("/people")) return "People";
   if (pathname.startsWith("/settings")) return "Settings";
   if (pathname.startsWith("/more")) return "More";
+  if (pathname.startsWith("/account")) return "Account";
   return "RPS1";
 }
 

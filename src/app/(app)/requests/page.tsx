@@ -2,6 +2,7 @@ import { BadgeCheck, CalendarDays, Inbox, Phone } from "lucide-react";
 import { Badge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
 import { Button } from "@/components/ui/button";
+import { ErrorNote } from "@/components/rps/error-note";
 import { jobRef } from "@/lib/loads";
 import { canManage } from "@/lib/roles";
 import { requireRole } from "@/lib/session";
@@ -55,11 +56,7 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
         }
       />
 
-      {(typeof error === "string" || loadError) && (
-        <p className="mb-4 rounded-xl border-l-4 border-danger bg-danger-soft p-3 text-sm font-semibold text-danger" role="alert">
-          {typeof error === "string" ? error : loadError?.message}
-        </p>
-      )}
+      <ErrorNote code={loadError ? "load_failed" : error} />
 
       {requests.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-line bg-white px-6 py-14 text-center shadow-card">

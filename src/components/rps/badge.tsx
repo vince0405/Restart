@@ -47,6 +47,7 @@ export function PaidBadge({ isPaid, amount }: { isPaid: boolean; amount?: number
   );
 }
 
-export function ExpiryBadge({ daysLeft }: { daysLeft: number }) {
-  return <Badge tone={expiryTone(daysLeft)}>{expiryLabel(daysLeft)}</Badge>;
+/** "12 days left" etc. Pass the co-op's warning_days from settings. */
+export function ExpiryBadge({ daysLeft, warningDays }: { daysLeft: number; warningDays?: number }) {
+  return <Badge tone={expiryTone(daysLeft, warningDays)}>{expiryLabel(daysLeft)}</Badge>;
 }

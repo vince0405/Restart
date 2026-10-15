@@ -2,12 +2,13 @@ import Link from "next/link";
 import { ChevronRight, Leaf, Package } from "lucide-react";
 import { Badge, ExpiryBadge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
+import { ErrorNote } from "@/components/rps/error-note";
 import {
-  EXPIRY_WARNING_DAYS,
   isServiceType,
   jobRef,
   type LoadRow,
   productFor,
+  settlement,
   storedDaysLeft,
 } from "@/lib/loads";
 import { isStaff } from "@/lib/roles";
@@ -22,7 +23,7 @@ function formatDate(date: Date) {
 
 export default async function StoragePage({ searchParams }: PageProps<"/storage">) {
   const { supabase } = await requireRole(isStaff);
-  const { lifeline } = await getSettings();
+  const { lifeline, warning_days } = await getSettings();
 
   const { type } = await searchParams;
   const filter = type === "palay" || type === "rice" ? type : null;
@@ -30,7 +31,7 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
   const { data, error } = await supabase
     .from("loads")
     .select(
-      "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at",
+      "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at, output_kg, keep_percent, buyout_status, price_per_kg",
     )
     .eq("stage", "Stored")
     .eq("request_status", "accepted");
@@ -42,6 +43,8 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
       load,
       product: productFor(load.service_type as Parameters<typeof productFor>[0]),
       left: storedDaysLeft(load, now, lifeline) ?? 0,
+      // What the customer kept, by output weight (not the palay brought in).
+      keptKg: settlement(load).keptKg,
       storedAt: new Date(load.stored_at ?? load.created_at),
     }))
     .sort((a, b) => a.left - b.left);
@@ -49,16 +52,16 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
   const totals = (product: "palay" | "rice") => {
     const mine = lots.filter((l) => l.product === product);
     return {
-      kilos: mine.reduce((sum, l) => sum + l.load.kilos, 0),
+      kilos: mine.reduce((sum, l) => sum + l.keptKg, 0),
       count: mine.length,
-      urgent: mine.filter((l) => l.left <= EXPIRY_WARNING_DAYS).length,
+      urgent: mine.filter((l) => l.left <= warning_days).length,
     };
   };
   const palay = totals("palay");
   const rice = totals("rice");
   const shown = filter ? lots.filter((l) => l.product === filter) : lots;
   const expired = shown.filter((l) => l.left <= 0).length;
-  const soon = shown.filter((l) => l.left > 0 && l.left <= EXPIRY_WARNING_DAYS).length;
+  const soon = shown.filter((l) => l.left > 0 && l.left <= warning_days).length;
 
   return (
     <div>
@@ -68,11 +71,7 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
         description="Palay and rice kept at the mill for customers, and how long each lot has left."
       />
 
-      {error && (
-        <p className="mb-4 text-sm text-destructive" role="alert">
-          Could not load storage: {error.message}
-        </p>
-      )}
+      <ErrorNote code={error ? "load_failed" : null} />
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2">
         <Link
@@ -140,7 +139,7 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
           </div>
         ) : (
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {shown.map(({ load, product, left, storedAt }) => {
+            {shown.map(({ load, product, left, storedAt, keptKg }) => {
               const age = Math.max(
                 0,
                 Math.floor((now.getTime() - storedAt.getTime()) / 86_400_000),
@@ -160,30 +159,24 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
                         {load.customer_name}
                       </div>
                     </div>
-                    <ExpiryBadge daysLeft={left} />
+                    <ExpiryBadge daysLeft={left} warningDays={warning_days} />
                   </div>
-                  <div className="my-4 grid grid-cols-3 gap-2 rounded-xl bg-surface p-3 text-center">
+                  <div className="my-4 grid grid-cols-2 gap-2 rounded-xl bg-surface p-3 text-center">
                     <div>
                       <div className="text-[10px] font-bold uppercase text-muted-foreground">
                         Quantity
                       </div>
                       <div className="mt-1 text-xs font-extrabold text-ink">
-                        {kg.format(load.kilos)} kg
+                        {kg.format(keptKg)} kg
                       </div>
                     </div>
-                    <div className="border-x border-line">
+                    <div className="border-l border-line">
                       <div className="text-[10px] font-bold uppercase text-muted-foreground">
                         Age
                       </div>
                       <div className="mt-1 text-xs font-extrabold text-ink">
                         {age} {age === 1 ? "day" : "days"}
                       </div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] font-bold uppercase text-muted-foreground">
-                        Sacks
-                      </div>
-                      <div className="mt-1 text-xs font-extrabold text-ink">{load.sacks}</div>
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">

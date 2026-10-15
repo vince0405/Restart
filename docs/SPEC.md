@@ -62,6 +62,9 @@ columns each role may change), not just the screens.
 
 - A request starts as **Pending**; accepted requests start at the first step;
   rejected requests stop, with a reason the customer can read.
+- A customer may **cancel** their own request while it is still Pending and
+  within the co-op's **cancel window** (default 2 hours, the Chairperson sets
+  1–24). The database checks this with its own clock.
 - At **Ready** the batch is weighed (output kg). The output is **rice** if the
   service mills, otherwise **palay**.
 - Kept grain may be **Stored** at the mill: rice lasts **30 days**, palay

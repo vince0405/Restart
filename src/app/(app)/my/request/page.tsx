@@ -3,6 +3,7 @@ import { ArrowRight, Building2 } from "lucide-react";
 import { Field, SectionHeading, ServicePicker } from "@/components/rps/intake-fields";
 import { PageTitle } from "@/components/rps/page-title";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { ErrorNote } from "@/components/rps/error-note";
 import { isStaff } from "@/lib/roles";
 import { getSettings, requireRole } from "@/lib/session";
 import { requestService } from "../actions";
@@ -27,14 +28,7 @@ export default async function RequestServicePage({ searchParams }: PageProps<"/m
         action={requestService}
         className="rounded-2xl border border-line bg-white p-5 shadow-card md:p-8"
       >
-        {typeof error === "string" && (
-          <p
-            className="mb-6 rounded-xl border-l-4 border-danger bg-danger-soft p-3 text-sm font-semibold text-danger"
-            role="alert"
-          >
-            {error}
-          </p>
-        )}
+        <ErrorNote code={error} />
 
         <SectionHeading title="Cooperative" text="Where your palay will be processed." />
         <div className="flex items-center gap-4 rounded-2xl border-2 border-brand bg-brand-soft p-4">

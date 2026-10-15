@@ -1,8 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { codeForDbError } from "@/lib/errors";
 import { firstStage, parseDisposition, parseLoadInput } from "@/lib/loads";
-import { getSession } from "@/lib/session";
+import { isStaff } from "@/lib/roles";
+import { requireRole } from "@/lib/session";
+
+const isCustomer = (r: Parameters<typeof isStaff>[0]) => !isStaff(r);
 
 /**
  * A customer asks the co-op for a service. It is saved as a PENDING
@@ -13,18 +17,16 @@ import { getSession } from "@/lib/session";
  * create an accepted job or one for someone else.
  */
 export async function requestService(formData: FormData) {
-  const { supabase, user, profile } = await getSession();
+  const { supabase, user, profile } = await requireRole(isCustomer);
 
   const parsed = parseLoadInput({
-    customer_name: profile.full_name || formData.get("customer_name"),
+    customer_name: profile.full_name.slice(0, 120) || formData.get("customer_name"),
     sacks: formData.get("sacks"),
     kilos: formData.get("kilos"),
     service_type: formData.get("service_type"),
     agreed_price: 0,
   });
-  if (!parsed.ok) {
-    redirect(`/my/request?error=${encodeURIComponent(parsed.error)}`);
-  }
+  if (!parsed.ok) redirect(`/my/request?error=${parsed.error}`);
 
   const preferred = String(formData.get("preferred_date") ?? "");
   const note = String(formData.get("customer_note") ?? "").trim().slice(0, 500);
@@ -37,10 +39,7 @@ export async function requestService(formData: FormData) {
     preferred_date: /^\d{4}-\d{2}-\d{2}$/.test(preferred) ? preferred : null,
     customer_note: note || null,
   });
-
-  if (error) {
-    redirect(`/my/request?error=${encodeURIComponent("Could not send the request. Please try again.")}`);
-  }
+  if (error) redirect(`/my/request?error=${codeForDbError(error)}`);
 
   redirect("/my");
 }
@@ -51,23 +50,47 @@ export async function requestService(formData: FormData) {
  * their own job — the loads_guard_update trigger refuses anything else.
  */
 export async function chooseDisposition(formData: FormData) {
-  const { supabase } = await getSession();
+  const { supabase } = await requireRole(isCustomer);
   const id = String(formData.get("id") ?? "");
+  const path = `/my/${encodeURIComponent(id)}`;
 
   const parsed = parseDisposition(formData.get("choice"), formData.get("keep_percent"));
-  if (!parsed.ok) {
-    redirect(`/my/${id}?error=${encodeURIComponent(parsed.error)}`);
-  }
+  if (!parsed.ok) redirect(`${path}?error=${parsed.error}`);
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("loads")
     .update(parsed.value)
     .eq("id", id)
-    .is("disposition", null);
+    .is("disposition", null)
+    .select("id");
+  if (error || !data?.length) redirect(`${path}?error=${codeForDbError(error)}`);
 
-  if (error) {
-    redirect(`/my/${id}?error=${encodeURIComponent("Could not save your choice. Please try again.")}`);
+  redirect(path);
+}
+
+/**
+ * A customer cancels their own request while it is still pending and
+ * inside the co-op's cancel window. The loads_guard_update trigger
+ * (supabase/sql/006) is the real check: it uses the database's clock, sets
+ * who and when itself, and refuses late, accepted or other people's
+ * requests — whatever this form or the phone's clock says.
+ */
+export async function cancelRequest(formData: FormData) {
+  const { supabase } = await requireRole(isCustomer);
+  const id = String(formData.get("id") ?? "");
+  const path = `/my/${encodeURIComponent(id)}`;
+
+  const { data, error } = await supabase
+    .from("loads")
+    .update({ request_status: "cancelled", cancelled_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("request_status", "pending")
+    .select("id");
+
+  // No row changed means it was not pending any more (or not theirs).
+  if (error || !data?.length) {
+    redirect(`${path}?error=${error ? codeForDbError(error) : "cancel_closed"}`);
   }
 
-  redirect(`/my/${id}`);
+  redirect("/my");
 }

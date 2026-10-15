@@ -19,6 +19,9 @@ stays small enough to actually ship by Session 3.
 - An automatic daily check that archives claimed jobs
 
 ## Later
+- Staff cancelling a request on the customer's behalf
+- Refunds after a cancellation
+- Showing cancelled (and rejected) requests to the Auditor
 - Storage locations and capacity (where in the warehouse, how full)
 - Storing between steps (e.g. dried palay waiting to be milled)
 - A separate storage fee (for now it is part of the agreed price)

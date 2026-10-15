@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Field, SectionHeading, ServicePicker } from "@/components/rps/intake-fields";
 import { PageTitle } from "@/components/rps/page-title";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { ErrorNote } from "@/components/rps/error-note";
 import { canManage } from "@/lib/roles";
 import { requireRole } from "@/lib/session";
 import { createLoad } from "../actions";
@@ -24,14 +25,7 @@ export default async function NewLoadPage({ searchParams }: PageProps<"/loads/ne
         action={createLoad}
         className="rounded-2xl border border-line bg-white p-5 shadow-card md:p-8"
       >
-        {error && (
-          <p
-            className="mb-6 rounded-xl border-l-4 border-danger bg-danger-soft p-3 text-sm font-semibold text-danger"
-            role="alert"
-          >
-            {error}
-          </p>
-        )}
+        <ErrorNote code={error} />
 
         <SectionHeading title="Customer" text="Who brought in the palay?" />
         <Field

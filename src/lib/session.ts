@@ -17,6 +17,8 @@ export type Settings = {
   farmgate_price_per_kg: number;
   lifeline: Lifeline;
   warning_days: number;
+  /** How long after asking a customer may cancel a pending request. */
+  cancel_window_hours: number;
 };
 
 /**
@@ -70,5 +72,6 @@ export const getSettings = cache(async (): Promise<Settings> => {
       palay: data?.palay_lifeline_days ?? DEFAULT_LIFELINE.palay,
     },
     warning_days: data?.warning_days ?? 14,
+    cancel_window_hours: data?.cancel_window_hours ?? 2,
   };
 });
