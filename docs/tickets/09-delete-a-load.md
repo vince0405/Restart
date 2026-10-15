@@ -7,7 +7,7 @@ load entered by mistake. The app asks "Are you sure?" first.
 
 **Status:** todo
 
-- [ ] "Delete load" asks for confirmation before deleting
-- [ ] Cancelling leaves the load untouched
-- [ ] After deleting, the Monitor is back on the list and the load is gone
+- [x] "Delete load" asks for confirmation before deleting
+- [x] Cancelling leaves the load untouched
+- [x] After deleting, the Monitor is back on the list and the load is gone
 - [ ] Works on the live URL — on a phone

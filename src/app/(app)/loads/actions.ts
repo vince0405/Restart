@@ -160,3 +160,21 @@ export async function markNotPaid(formData: FormData) {
 
   redirect(`/loads/${id}`);
 }
+
+/**
+ * Deletes a load entered by mistake. The detail screen only shows the
+ * button that calls this after the Monitor has said "Yes, delete".
+ * RLS means a Monitor can only ever delete their own loads.
+ */
+export async function deleteLoad(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("loads").delete().eq("id", id);
+
+  if (error) {
+    redirect(`/loads/${id}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect("/loads");
+}

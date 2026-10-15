@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Check, Scale, Warehouse } from "lucide-react";
+import { ArrowLeft, Check, Scale, Trash2, Warehouse } from "lucide-react";
 import { Badge, ExpiryBadge, PaidBadge, StageBadge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,7 +20,7 @@ import {
 } from "@/lib/loads";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
-import { markNotPaid, markPaid, moveStage, storeLoad } from "../actions";
+import { deleteLoad, markNotPaid, markPaid, moveStage, storeLoad } from "../actions";
 
 const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
 const kg = new Intl.NumberFormat("en-PH", { maximumFractionDigits: 2 });
@@ -60,7 +60,8 @@ export default async function LoadDetailPage({
   if (!user) redirect("/login");
 
   const { id } = await params;
-  const { error } = await searchParams;
+  const { error, confirm } = await searchParams;
+  const confirmingDelete = confirm === "delete";
 
   // RLS means this only finds the load if it belongs to the signed-in
   // Monitor. Someone else's load (or a made-up id) is simply "not found".
@@ -324,6 +325,49 @@ export default async function LoadDetailPage({
           )}
         </section>
       </div>
+
+      {/* Delete: the first tap only asks "Are you sure?" (?confirm=delete);
+          the load is removed only by the "Yes, delete" button. */}
+      <section className="mt-6 rounded-2xl border border-line bg-white p-5 shadow-card">
+        {confirmingDelete ? (
+          <div className="rounded-xl border-l-4 border-danger bg-danger-soft p-4">
+            <p className="font-extrabold text-ink">Delete this load?</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              #{jobRef(load.id)} for {load.customer_name} will be removed for good. Only do
+              this if it was entered by mistake.
+            </p>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <form action={deleteLoad}>
+                <input type="hidden" name="id" value={load.id} />
+                <Button type="submit" variant="destructive" className="w-full sm:w-auto">
+                  <Trash2 className="size-4" aria-hidden />
+                  Yes, delete
+                </Button>
+              </form>
+              <Link
+                href={`/loads/${load.id}`}
+                className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}
+              >
+                Cancel
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-extrabold text-ink">Entered by mistake?</h2>
+              <p className="text-xs text-muted-foreground">You will be asked to confirm.</p>
+            </div>
+            <Link
+              href={`/loads/${load.id}?confirm=delete`}
+              className={cn(buttonVariants({ variant: "outline" }), "text-danger hover:text-danger")}
+            >
+              <Trash2 className="size-4" aria-hidden />
+              Delete load
+            </Link>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
