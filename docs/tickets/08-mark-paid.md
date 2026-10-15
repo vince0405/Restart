@@ -1,4 +1,4 @@
-# 06 — Mark paid
+# 08 — Mark paid
 
 **What to build:** On the load detail screen, the Monitor enters the
 amount received and taps "Mark paid". If it was a mistake, "Mark not

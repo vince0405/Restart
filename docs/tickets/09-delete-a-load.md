@@ -1,4 +1,4 @@
-# 07 — Delete a mistaken load
+# 09 — Delete a mistaken load
 
 **What to build:** On the load detail screen, the Monitor can delete a
 load entered by mistake. The app asks "Are you sure?" first.

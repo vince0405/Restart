@@ -29,23 +29,27 @@ takes her.] That costs her time every day, and it costs the mill money.
 ### 3. Our fix (~45s)
 
 So we're building RPS1. It's a simple phone app that lets my mother follow
-a load from arrival to payment.
+every load from the first step to payment.
 
-When a farmer arrives, she types in the customer's name, the sacks, the
-kilos, the service, and the price they agreed on. As the work happens, she
-taps the load forward. Received. Drying. Dried. Milling. Milled. Released.
-When the customer pays, she marks it paid and enters the amount.
+She types in the customer's name, the sacks, the kilos, the price, and the
+service. A package deal, harvesting and drying, drying only, or milling
+only. The app then shows only the steps that service has. As the work
+happens, she taps the load forward.
 
-One list shows every load, what stage it's at, and whether it's paid. No
-flipping pages. No asking around twice. And it has a login, so her
-customers' details stay private.
+If the customer wants to leave their palay or rice at the mill, she taps
+store. Palay keeps three months. Rice keeps one. The app warns her before
+anything goes bad.
+
+One list shows every load, its step, whether it's paid, and what's about
+to expire. No flipping pages. No asking around twice. And it has a login,
+so her customers' details stay private.
 
 ### 4. The demo moment (~30s)
 
-In Session 3, we'll show it live, on a phone. We'll log a new load, tap it
-through every stage from received to released, and mark it paid. You'll
-watch the list change as we go. That's her whole job with one load, start
-to finish, in under a minute.
+In Session 3, we'll show it live, on a phone. We'll log a package deal and
+tap it from harvesting, to drying, to milling, to ready. We'll store the
+rice and watch the expiry date appear. Then we'll mark it paid. That's her
+whole job with one load, start to finish, in about a minute.
 
 ### 5. How we'll know (~30s)
 
