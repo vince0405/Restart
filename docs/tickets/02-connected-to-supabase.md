@@ -7,13 +7,13 @@ signed-out visitor can see 0 loads.
 
 **Blocked by:** 01
 
-**Status:** todo
+**Status:** done
 
-- [ ] Supabase URL and publishable key are set in `.env.local` and in Vercel
-- [ ] The `loads` table exists with every column from the spec
-- [ ] RLS is ON for `loads`, with policies so a signed-in Monitor can read,
+- [x] Supabase URL and publishable key are set in `.env.local` and in Vercel
+- [x] The `loads` table exists with every column from the spec
+- [x] RLS is ON for `loads`, with policies so a signed-in Monitor can read,
       add, update and delete only their own rows, and visitors can do nothing
-- [ ] Supabase Table Editor shows no "RLS disabled" warning
-- [ ] The example `notes` SQL is deleted from the repo
-- [ ] The live site shows "Connected: 0 loads visible" while signed out
-- [ ] Works on the live URL
+- [x] Supabase Table Editor shows no "RLS disabled" warning
+- [x] The example `notes` SQL is deleted from the repo
+- [x] The live site shows "Connected: 0 loads visible" while signed out
+- [x] Works on the live URL
