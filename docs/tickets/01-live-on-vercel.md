@@ -6,9 +6,9 @@ the README so nobody has to hunt for it.
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done
 
-- [ ] The repo is imported into Vercel and the latest push to `main` deployed
-- [ ] The live URL is at the top of `README.md`
-- [ ] The docs written so far (problem, pitch, spec, tickets) are committed
-- [ ] Works on the live URL — opened on a phone
+- [x] The repo is imported into Vercel and the latest push to `main` deployed
+- [x] The live URL is at the top of `README.md`
+- [x] The docs written so far (problem, pitch, spec, tickets) are committed
+- [x] Works on the live URL — opened on a phone

@@ -1,6 +1,6 @@
 # PHINMA AI Builder — team template
 
-**Your live URL:** _paste it here as soon as you have one (Ticket 01)_
+**Your live URL:** https://restart-cyan.vercel.app/
 
 This is your team's starting point. It is already a working Next.js app
 that deploys to Vercel. You will delete the starter page and build your
@@ -94,7 +94,7 @@ before there is a spec — that is deliberate, not a bug.
 4. **Row Level Security on, always.** Your app is public. Without RLS,
    so is your data.
 5. **Never commit `.env.local`.**
-
+  
 ## What is already here
 
 ```
