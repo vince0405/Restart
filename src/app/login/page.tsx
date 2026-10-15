@@ -47,7 +47,12 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-baseline justify-between gap-3">
+                <Label htmlFor="password">Password</Label>
+                <Link href="/forgot" className="text-sm font-bold text-brand">
+                  Forgot password?
+                </Link>
+              </div>
               <Input
                 id="password"
                 name="password"
