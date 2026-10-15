@@ -6,10 +6,10 @@ the sign-in screen. The Monitor can sign out.
 
 **Blocked by:** 02
 
-**Status:** todo
+**Status:** done
 
 - [x] The Monitor's account is created in the Supabase dashboard
-- [ ] Public sign-ups are switched off in Supabase
+- [x] Public sign-ups are switched off in Supabase
 - [x] Visiting the app signed out shows only the sign-in screen
 - [x] A wrong password shows a clear error message
 - [x] After signing in, the Monitor sees the loads list with a friendly
