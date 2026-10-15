@@ -12,7 +12,7 @@
 - [x] Jobs: search (customer name), service filter, status filter
       (In progress / Ready / Stored / Completed), pages of 15, newest
       first; no payment method in the list
-- [ ] Dashboard: recent jobs in a clearer, grouped layout
+- [x] Dashboard: recent jobs in a clearer, grouped layout
 - [ ] Money: Week / Month / Year filters, bar chart by default with an
       optional line chart, amounts shortened (1k, 10k, 1m)
 - [ ] History: simple filters, pages, easier to read

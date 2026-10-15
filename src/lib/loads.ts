@@ -753,3 +753,31 @@ export function parsePayment(
 export function manilaToday(now: Date = new Date()): string {
   return now.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
 }
+
+/**
+ * Recent jobs grouped by the day they were logged (Manila time), newest
+ * first: "Today", "Yesterday", then the date ("Mon, 13 Oct").
+ */
+export function groupByDay<T extends { created_at: string }>(items: T[], now: Date = new Date()) {
+  const day = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
+  const today = day(now);
+  const yesterday = day(new Date(now.getTime() - 86_400_000));
+  const groups: { key: string; label: string; items: T[] }[] = [];
+  for (const item of items) {
+    const when = new Date(item.created_at);
+    const key = day(when);
+    let group = groups.find((g) => g.key === key);
+    if (!group) {
+      const label =
+        key === today
+          ? "Today"
+          : key === yesterday
+            ? "Yesterday"
+            : when.toLocaleDateString("en-PH", { timeZone: "Asia/Manila", weekday: "short", day: "numeric", month: "short" });
+      group = { key, label, items: [] };
+      groups.push(group);
+    }
+    group.items.push(item);
+  }
+  return groups;
+}

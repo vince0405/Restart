@@ -20,6 +20,7 @@ import { ErrorNote } from "@/components/rps/error-note";
 import {
   expiryLabel,
   expiryTone,
+  groupByDay,
   jobRef,
   type LoadRow,
   moneySummary,
@@ -48,6 +49,22 @@ const BOARD = [
   { stage: "Milling", dot: "bg-brand" },
   { stage: "Ready", dot: "bg-brand-dark" },
 ];
+
+/** How many recent jobs the dashboard shows. */
+const RECENT = 8;
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function timeOf(iso: string) {
+  return new Date(iso).toLocaleTimeString("en-PH", { timeZone: "Asia/Manila", hour: "numeric", minute: "2-digit" });
+}
 
 function greeting(now: Date) {
   const hour = Number(
@@ -363,53 +380,63 @@ export default async function DashboardPage() {
         </section>
       </div>
 
-      <section className="mt-6 rounded-2xl border border-line bg-card p-4 shadow-card md:p-5">
-        <div className="mb-4 flex items-center justify-between">
+      <section aria-labelledby="recent-title" className="mt-6 rounded-2xl border border-line bg-card shadow-card">
+        <div className="flex items-center justify-between gap-3 border-b border-line p-4 md:px-5">
           <div>
-            <h2 className="font-extrabold text-ink">Recent loads</h2>
-            <p className="text-xs text-muted-foreground">Latest mill activity</p>
+            <h2 id="recent-title" className="font-extrabold text-ink">Recent jobs</h2>
+            <p className="text-xs text-muted-foreground">The latest {Math.min(loads.length, RECENT)} jobs, by the day they came in</p>
           </div>
-          <Link href="/loads" className="flex min-h-11 items-center px-1 text-sm font-bold text-brand">
+          <Link href="/loads" className="flex min-h-11 items-center gap-1 px-1 text-sm font-bold text-brand">
             View all
+            <ArrowRight className="size-4" aria-hidden />
           </Link>
         </div>
         {loads.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
+          <p className="p-6 text-center text-sm text-muted-foreground">
             No jobs yet. Accepted requests and walk-in jobs show up here.
           </p>
         ) : (
-          <>
-            <div className="hidden grid-cols-[1fr_1.4fr_1fr_1fr_1fr] border-b border-line px-3 pb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground md:grid">
-              <span>Job ID</span>
-              <span>Customer</span>
-              <span>Service</span>
-              <span className="md:text-right md:pr-4">Fee</span>
-              <span>Status</span>
-            </div>
-            {loads.slice(0, 5).map((load) => (
-              <Link
-                key={load.id}
-                href={`/loads/${load.id}`}
-                className="grid gap-2 border-b border-line/70 px-3 py-3 last:border-0 hover:bg-surface md:grid-cols-[1fr_1.4fr_1fr_1fr_1fr] md:items-center"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-brand">#{jobRef(load.id)}</span>
-                  <span className="md:hidden">
-                    <StageBadge stage={load.stage} />
-                  </span>
-                </div>
-                <span className="text-sm font-bold text-ink">{load.customer_name}</span>
-                <span className="text-xs text-muted-foreground">{load.service_type}</span>
-                <span className="text-sm font-bold tabular-nums text-ink md:text-right md:pr-4">{peso.format(load.agreed_price)}</span>
-                <span className="flex flex-wrap gap-1.5">
-                  <span className="hidden md:inline">
-                    <StageBadge stage={load.stage} />
-                  </span>
-                  <PaidBadge isPaid={load.is_paid} amount={load.amount_paid} fee={load.agreed_price} />
-                </span>
-              </Link>
+          <div className="divide-y divide-line">
+            {groupByDay(loads.slice(0, RECENT), now).map((group) => (
+              <div key={group.key}>
+                <h3 className="flex items-center gap-2 bg-surface/70 px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground md:px-5">
+                  {group.label}
+                  <span className="rounded-full bg-line px-1.5 tabular-nums">{group.items.length}</span>
+                </h3>
+                <ul>
+                  {group.items.map((load) => (
+                    <li key={load.id} className="border-t border-line/60 first:border-0">
+                      <Link
+                        href={`/loads/${load.id}`}
+                        className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface md:px-5"
+                      >
+                        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft text-sm font-extrabold text-brand">
+                          {initials(load.customer_name)}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-bold text-ink">{load.customer_name}</span>
+                          <span className="block truncate text-xs text-muted-foreground">
+                            #{jobRef(load.id)} · {load.service_type} · {timeOf(load.created_at)}
+                          </span>
+                        </span>
+                        <span className="hidden flex-wrap justify-end gap-1.5 sm:flex">
+                          <StageBadge stage={load.stage} />
+                          <PaidBadge isPaid={load.is_paid} amount={load.amount_paid} fee={load.agreed_price} />
+                        </span>
+                        <span className="w-20 shrink-0 text-right text-sm font-extrabold tabular-nums text-ink">
+                          {peso.format(load.agreed_price)}
+                          <span className="mt-0.5 block sm:hidden">
+                            <StageBadge stage={load.stage} />
+                          </span>
+                        </span>
+                        <ChevronRight className="hidden size-4 shrink-0 text-muted-foreground md:block" aria-hidden />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </>
+          </div>
         )}
       </section>
     </div>

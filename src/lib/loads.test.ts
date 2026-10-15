@@ -11,6 +11,7 @@ import {
   expiryLabel,
   expiryTone,
   firstStage,
+  groupByDay,
   jobRef,
   moneyStats,
   moneySummary,
@@ -667,5 +668,26 @@ describe("payments (Ticket 31)", () => {
   it("knows today's date in Manila", () => {
     // 20:00 UTC on 14 Oct is already 15 Oct in Manila (UTC+8).
     expect(manilaToday(new Date("2026-10-14T20:00:00Z"))).toBe("2026-10-15");
+  });
+});
+
+describe("recent jobs grouped by day", () => {
+  it("groups by Manila day: Today, Yesterday, then the date", () => {
+    const now = new Date("2026-10-15T04:00:00Z"); // 12:00 noon in Manila
+    const groups = groupByDay(
+      [
+        { id: "a", created_at: "2026-10-15T01:00:00Z" },
+        { id: "b", created_at: "2026-10-14T17:00:00Z" }, // 1 am on the 15th in Manila
+        { id: "c", created_at: "2026-10-14T03:00:00Z" },
+        { id: "d", created_at: "2026-10-12T03:00:00Z" },
+      ],
+      now,
+    );
+    expect(groups.map((g) => [g.label.replace(/\s+/g, " "), g.items.map((i) => i.id)])).toEqual([
+      ["Today", ["a", "b"]],
+      ["Yesterday", ["c"]],
+      [groups[2].label.replace(/\s+/g, " "), ["d"]],
+    ]);
+    expect(groups[2].label).toMatch(/12/);
   });
 });
