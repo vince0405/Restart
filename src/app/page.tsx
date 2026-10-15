@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
@@ -23,7 +24,12 @@ export default async function LoadsPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-8">
-      <h1 className="text-3xl font-semibold tracking-tight">Loads</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-3xl font-semibold tracking-tight">Loads</h1>
+        <Link href="/loads/new" className={buttonVariants({ size: "lg" })}>
+          + New load
+        </Link>
+      </div>
 
       {error && (
         <p className="text-sm text-destructive" role="alert">
