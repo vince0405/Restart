@@ -1,111 +1,77 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
+import { signOut } from "./actions";
 
-// Ticket 02: prove the live site can reach the database. Signed out, RLS
-// should hide every row, so the expected answer is "0 loads visible".
-async function getConnectionStatus() {
-  try {
-    const supabase = await createClient();
-    // head: true asks only for the count, not the rows themselves.
-    const { count, error } = await supabase
-      .from("loads")
-      .select("*", { count: "exact", head: true });
-    if (error) return `Not connected: ${error.message}`;
-    return `Connected: ${count ?? 0} loads visible`;
-  } catch (e) {
-    return `Not connected: ${e instanceof Error ? e.message : String(e)}`;
-  }
-}
+// The loads list: the Monitor's home screen.
+export default async function LoadsPage() {
+  const supabase = await createClient();
 
-// This is the starter screen. Once Ticket 01 is done and you can see this
-// page on your phone, delete everything here and build your own app.
+  // Not signed in? Only the sign-in screen is allowed.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
-const steps = [
-  {
-    n: "01",
-    title: "Get it live",
-    body: "If you are reading this on a vercel.app URL, this step is done. Put that URL at the top of your README and open it on your phone.",
-  },
-  {
-    n: "02",
-    title: "Find the real problem",
-    body: "Run /grill-with-docs in Claude Code. You will be asked about a real person you have watched struggle. Have an answer.",
-  },
-  {
-    n: "03",
-    title: "Pitch it",
-    body: "Run /pitch to turn your problem into a three-minute script for Session 1.",
-  },
-  {
-    n: "04",
-    title: "Spec, tickets, build",
-    body: "/to-spec, then /to-tickets, then /implement one ticket at a time. Push after every ticket and check the live URL.",
-  },
-  {
-    n: "05",
-    title: "Review before you demo",
-    body: "/code-review. Fix every red item. An unprotected database on a public URL is a real data leak.",
-  },
-];
-
-export default async function Home() {
-  const connectionStatus = await getConnectionStatus();
+  // No "where owner_id = ..." needed: Row Level Security only ever hands
+  // back the signed-in Monitor's own loads.
+  const { data: loads, error } = await supabase
+    .from("loads")
+    .select("id, customer_name, sacks, stage, is_paid")
+    .order("created_at", { ascending: false });
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-4 py-12 sm:py-20">
-      <header className="flex flex-col gap-3">
-        <span className="inline-flex w-fit items-center rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground">
-          PHINMA AI Builder Workshop
-        </span>
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Your app is live.
-        </h1>
-        <p className="text-base text-muted-foreground">
-          This page is deployed on the internet right now. Anyone with the link
-          can open it. That is the whole point — you will be building on
-          something real, not something on your laptop.
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-8">
+      <h1 className="text-3xl font-semibold tracking-tight">Loads</h1>
+
+      {error && (
+        <p className="text-sm text-destructive" role="alert">
+          Could not load the list: {error.message}
         </p>
-      </header>
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Database</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm">{connectionStatus}</p>
-        </CardContent>
-      </Card>
+      {loads && loads.length === 0 && (
+        <Card>
+          <CardContent className="py-10 text-center text-muted-foreground">
+            No loads yet.
+          </CardContent>
+        </Card>
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>What happens next</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-5">
-          {steps.map((step) => (
-            <div key={step.n} className="flex gap-4">
-              <span className="font-mono text-sm text-muted-foreground tabular-nums">
-                {step.n}
-              </span>
-              <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">{step.title}</p>
-                <p className="text-sm text-muted-foreground">{step.body}</p>
-              </div>
-            </div>
+      {loads && loads.length > 0 && (
+        <ul className="flex flex-col gap-3">
+          {loads.map((load) => (
+            <li key={load.id}>
+              <Card>
+                <CardContent className="flex items-center justify-between gap-3 py-4">
+                  <div className="flex flex-col gap-1">
+                    <span className="font-medium">{load.customer_name}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {load.sacks} sacks · {load.stage}
+                    </span>
+                  </div>
+                  <span
+                    className={
+                      load.is_paid
+                        ? "rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground"
+                        : "rounded-full border border-border px-3 py-1 text-xs font-medium"
+                    }
+                  >
+                    {load.is_paid ? "Paid" : "Not paid"}
+                  </span>
+                </CardContent>
+              </Card>
+            </li>
           ))}
-        </CardContent>
-      </Card>
+        </ul>
+      )}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button>Replace this page with your app</Button>
-        <span className="text-sm text-muted-foreground">
-          src/app/page.tsx
-        </span>
-      </div>
-
-      <footer className="mt-auto border-t border-border pt-6 text-sm text-muted-foreground">
-        One user. One job. Demoable in three minutes.
-      </footer>
+      <form action={signOut} className="mt-auto border-t border-border pt-6">
+        <Button type="submit" variant="ghost">
+          Sign out
+        </Button>
+      </form>
     </main>
   );
 }

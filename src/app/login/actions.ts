@@ -1,0 +1,19 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+
+// A server action: this runs on the server when the sign-in form is
+// submitted, so the password never touches our own JavaScript in the browser.
+export async function signIn(formData: FormData) {
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: String(formData.get("email") ?? ""),
+    password: String(formData.get("password") ?? ""),
+  });
+
+  if (error) redirect("/login?error=1");
+
+  redirect("/");
+}
