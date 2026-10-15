@@ -147,10 +147,20 @@ with that number). Forgot-password does **not** reveal accounts.
   referrer policy, no camera/microphone/location).
 - **All 10 tables** have Row Level Security on with policies.
 
+## Added afterwards (Ticket 44, 16 Oct 2026)
+
+- **Content-Security-Policy** on every page: scripts run only with a fresh
+  one-time nonce per request, so an injected script would be refused;
+  data only from this site and our Supabase project; no framing; forms
+  only post here. Tested: nothing blocked on the public pages.
+- `X-Powered-By: Next.js` removed; Cross-Origin-Opener-Policy added.
+- Signed-out visitors can no longer call the "who am I?" helpers.
+- Own profile edits are checked: no blank names, mobile numbers only in
+  the standard form.
+
 ## Still worth doing later
 
 - An SMS provider (Ticket 33) to verify mobile numbers and allow resets.
 - Supabase dashboard → Authentication: keep the built-in sign-in rate
   limits on, and set the Site URL / Redirect URLs (Ticket 36).
-- A Content-Security-Policy header (needs care with Next.js scripts).
 - Run `/code-review` after the next big change.

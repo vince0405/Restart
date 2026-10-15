@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Don't announce the framework in every response (Ticket 44).
+  poweredByHeader: false,
   // Cache Components and Partial Prefetching are deliberately OFF.
   //
   // With them on, any page that reads from the database (or uses
@@ -17,6 +19,8 @@ const nextConfig: NextConfig = {
   // - no guessing file types (stops a file being run as a script)
   // - only our own address is shared when someone follows a link out
   // - no camera, microphone or location: the app does not use them
+  // The Content-Security-Policy is set per request in src/proxy.ts (it
+  // needs a fresh nonce each time).
   headers() {
     return [
       {
@@ -26,6 +30,8 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          // Pages opened from RPS1 can't reach back into it (Ticket 44).
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
         ],
       },
     ];

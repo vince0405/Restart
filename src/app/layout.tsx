@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { headers } from "next/headers";
 import { Suspense } from "react";
 import { NavProgress } from "@/components/rps/nav-progress";
 import "./globals.css";
@@ -25,13 +26,16 @@ export const viewport: Viewport = {
 // A fixed string we wrote — no user input — so inlining it is safe.
 const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("rps1-theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);}catch(e){}})();`;
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // The Content-Security-Policy only runs scripts carrying this request's
+  // nonce (src/proxy.ts); the theme script needs it too.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     // suppressHydrationWarning: the script above may add "dark" before React
     // loads, which is expected.
     <html lang="en" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col bg-canvas text-ink">
         {/* The top loading bar reads the address; Suspense keeps pages static-friendly. */}
