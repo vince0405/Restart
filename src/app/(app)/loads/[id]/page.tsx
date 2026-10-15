@@ -112,7 +112,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
   // RLS: staff see every job. A made-up id is simply "not found".
   const { data } = await supabase
     .from("loads")
-    .select("*, customer:profiles(full_name, phone, is_member)")
+    .select("*, customer:profiles!loads_customer_id_fkey(full_name, phone, is_member)")
     .eq("id", id)
     .maybeSingle();
   const load = data as Job | null;

@@ -35,7 +35,7 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
   const { data, error: loadError } = await supabase
     .from("loads")
     .select(
-      "id, created_at, customer_name, sacks, kilos, service_type, preferred_date, customer_note, customer:profiles(full_name, phone, is_member)",
+      "id, created_at, customer_name, sacks, kilos, service_type, preferred_date, customer_note, customer:profiles!loads_customer_id_fkey(full_name, phone, is_member)",
     )
     .eq("request_status", "pending")
     .order("created_at", { ascending: true });

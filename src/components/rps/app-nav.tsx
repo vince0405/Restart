@@ -134,16 +134,13 @@ export function Sidebar({
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-bold text-ink">{name}</div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              {ROLE_LABELS[role]}
-              {isMember && (
-                <>
-                  {" · "}
-                  <BadgeCheck className="size-3.5 text-brand" aria-hidden />
-                  Member
-                </>
-              )}
-            </div>
+            <div className="text-xs text-muted-foreground">{ROLE_LABELS[role]}</div>
+            {isMember && (
+              <div className="flex items-center gap-1 text-[11px] font-semibold text-brand">
+                <BadgeCheck className="size-3.5" aria-hidden />
+                Member
+              </div>
+            )}
           </div>
           <form action={signOut}>
             <button
