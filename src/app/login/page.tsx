@@ -34,8 +34,16 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <CardContent>
           <form action={signIn} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" autoComplete="email" required />
+              <Label htmlFor="identifier">Mobile number or email</Label>
+              <Input
+                id="identifier"
+                name="identifier"
+                type="text"
+                inputMode="email"
+                autoComplete="username"
+                placeholder="0917 123 4567"
+                required
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="password">Password</Label>
@@ -50,7 +58,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
 
             {check && (
               <p className="rounded-xl border-l-4 border-brand bg-brand-soft p-3 text-sm font-semibold text-brand">
-                Account created. Check your email for the confirmation link, then sign in.
+                Account created, but it still needs to be confirmed. Please ask the co-op.
               </p>
             )}
 
@@ -59,7 +67,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
                 className="rounded-xl border-l-4 border-danger bg-danger-soft p-3 text-sm font-semibold text-danger"
                 role="alert"
               >
-                Wrong email or password. Please try again.
+                Wrong mobile number, email or password. Please try again.
               </p>
             )}
 

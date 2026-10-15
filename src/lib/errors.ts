@@ -21,6 +21,8 @@ export const ERROR_MESSAGES = {
   name_missing: "Enter the person's full name (up to 120 characters).",
   email_invalid: "That email address doesn't look right.",
   email_taken: "That email already has an account. Find it in the list below and change its role there.",
+  phone_invalid: "Enter a Philippine mobile number, like 0917 123 4567.",
+  phone_taken: "That mobile number already has an account. Find it in the list below and change its role there.",
   password_short: "The password must be at least 8 characters.",
   password_mismatch: "The two passwords don't match.",
   signup_disabled: "Sign-ups are switched off in Supabase, so accounts can't be created. Turn them back on first.",

@@ -169,8 +169,10 @@ above); Auditors read only. `owner_id` stops being "who can see it" — roles
 decide that now.
 
 ## Login
-Supabase Auth, email and password. **Public sign-ups turn back ON** so
-customers can join. Every new account is a Customer; nobody can promote
+Supabase Auth with a **Philippine mobile number and password** (email is
+optional, for contact only; older email accounts still sign in by email).
+There is no SMS check — that needs a paid SMS service (see LATER).
+**Public sign-ups turn back ON** so customers can join. Every new account is a Customer; nobody can promote
 themselves. The first Chairperson is set once by hand in Supabase.
 
 ## Done for the demo

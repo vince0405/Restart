@@ -3,6 +3,7 @@ import { PageTitle } from "@/components/rps/page-title";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatPhMobile, isPhoneSignInEmail } from "@/lib/phone";
 import { ROLE_LABELS } from "@/lib/roles";
 import { getSession } from "@/lib/session";
 import { changePassword } from "./actions";
@@ -15,7 +16,17 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
 
   return (
     <div className="mx-auto max-w-xl">
-      <PageTitle eyebrow="Account" title={profile.full_name || "My account"} description={user.email ?? ""} />
+      <PageTitle
+        eyebrow="Account"
+        title={profile.full_name || "My account"}
+        description={
+          // Phone accounts sign in with their mobile number; never show the
+          // internal sign-in name.
+          isPhoneSignInEmail(user.email)
+            ? `Sign in with ${formatPhMobile(profile.phone)}`
+            : `Sign in with ${user.email ?? ""}`
+        }
+      />
 
       <div className="mb-6 rounded-2xl border border-line bg-white p-5 text-sm shadow-card">
         <div className="flex justify-between">

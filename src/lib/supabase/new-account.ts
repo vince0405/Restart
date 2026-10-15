@@ -13,10 +13,12 @@ import { createClient } from "@supabase/supabase-js";
  * with set_person(), which only the Chairperson may call.
  */
 export async function createAccount(input: {
-  email: string;
+  /** The sign-in name: made from the mobile number (see src/lib/phone.ts). */
+  signInEmail: string;
   password: string;
   fullName: string;
   phone: string;
+  contactEmail: string | null;
 }) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -27,8 +29,10 @@ export async function createAccount(input: {
   });
 
   return supabase.auth.signUp({
-    email: input.email,
+    email: input.signInEmail,
     password: input.password,
-    options: { data: { full_name: input.fullName, phone: input.phone } },
+    options: {
+      data: { full_name: input.fullName, phone: input.phone, contact_email: input.contactEmail },
+    },
   });
 }

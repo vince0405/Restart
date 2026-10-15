@@ -10,7 +10,8 @@ import { signUp } from "../login/actions";
 
 const MESSAGES: Record<string, string> = {
   name: "Please enter your name.",
-  user_already_exists: "That email already has an account. Sign in instead.",
+  phone_taken: "That mobile number already has an account. Sign in instead.",
+  phone_invalid: "Enter a Philippine mobile number, like 0917 123 4567.",
   weak_password: "Choose a longer password (at least 6 characters).",
   signup_disabled: "Sign-ups are switched off right now. Please ask the co-op.",
   email_address_invalid: "That email address doesn't look right.",
@@ -56,11 +57,13 @@ export default async function SignUpPage({ searchParams }: PageProps<"/signup">)
                 inputMode="tel"
                 autoComplete="tel"
                 placeholder="0917 123 4567"
+                required
               />
+              <p className="text-xs text-muted-foreground">You&rsquo;ll use this to sign in.</p>
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" autoComplete="email" required />
+              <Label htmlFor="email">Email (optional)</Label>
+              <Input id="email" name="email" type="email" autoComplete="email" />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="password">Password</Label>

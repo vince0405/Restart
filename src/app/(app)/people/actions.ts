@@ -5,6 +5,7 @@ import { codeForDbError } from "@/lib/errors";
 import { parseAmountPaid } from "@/lib/loads";
 import { canManagePeople, isRole } from "@/lib/roles";
 import { requireRole } from "@/lib/session";
+import { normalizePhMobile, parseOptionalEmail, phoneSignInEmail } from "@/lib/phone";
 import { createAccount } from "@/lib/supabase/new-account";
 
 /**
@@ -67,29 +68,38 @@ export async function updateSettings(formData: FormData) {
  * (like the sign-up page), so the database makes it a Customer; then the
  * Chairperson's own session calls set_person() — which the database only
  * allows for the Chairperson — to set the role. Give the person their
- * email and starting password, and ask them to change it under Account.
+ * mobile number and starting password, and ask them to change it under
+ * Account.
  */
 export async function addPerson(formData: FormData) {
   const { supabase } = await requireRole(canManagePeople);
 
   const fullName = String(formData.get("full_name") ?? "").trim();
-  const phone = String(formData.get("phone") ?? "").trim().slice(0, 30);
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const phone = normalizePhMobile(formData.get("phone"));
+  const contactEmail = parseOptionalEmail(formData.get("email"));
   const password = String(formData.get("password") ?? "");
   const role = formData.get("role");
   const isMember = formData.get("is_member") === "on";
 
   if (!fullName || fullName.length > 120) redirect("/people?error=name_missing");
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) redirect("/people?error=email_invalid");
+  if (!phone) redirect("/people?error=phone_invalid");
+  if (contactEmail === false) redirect("/people?error=email_invalid");
   if (password.length < 8) redirect("/people?error=password_short");
   if (!isRole(role)) redirect("/people?error=role_invalid");
 
-  const { data, error } = await createAccount({ email, password, fullName, phone });
+  // They sign in with their mobile number; the email is for contact only.
+  const { data, error } = await createAccount({
+    signInEmail: phoneSignInEmail(phone),
+    password,
+    fullName,
+    phone,
+    contactEmail,
+  });
 
   if (error) {
     const code =
       error.code === "user_already_exists"
-        ? "email_taken"
+        ? "phone_taken"
         : error.code === "weak_password"
           ? "password_short"
           : error.code === "email_address_invalid"
@@ -103,7 +113,7 @@ export async function addPerson(formData: FormData) {
   }
   // Supabase hides "email already used" in some settings by returning a
   // user with no identities instead of an error.
-  if (!data.user || data.user.identities?.length === 0) redirect("/people?error=email_taken");
+  if (!data.user || data.user.identities?.length === 0) redirect("/people?error=phone_taken");
 
   if (role !== "customer" || isMember) {
     const { error: roleError } = await supabase.rpc("set_person", {

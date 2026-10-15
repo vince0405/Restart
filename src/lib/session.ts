@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { DEFAULT_LIFELINE, type Lifeline } from "@/lib/loads";
+import { formatPhMobile, isPhoneSignInEmail } from "@/lib/phone";
 import { isRole, isStaff, type Role } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 
@@ -41,7 +42,9 @@ export const getSession = cache(async () => {
 
   const profile: Profile = {
     id: user.id,
-    full_name: data?.full_name || user.email || "",
+    // Never fall back to a phone account's internal sign-in name.
+    full_name:
+      data?.full_name || (isPhoneSignInEmail(user.email) ? formatPhMobile(data?.phone) : user.email) || "",
     phone: data?.phone ?? "",
     // No profile row yet? Treat them as a customer: the safest choice.
     role: isRole(data?.role) ? data.role : "customer",

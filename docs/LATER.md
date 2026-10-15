@@ -19,6 +19,9 @@ stays small enough to actually ship by Session 3.
 - An automatic daily check that archives claimed jobs
 
 ## Later
+- SMS code to prove a mobile number belongs to the person signing up (needs
+  a paid SMS service such as Twilio — outside the pinned stack; ask the team)
+- "Forgot password" for mobile-number accounts (today the Chairperson resets it)
 - Staff cancelling a request on the customer's behalf
 - Refunds after a cancellation
 - Showing cancelled (and rejected) requests to the Auditor

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorNote } from "@/components/rps/error-note";
 import { canManagePeople, isRole, ROLE_LABELS, ROLES } from "@/lib/roles";
+import { formatPhMobile } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 import { requireRole } from "@/lib/session";
 import { addPerson, updatePerson } from "./actions";
@@ -44,8 +45,8 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
 
       {added && (
         <p className="mb-4 rounded-xl border-l-4 border-brand bg-brand-soft p-3 text-sm font-semibold text-brand">
-          Account created. Give the person their email and starting password, and ask them to
-          change the password under Account after signing in.
+          Account created. Give the person their mobile number and starting password, and ask
+          them to change the password under Account after signing in.
         </p>
       )}
       {saved && (
@@ -73,12 +74,21 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
             <Input id="add-name" name="full_name" maxLength={120} autoComplete="off" required />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="add-phone">Mobile number (optional)</Label>
-            <Input id="add-phone" name="phone" type="tel" inputMode="tel" maxLength={30} autoComplete="off" />
+            <Label htmlFor="add-phone">Mobile number (used to sign in)</Label>
+            <Input
+              id="add-phone"
+              name="phone"
+              type="tel"
+              inputMode="tel"
+              maxLength={30}
+              autoComplete="off"
+              placeholder="0917 123 4567"
+              required
+            />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="add-email">Email</Label>
-            <Input id="add-email" name="email" type="email" autoComplete="off" required />
+            <Label htmlFor="add-email">Email (optional)</Label>
+            <Input id="add-email" name="email" type="email" autoComplete="off" />
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="add-password">Starting password</Label>
@@ -165,7 +175,9 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
                       </Badge>
                     )}
                   </div>
-                  <div className="text-xs text-muted-foreground">{p.phone || "No phone"}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {p.phone ? formatPhMobile(p.phone) : "No phone"}
+                  </div>
                 </div>
                 <label className="flex flex-col gap-1">
                   <span className="sr-only">Role for {p.full_name}</span>
