@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/rps/logo";
 import { Button } from "@/components/ui/button";
@@ -8,14 +9,14 @@ import { createClient } from "@/lib/supabase/server";
 import { signIn } from "./actions";
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
-  // Already signed in? Go straight to the loads list.
+  // Already signed in? Go straight in.
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (user) redirect("/");
 
-  const { error } = await searchParams;
+  const { error, check } = await searchParams;
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-12">
@@ -47,6 +48,12 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
               />
             </div>
 
+            {check && (
+              <p className="rounded-xl border-l-4 border-brand bg-brand-soft p-3 text-sm font-semibold text-brand">
+                Account created. Check your email for the confirmation link, then sign in.
+              </p>
+            )}
+
             {error && (
               <p
                 className="rounded-xl border-l-4 border-danger bg-danger-soft p-3 text-sm font-semibold text-danger"
@@ -59,6 +66,12 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             <Button type="submit" size="lg">
               Sign in
             </Button>
+            <p className="text-center text-sm text-muted-foreground">
+              New here?{" "}
+              <Link href="/signup" className="font-bold text-brand">
+                Create an account
+              </Link>
+            </p>
           </form>
         </CardContent>
       </Card>

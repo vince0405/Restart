@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ChevronRight, Leaf, Package } from "lucide-react";
 import { Badge, ExpiryBadge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
@@ -9,10 +8,10 @@ import {
   jobRef,
   type LoadRow,
   productFor,
-  SHELF_LIFE_MONTHS,
   storedDaysLeft,
 } from "@/lib/loads";
-import { createClient } from "@/lib/supabase/server";
+import { isStaff } from "@/lib/roles";
+import { getSettings, requireRole } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 const kg = new Intl.NumberFormat("en-PH", { maximumFractionDigits: 0 });
@@ -22,11 +21,8 @@ function formatDate(date: Date) {
 }
 
 export default async function StoragePage({ searchParams }: PageProps<"/storage">) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase } = await requireRole(isStaff);
+  const { lifeline } = await getSettings();
 
   const { type } = await searchParams;
   const filter = type === "palay" || type === "rice" ? type : null;
@@ -36,7 +32,8 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
     .select(
       "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at",
     )
-    .eq("stage", "Stored");
+    .eq("stage", "Stored")
+    .eq("request_status", "accepted");
 
   const now = new Date();
   const lots = ((data ?? []) as LoadRow[])
@@ -44,7 +41,7 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
     .map((load) => ({
       load,
       product: productFor(load.service_type as Parameters<typeof productFor>[0]),
-      left: storedDaysLeft(load, now) ?? 0,
+      left: storedDaysLeft(load, now, lifeline) ?? 0,
       storedAt: new Date(load.stored_at ?? load.created_at),
     }))
     .sort((a, b) => a.left - b.left);
@@ -91,7 +88,7 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
           <div className="flex-1">
             <div className="font-extrabold text-ink">Dried palay</div>
             <div className="text-xs text-muted-foreground">
-              Keeps {SHELF_LIFE_MONTHS.palay} months · {kg.format(palay.kilos)} kg
+              Keeps {lifeline.palay} days · {kg.format(palay.kilos)} kg
             </div>
           </div>
           <Badge tone={palay.urgent > 0 ? "red" : "green"}>
@@ -111,7 +108,7 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
           <div className="flex-1">
             <div className="font-extrabold text-ink">Milled rice</div>
             <div className="text-xs text-muted-foreground">
-              Keeps {SHELF_LIFE_MONTHS.rice} month · {kg.format(rice.kilos)} kg
+              Keeps {lifeline.rice} days · {kg.format(rice.kilos)} kg
             </div>
           </div>
           <Badge tone={rice.urgent > 0 ? "red" : "amber"}>

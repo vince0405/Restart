@@ -84,24 +84,18 @@ export function productFor(service: ServiceType): "rice" | "palay" {
   return STEPS[service].includes("Milling") ? "rice" : "palay";
 }
 
-/** How long stored grain keeps: palay 3 months, rice 1 month. */
-export const SHELF_LIFE_MONTHS = { palay: 3, rice: 1 } as const;
+/** How many days stored grain keeps. The real numbers live in the
+ *  `settings` table; these are the defaults (rice 30 days, palay 90). */
+export type Lifeline = { rice: number; palay: number };
+export const DEFAULT_LIFELINE: Lifeline = { rice: 30, palay: 90 };
 
-/**
- * The date stored grain goes bad. Calendar months, so 31 January plus one
- * month is 28 (or 29) February, not 3 March.
- */
-export function expiryDate(storedAt: Date, service: ServiceType): Date {
-  const months = SHELF_LIFE_MONTHS[productFor(service)];
-  const d = new Date(storedAt);
-  const day = d.getUTCDate();
-  d.setUTCDate(1);
-  d.setUTCMonth(d.getUTCMonth() + months);
-  const lastDay = new Date(
-    Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0),
-  ).getUTCDate();
-  d.setUTCDate(Math.min(day, lastDay));
-  return d;
+/** The date stored grain goes bad: the day it was stored plus its lifeline. */
+export function expiryDate(
+  storedAt: Date,
+  service: ServiceType,
+  lifeline: Lifeline = DEFAULT_LIFELINE,
+): Date {
+  return new Date(storedAt.getTime() + lifeline[productFor(service)] * 86_400_000);
 }
 
 /** Whole days from now until the expiry date. Negative once expired. */
@@ -148,18 +142,37 @@ export type LoadRow = {
   is_paid: boolean;
   amount_paid: number | null;
   stored_at: string | null;
+  customer_id?: string | null;
+  request_status?: string;
+  output_kg?: number | null;
+  disposition?: string | null;
+  keep_percent?: number | null;
+  buyout_status?: string;
+  price_per_kg?: number | null;
+  payout_done_at?: string | null;
+  reject_reason?: string | null;
+  preferred_date?: string | null;
+  customer_note?: string | null;
 };
 
 /** Days left for a stored load, or null if it is not in storage. */
-export function storedDaysLeft(load: LoadRow, now: Date = new Date()): number | null {
+export function storedDaysLeft(
+  load: LoadRow,
+  now: Date = new Date(),
+  lifeline: Lifeline = DEFAULT_LIFELINE,
+): number | null {
   if (load.stage !== "Stored" || !load.stored_at || !isServiceType(load.service_type)) {
     return null;
   }
-  return daysLeft(expiryDate(new Date(load.stored_at), load.service_type), now);
+  return daysLeft(expiryDate(new Date(load.stored_at), load.service_type, lifeline), now);
 }
 
 /** The headline numbers on the dashboard, worked out from real loads. */
-export function summarize(loads: LoadRow[], now: Date = new Date()) {
+export function summarize(
+  loads: LoadRow[],
+  now: Date = new Date(),
+  lifeline: Lifeline = DEFAULT_LIFELINE,
+) {
   const manilaDay = (d: Date) =>
     d.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
   const today = manilaDay(now);
@@ -189,7 +202,7 @@ export function summarize(loads: LoadRow[], now: Date = new Date()) {
         summary.palayKg += load.kilos;
         summary.palaySacks += load.sacks;
       }
-      const left = storedDaysLeft(load, now);
+      const left = storedDaysLeft(load, now, lifeline);
       if (left !== null && left <= EXPIRY_WARNING_DAYS) summary.expiringSoon++;
     }
 
@@ -201,6 +214,122 @@ export function summarize(loads: LoadRow[], now: Date = new Date()) {
   }
 
   return summary;
+}
+
+/** What a customer should read about their job, in plain words. */
+export function customerStatus(load: LoadRow): {
+  label: string;
+  tone: "amber" | "red" | "green" | "blue" | "gray";
+} {
+  if (load.request_status === "pending") return { label: "Waiting for the co-op", tone: "amber" };
+  if (load.request_status === "rejected") return { label: "Not accepted", tone: "red" };
+  if (load.stage === "Released") return { label: "Completed", tone: "gray" };
+  if (load.stage === "Stored") return { label: "Stored at the mill", tone: "blue" };
+  if (load.stage === "Ready") {
+    if (load.output_kg == null) return { label: "Ready, being weighed", tone: "green" };
+    if (!load.disposition) return { label: "Ready: choose keep, sell or split", tone: "green" };
+    if (load.buyout_status === "requested") return { label: "Waiting for buyout decision", tone: "amber" };
+    if (load.buyout_status === "approved") return { label: "Buyout approved", tone: "green" };
+    if (load.buyout_status === "declined") return { label: "Buyout declined: please claim", tone: "red" };
+    return { label: "Ready to claim", tone: "green" };
+  }
+  return { label: `In progress: ${load.stage}`, tone: "amber" };
+}
+
+// ---- Keep, sell or split, and the buyout -------------------------------
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Who owes whom once a job is weighed and the customer has chosen.
+ *
+ *   sale value  = kg sold x price per kg      (only once a buyout is approved)
+ *   fee owed    = processing fee - cash already paid
+ *   payout      = sale value - fee owed       (if positive, the co-op pays)
+ *   still owes  = fee owed - sale value       (if positive, the customer pays)
+ */
+export function settlement(load: {
+  agreed_price: number;
+  is_paid: boolean;
+  amount_paid: number | null;
+  output_kg?: number | null;
+  keep_percent?: number | null;
+  buyout_status?: string;
+  price_per_kg?: number | null;
+}) {
+  const output = load.output_kg ?? 0;
+  const keepPercent = load.keep_percent ?? 100;
+  const keptKg = round2((output * keepPercent) / 100);
+  const soldKg = round2(output - keptKg);
+  const approved = load.buyout_status === "approved";
+  const saleValue = approved ? round2(soldKg * (load.price_per_kg ?? 0)) : 0;
+  const paidCash = load.is_paid ? (load.amount_paid ?? 0) : 0;
+  const feeOwed = round2(Math.max(0, load.agreed_price - paidCash));
+  const net = round2(saleValue - feeOwed);
+  return {
+    keptKg,
+    soldKg,
+    saleValue,
+    paidCash,
+    feeOwed,
+    payout: Math.max(0, net),
+    stillOwes: Math.max(0, -net),
+  };
+}
+
+/** The co-op's money and stock totals, for the Money screen. */
+export function moneySummary(loads: LoadRow[]) {
+  const totals = {
+    cashReceived: 0,
+    feesCoveredByBuyouts: 0,
+    payoutsMade: 0,
+    payoutsToMake: 0,
+    owedByCustomers: 0,
+    stockRiceKg: 0,
+    stockPalayKg: 0,
+    buyoutsWaiting: 0,
+  };
+  for (const load of loads) {
+    if (load.request_status && load.request_status !== "accepted") continue;
+    const s = settlement(load);
+    totals.cashReceived += s.paidCash;
+    totals.owedByCustomers += s.stillOwes;
+    if (load.buyout_status === "requested") totals.buyoutsWaiting++;
+    if (load.buyout_status === "approved") {
+      totals.feesCoveredByBuyouts += Math.min(s.saleValue, s.feeOwed);
+      if (load.payout_done_at) totals.payoutsMade += s.payout;
+      else totals.payoutsToMake += s.payout;
+      if (isServiceType(load.service_type) && productFor(load.service_type) === "rice") {
+        totals.stockRiceKg += s.soldKg;
+      } else {
+        totals.stockPalayKg += s.soldKg;
+      }
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(totals).map(([k, v]) => [k, round2(v)]),
+  ) as typeof totals;
+}
+
+/** Turn a keep / sell / split choice into the database columns. */
+export function parseDisposition(
+  choice: unknown,
+  keepPercentRaw: unknown,
+): ParseResult<{ disposition: "keep" | "sell" | "split"; keep_percent: number; buyout_status: "none" | "requested" }> {
+  if (choice === "keep") {
+    return { ok: true, value: { disposition: "keep", keep_percent: 100, buyout_status: "none" } };
+  }
+  if (choice === "sell") {
+    return { ok: true, value: { disposition: "sell", keep_percent: 0, buyout_status: "requested" } };
+  }
+  if (choice === "split") {
+    const n = Number(String(keepPercentRaw ?? "").trim());
+    if (!Number.isInteger(n) || n < 1 || n > 99) {
+      return { ok: false, error: "For a split, keep a whole percentage from 1 to 99." };
+    }
+    return { ok: true, value: { disposition: "split", keep_percent: n, buyout_status: "requested" } };
+  }
+  return { ok: false, error: "Choose keep, sell or split." };
 }
 
 export type LoadInput = {

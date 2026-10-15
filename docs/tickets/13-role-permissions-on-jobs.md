@@ -10,9 +10,9 @@ their own job.
 
 **Status:** todo
 
-- [ ] A database check stops each role changing columns it is not allowed
+- [x] A database check stops each role changing columns it is not allowed
       to (e.g. an Operator changing payment fields is refused)
-- [ ] Buttons are hidden for roles that may not use them
-- [ ] Customer job detail: timeline, status, agreed price, what they owe
-- [ ] Auditor sees every screen with no buttons that change anything
+- [x] Buttons are hidden for roles that may not use them
+- [x] Customer job detail: timeline, status, agreed price, what they owe
+- [x] Auditor sees every screen with no buttons that change anything
 - [ ] Works on the live URL

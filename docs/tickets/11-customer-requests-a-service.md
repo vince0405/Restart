@@ -8,11 +8,11 @@ a note, and sends the request. It appears on "My jobs" as Pending.
 
 **Status:** todo
 
-- [ ] SQL file adds the request columns to `loads` (customer, request
+- [x] SQL file adds the request columns to `loads` (customer, request
       status, reject reason, preferred date, note); the team has run it
-- [ ] Request form with the four service cards
-- [ ] The request is saved as Pending and linked to the customer
-- [ ] My jobs lists the customer's requests and jobs with their status
-- [ ] A customer cannot create a job for someone else, or an already
+- [x] Request form with the four service cards
+- [x] The request is saved as Pending and linked to the customer
+- [x] My jobs lists the customer's requests and jobs with their status
+- [x] A customer cannot create a job for someone else, or an already
       accepted one, even through the API
 - [ ] Works on the live URL — on a phone

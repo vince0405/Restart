@@ -6,6 +6,7 @@ import {
   expiryTone,
   firstStage,
   jobRef,
+  moneySummary,
   type LoadRow,
   nextStage,
   parseAmountPaid,
@@ -13,6 +14,8 @@ import {
   prevStage,
   productFor,
   SERVICE_TYPES,
+  parseDisposition,
+  settlement,
   stepsFor,
   summarize,
 } from "./loads";
@@ -161,25 +164,21 @@ describe("storage", () => {
     expect(productFor("Harvesting + Drying")).toBe("palay");
   });
 
-  it("keeps rice 1 month and palay 3 months", () => {
+  it("keeps rice 30 days and palay 90 days by default", () => {
     const stored = new Date("2026-10-15T02:00:00Z");
     expect(expiryDate(stored, "Milling only").toISOString()).toBe(
-      "2026-11-15T02:00:00.000Z",
+      "2026-11-14T02:00:00.000Z",
     );
     expect(expiryDate(stored, "Drying only").toISOString()).toBe(
-      "2027-01-15T02:00:00.000Z",
+      "2027-01-13T02:00:00.000Z",
     );
   });
 
-  it("does not spill into the next month at the end of a month", () => {
-    const stored = new Date("2027-01-31T02:00:00Z");
-    expect(expiryDate(stored, "Package Deal").toISOString()).toBe(
-      "2027-02-28T02:00:00.000Z",
-    );
-    const palay = new Date("2026-11-30T02:00:00Z");
-    expect(expiryDate(palay, "Drying only").toISOString()).toBe(
-      "2027-02-28T02:00:00.000Z",
-    );
+  it("uses the co-op's own lifeline when given", () => {
+    const stored = new Date("2026-10-15T02:00:00Z");
+    expect(
+      expiryDate(stored, "Package Deal", { rice: 10, palay: 60 }).toISOString(),
+    ).toBe("2026-10-25T02:00:00.000Z");
   });
 
   it("counts days left, going negative once expired", () => {
@@ -235,5 +234,120 @@ describe("dashboard summary", () => {
 
   it("makes a short job reference from the id", () => {
     expect(jobRef("af8d1854-ba29-49ad-b813-5618fd3f68b1")).toBe("RPS-AF8D1");
+  });
+});
+
+describe("keep, sell or split", () => {
+  it("turns each choice into the right columns", () => {
+    expect(parseDisposition("keep", "")).toEqual({
+      ok: true,
+      value: { disposition: "keep", keep_percent: 100, buyout_status: "none" },
+    });
+    expect(parseDisposition("sell", "")).toEqual({
+      ok: true,
+      value: { disposition: "sell", keep_percent: 0, buyout_status: "requested" },
+    });
+    expect(parseDisposition("split", "70")).toEqual({
+      ok: true,
+      value: { disposition: "split", keep_percent: 70, buyout_status: "requested" },
+    });
+  });
+
+  it("refuses a split that is not 1 to 99 percent", () => {
+    expect(parseDisposition("split", "0").ok).toBe(false);
+    expect(parseDisposition("split", "100").ok).toBe(false);
+    expect(parseDisposition("split", "33.5").ok).toBe(false);
+    expect(parseDisposition("maybe", "").ok).toBe(false);
+  });
+});
+
+describe("settlement", () => {
+  const job = {
+    agreed_price: 5000,
+    is_paid: false,
+    amount_paid: null,
+    output_kg: 1000,
+    keep_percent: 70,
+    buyout_status: "approved",
+    price_per_kg: 40,
+  };
+
+  it("pays the customer the sale value minus the fee", () => {
+    // 300 kg sold x 40 = 12,000; minus 5,000 fee = 7,000 payout
+    expect(settlement(job)).toEqual({
+      keptKg: 700,
+      soldKg: 300,
+      saleValue: 12000,
+      paidCash: 0,
+      feeOwed: 5000,
+      payout: 7000,
+      stillOwes: 0,
+    });
+  });
+
+  it("makes the customer pay the difference when the fee is bigger", () => {
+    const s = settlement({ ...job, keep_percent: 95 }); // 50 kg x 40 = 2,000
+    expect(s.payout).toBe(0);
+    expect(s.stillOwes).toBe(3000);
+  });
+
+  it("does not deduct a fee that was already paid in cash", () => {
+    const s = settlement({ ...job, is_paid: true, amount_paid: 5000 });
+    expect(s.feeOwed).toBe(0);
+    expect(s.payout).toBe(12000);
+  });
+
+  it("counts no sale until the buyout is approved", () => {
+    const s = settlement({ ...job, buyout_status: "requested" });
+    expect(s.saleValue).toBe(0);
+    expect(s.stillOwes).toBe(5000);
+  });
+
+  it("keeps everything when nothing was chosen yet", () => {
+    const s = settlement({ ...job, keep_percent: null, buyout_status: "none" });
+    expect(s.keptKg).toBe(1000);
+    expect(s.soldKg).toBe(0);
+  });
+});
+
+describe("money summary", () => {
+  const base = {
+    created_at: "2026-10-01T02:00:00Z",
+    customer_name: "X",
+    sacks: 10,
+    kilos: 1000,
+    stage: "Ready",
+    stored_at: null,
+    request_status: "accepted",
+  };
+  const loads: LoadRow[] = [
+    // Paid 3,000 cash, kept everything.
+    { ...base, id: "a", service_type: "Drying only", agreed_price: 3000, is_paid: true, amount_paid: 3000 },
+    // Sold 300 kg of rice at 40 = 12,000; 5,000 fee deducted; 7,000 paid out.
+    {
+      ...base, id: "b", service_type: "Package Deal", agreed_price: 5000, is_paid: false, amount_paid: null,
+      output_kg: 1000, keep_percent: 70, disposition: "split", buyout_status: "approved",
+      price_per_kg: 40, payout_done_at: "2026-10-10T02:00:00Z",
+    },
+    // Still owes 2,000; a buyout is waiting.
+    {
+      ...base, id: "c", service_type: "Milling only", agreed_price: 2000, is_paid: false, amount_paid: null,
+      output_kg: 500, keep_percent: 0, disposition: "sell", buyout_status: "requested",
+    },
+    // Rejected requests never count.
+    { ...base, id: "d", service_type: "Drying only", agreed_price: 9999, is_paid: false, amount_paid: null, request_status: "rejected" },
+  ];
+
+  it("adds up cash, payouts, money owed and co-op stock", () => {
+    expect(moneySummary(loads)).toEqual({
+      cashReceived: 3000,
+      feesCoveredByBuyouts: 5000,
+      payoutsMade: 7000,
+      payoutsToMake: 0,
+      owedByCustomers: 2000,
+      stockRiceKg: 300,
+      stockPalayKg: 0,
+      buyoutsWaiting: 1,
+    });
   });
 });

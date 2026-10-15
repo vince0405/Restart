@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import {
   ArrowRight,
   CalendarClock,
   ChevronRight,
   ClipboardList,
+  Inbox,
   Leaf,
   Plus,
   ReceiptText,
@@ -20,12 +20,14 @@ import {
   expiryTone,
   jobRef,
   type LoadRow,
+  moneySummary,
   productFor,
   isServiceType,
   storedDaysLeft,
   summarize,
 } from "@/lib/loads";
-import { createClient } from "@/lib/supabase/server";
+import { canManage, isStaff } from "@/lib/roles";
+import { getSettings, requireRole } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 const peso = new Intl.NumberFormat("en-PH", {
@@ -54,23 +56,27 @@ function greeting(now: Date) {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, role } = await requireRole(isStaff);
 
   // RLS hands back only the signed-in Monitor's loads.
   const { data, error } = await supabase
     .from("loads")
     .select(
-      "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at",
+      "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at, request_status, output_kg, disposition, keep_percent, buyout_status, price_per_kg, payout_done_at",
     )
+    .eq("request_status", "accepted")
     .order("created_at", { ascending: false });
   const loads = (data ?? []) as LoadRow[];
 
+  // Pending requests are counted separately: they are not jobs yet.
+  const { count: pendingRequests } = await supabase
+    .from("loads")
+    .select("id", { count: "exact", head: true })
+    .eq("request_status", "pending");
+
+  const { lifeline } = await getSettings();
   const now = new Date();
-  const s = summarize(loads, now);
+  const s = summarize(loads, now, lifeline);
 
   const kpis: {
     label: string;
@@ -129,11 +135,13 @@ export default async function DashboardPage() {
 
   // Alerts: stored grain close to expiry, and rice already released but unpaid.
   const expiryAlerts = loads
-    .map((load) => ({ load, left: storedDaysLeft(load, now) }))
+    .map((load) => ({ load, left: storedDaysLeft(load, now, lifeline) }))
     .filter((a): a is { load: LoadRow; left: number } => a.left !== null && a.left <= EXPIRY_SOON_DAYS)
     .sort((a, b) => a.left - b.left);
   const unpaidReleased = loads.filter((l) => l.stage === "Released" && !l.is_paid);
-  const alertCount = expiryAlerts.length + unpaidReleased.length;
+  const buyoutsWaiting = loads.filter((l) => l.buyout_status === "requested");
+  const alertCount = expiryAlerts.length + unpaidReleased.length + buyoutsWaiting.length;
+  const money = moneySummary(loads);
 
   return (
     <div>
@@ -142,10 +150,12 @@ export default async function DashboardPage() {
         title={greeting(now)}
         description="Here's what's happening across the mill today."
         action={
-          <Link href="/loads/new" className={cn(buttonVariants(), "md:hidden")}>
-            <Plus className="size-[18px]" aria-hidden />
-            New load
-          </Link>
+          canManage(role) && (
+            <Link href="/loads/new" className={cn(buttonVariants(), "md:hidden")}>
+              <Plus className="size-[18px]" aria-hidden />
+              New walk-in job
+            </Link>
+          )
         }
       />
 
@@ -153,6 +163,20 @@ export default async function DashboardPage() {
         <p className="mb-4 text-sm text-destructive" role="alert">
           Could not load your data: {error.message}
         </p>
+      )}
+
+      {(pendingRequests ?? 0) > 0 && (
+        <Link
+          href="/requests"
+          className="mb-5 flex items-center gap-3 rounded-2xl border-l-4 border-gold bg-gold-soft p-4 shadow-card"
+        >
+          <Inbox className="size-5 shrink-0 text-gold-dark" aria-hidden />
+          <span className="flex-1 text-sm font-bold text-ink">
+            {pendingRequests} new {pendingRequests === 1 ? "request" : "requests"} waiting
+            {canManage(role) ? " for you to accept or reject" : ""}
+          </span>
+          <ArrowRight className="size-4 text-gold-dark" aria-hidden />
+        </Link>
       )}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
@@ -272,9 +296,21 @@ export default async function DashboardPage() {
           <div className="space-y-3">
             {alertCount === 0 && (
               <p className="text-sm text-muted-foreground">
-                No stored grain close to expiry, and every released load is paid.
+                No buyouts to decide, no stored grain close to expiry, and every released load is paid.
               </p>
             )}
+            {buyoutsWaiting.slice(0, 3).map((load) => (
+              <Link
+                key={load.id}
+                href={`/loads/${load.id}`}
+                className="block rounded-xl border-l-4 border-gold bg-gold-soft p-3"
+              >
+                <div className="text-xs font-bold text-ink">#{jobRef(load.id)} wants to sell to the co-op</div>
+                <div className="mt-1 text-[11px] text-muted-foreground">
+                  {load.customer_name} · {load.keep_percent === 0 ? "sell 100%" : `keep ${load.keep_percent}%`}
+                </div>
+              </Link>
+            ))}
             {expiryAlerts.slice(0, 4).map(({ load, left }) => (
               <Link
                 key={load.id}
@@ -312,9 +348,15 @@ export default async function DashboardPage() {
               </Link>
             ))}
           </div>
+          <div className="mt-4 rounded-xl bg-surface p-3 text-xs text-muted-foreground">
+            Co-op stock bought:{" "}
+            <strong className="text-ink">
+              {kg.format(money.stockRiceKg)} kg rice · {kg.format(money.stockPalayKg)} kg palay
+            </strong>
+          </div>
           <Link
             href="/storage"
-            className="mt-4 block w-full rounded-xl border border-line py-2.5 text-center text-xs font-bold text-brand"
+            className="mt-3 block w-full rounded-xl border border-line py-2.5 text-center text-xs font-bold text-brand"
           >
             View storage
           </Link>

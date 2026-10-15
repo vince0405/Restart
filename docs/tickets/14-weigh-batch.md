@@ -8,8 +8,8 @@
 
 **Status:** todo
 
-- [ ] SQL file adds `output_kg`; the team has run it
-- [ ] At Ready, staff see "Record output weight"; it is required before
+- [x] SQL file adds `output_kg`; the team has run it
+- [x] At Ready, staff see "Record output weight"; it is required before
       release, storing or a disposition choice
-- [ ] Customer job detail shows kg in, kg out and whether it is rice or palay
+- [x] Customer job detail shows kg in, kg out and whether it is rice or palay
 - [ ] Works on the live URL — on a phone

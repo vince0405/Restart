@@ -9,16 +9,16 @@ database enforces who can see which jobs.
 
 **Status:** todo
 
-- [ ] SQL file: `profiles` table (role starts as `customer`, a profile is
+- [x] SQL file: `profiles` table (role starts as `customer`, a profile is
       created automatically on sign-up), `settings` table with the co-op
       name, RLS on both. The team has run it.
-- [ ] Nobody can change their own role or member flag, even through the API
-- [ ] `loads` RLS rewritten: staff and auditors see all jobs, customers only
+- [x] Nobody can change their own role or member flag, even through the API
+- [x] `loads` RLS rewritten: staff and auditors see all jobs, customers only
       their own; existing jobs stay visible to staff
 - [ ] Public sign-ups switched back on; a Sign up screen with name, phone,
       email, password
-- [ ] The team's chairperson account is set to `chairperson` by hand
-- [ ] Customers land on "My jobs"; staff land on the dashboard; the sidebar
+- [x] The team's chairperson account is set to `chairperson` by hand
+- [x] Customers land on "My jobs"; staff land on the dashboard; the sidebar
       shows the person's name and role
-- [ ] A customer typing a staff address (e.g. /storage) is sent to My jobs
+- [x] A customer typing a staff address (e.g. /storage) is sent to My jobs
 - [ ] Works on the live URL

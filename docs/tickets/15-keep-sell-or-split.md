@@ -8,11 +8,11 @@ existing pay / store / release flow; selling asks the co-op for a buyout.
 
 **Status:** todo
 
-- [ ] SQL file adds `disposition`, `keep_percent`, `buyout_status`; the team
+- [x] SQL file adds `disposition`, `keep_percent`, `buyout_status`; the team
       has run it
-- [ ] Choice screen shows the kg kept and kg offered for sale
-- [ ] Keep 100%: no buyout; the job continues to payment, storage, release
-- [ ] Sell or split: buyout status becomes Requested and shows on the
+- [x] Choice screen shows the kg kept and kg offered for sale
+- [x] Keep 100%: no buyout; the job continues to payment, storage, release
+- [x] Sell or split: buyout status becomes Requested and shows on the
       Chairperson's dashboard
-- [ ] A customer can only choose for their own Ready, weighed job, once
+- [x] A customer can only choose for their own Ready, weighed job, once
 - [ ] Works on the live URL — on a phone

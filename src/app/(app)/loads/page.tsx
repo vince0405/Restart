@@ -1,33 +1,29 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ChevronRight, ClipboardList, Plus } from "lucide-react";
 import { ExpiryBadge, PaidBadge, StageBadge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
 import { buttonVariants } from "@/components/ui/button";
 import { jobRef, type LoadRow, storedDaysLeft } from "@/lib/loads";
-import { createClient } from "@/lib/supabase/server";
+import { canManage, isStaff } from "@/lib/roles";
+import { getSettings, requireRole } from "@/lib/session";
 
 const kg = new Intl.NumberFormat("en-PH", { maximumFractionDigits: 0 });
 
 // The Jobs list: every load, newest first.
 export default async function JobsPage() {
-  const supabase = await createClient();
-
-  // Not signed in? Only the sign-in screen is allowed.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, role } = await requireRole(isStaff);
 
   // No "where owner_id = ..." needed: Row Level Security only ever hands
   // back the signed-in Monitor's own loads.
   const { data, error } = await supabase
     .from("loads")
     .select(
-      "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at",
+      "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at, customer_id, disposition, buyout_status",
     )
+    .eq("request_status", "accepted")
     .order("created_at", { ascending: false });
   const loads = (data ?? []) as LoadRow[];
+  const { lifeline } = await getSettings();
 
   return (
     <div>
@@ -40,10 +36,12 @@ export default async function JobsPage() {
             : "Every load the mill is working on."
         }
         action={
-          <Link href="/loads/new" className={buttonVariants({ size: "lg" })}>
-            <Plus className="size-5" aria-hidden />
-            New load
-          </Link>
+          canManage(role) && (
+            <Link href="/loads/new" className={buttonVariants({ size: "lg" })}>
+              <Plus className="size-5" aria-hidden />
+              New walk-in job
+            </Link>
+          )
         }
       />
 
@@ -75,7 +73,7 @@ export default async function JobsPage() {
           </div>
           <ul>
             {loads.map((load) => {
-              const left = storedDaysLeft(load);
+              const left = storedDaysLeft(load, new Date(), lifeline);
               return (
                 <li key={load.id} className="border-b border-line/70 last:border-0">
                   <Link

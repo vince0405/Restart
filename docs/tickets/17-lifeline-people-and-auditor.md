@@ -8,10 +8,10 @@ manages people (role, member flag). The Auditor gets a Money summary.
 
 **Status:** todo
 
-- [ ] Lifeline uses the settings (rice 30 days, palay 90, warning 14) and
+- [x] Lifeline uses the settings (rice 30 days, palay 90, warning 14) and
       the customer sees "Claim within N days" on their job
-- [ ] People screen: list of accounts; the Chairperson changes role and
+- [x] People screen: list of accounts; the Chairperson changes role and
       member flag; nobody else can
-- [ ] Money summary: fees received, payouts made, outstanding balances,
+- [x] Money summary: fees received, payouts made, outstanding balances,
       co-op stock
 - [ ] Works on the live URL

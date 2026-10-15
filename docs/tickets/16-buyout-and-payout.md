@@ -9,14 +9,14 @@ Chairperson marks the payout as handed over. Bought kg count as co-op stock.
 
 **Status:** todo
 
-- [ ] SQL file adds `price_per_kg`, `payout_done_at`, and the farmgate price
+- [x] SQL file adds `price_per_kg`, `payout_done_at`, and the farmgate price
       in `settings`; the team has run it
-- [ ] The payout maths (sale value, fee, net, "still owes" when negative)
+- [x] The payout maths (sale value, fee, net, "still owes" when negative)
       lives in one tested function
-- [ ] Approve shows the net payout; Decline tells the customer to claim
+- [x] Approve shows the net payout; Decline tells the customer to claim
       all of it
-- [ ] Chairperson can mark the payout as paid out
-- [ ] Settings screen: the Chairperson edits the farmgate price
-- [ ] Dashboard shows co-op stock (kg bought)
-- [ ] Only the Chairperson can approve, decline or mark paid out
+- [x] Chairperson can mark the payout as paid out
+- [x] Settings screen: the Chairperson edits the farmgate price
+- [x] Dashboard shows co-op stock (kg bought)
+- [x] Only the Chairperson can approve, decline or mark paid out
 - [ ] Works on the live URL
