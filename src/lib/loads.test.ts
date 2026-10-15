@@ -388,6 +388,7 @@ describe("money summary", () => {
       stockRiceKg: 300,
       stockPalayKg: 0,
       buyoutsWaiting: 1,
+      harvestPalayKg: 0,
     });
   });
 });
@@ -616,5 +617,19 @@ describe("editing a job's details (Ticket 35)", () => {
   it("still needs a name and, for harvesting, an address", () => {
     expect(parseJobDetails({ ...form, customer_name: " " }, atStart).ok).toBe(false);
     expect(parseJobDetails({ ...form, harvest_address: "" }, atStart).ok).toBe(false);
+  });
+});
+
+describe("harvest share paid in palay on the Money page (Ticket 30)", () => {
+  it("counts the palay kept separately from pesos", () => {
+    const job = {
+      id: "p", created_at: "2026-10-01T02:00:00Z", customer_name: "X", sacks: 34, kilos: 1700,
+      service_type: "Package Deal", stage: "Drying", agreed_price: 9000, is_paid: false,
+      amount_paid: null, stored_at: null, request_status: "accepted",
+      harvest_fee_in: "palay", harvest_kept_kg: 300,
+    };
+    const m = moneySummary([job, { ...job, id: "q", harvest_kept_kg: 120.5 }]);
+    expect(m.harvestPalayKg).toBe(420.5);
+    expect(m.cashReceived).toBe(0);
   });
 });

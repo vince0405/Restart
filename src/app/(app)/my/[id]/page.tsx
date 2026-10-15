@@ -250,6 +250,12 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
           <section className="rounded-2xl border border-line bg-card p-5 shadow-card">
             <h2 className="font-extrabold text-ink">Money</h2>
             <div className="mt-4 space-y-3 text-sm">
+              {load.harvest_fee_in === "palay" && load.harvest_kept_kg != null && (
+                <MoneyRow
+                  label="Harvest share paid in palay"
+                  value={`${kg.format(Number(load.harvest_kept_kg))} kg`}
+                />
+              )}
               <MoneyRow label="Processing fee" value={load.agreed_price > 0 ? peso.format(load.agreed_price) : "To be set"} />
               <MoneyRow label="Paid in cash" value={peso.format(money.paidCash)} />
               {load.buyout_status === "requested" && (

@@ -215,6 +215,9 @@ export type LoadRow = {
   milling_fee?: number | null;
   /** Staff's change to the price list, kept across counts (negative = discount). */
   fee_adjustment?: number | null;
+  /** How the harvest share was paid (Ticket 30), and the palay kept if in palay. */
+  harvest_fee_in?: string | null;
+  harvest_kept_kg?: number | null;
 };
 
 /** Days left for a stored load, or null if it is not in storage. */
@@ -385,10 +388,13 @@ export function moneySummary(loads: LoadRow[]) {
     stockRiceKg: 0,
     stockPalayKg: 0,
     buyoutsWaiting: 0,
+    /** Palay kept by the co-op as the harvest share (Ticket 30), not pesos. */
+    harvestPalayKg: 0,
   };
   for (const load of loads) {
     if (load.request_status && load.request_status !== "accepted") continue;
     const s = settlement(load);
+    totals.harvestPalayKg += Number(load.harvest_kept_kg ?? 0);
     totals.cashReceived += s.paidCash;
     totals.owedByCustomers += s.stillOwes;
     if (load.buyout_status === "requested") totals.buyoutsWaiting++;

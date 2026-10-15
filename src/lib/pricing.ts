@@ -103,3 +103,15 @@ export function parseRates(get: (name: string) => unknown): Rates | null {
 export function feeWithAdjustment(listTotal: number, adjustment: number): number {
   return Math.max(0, round2(listTotal + adjustment));
 }
+
+/**
+ * The harvest share paid in palay (Ticket 30): the co-op keeps the share
+ * of the kilos and the same share of the sacks (rounded to whole sacks);
+ * the farmer's grain is the rest, and the harvest fee is P0. Same rule as
+ * the database (supabase/sql/015-harvest-fee-in-palay.sql).
+ */
+export function harvestShareInPalay(kilos: number, sacks: number, rates: Rates = DEFAULT_RATES) {
+  const keptKg = harvestShareKg(kilos, rates);
+  const keptSacks = Math.round((sacks * rates.harvest_share_percent) / 100);
+  return { keptKg, farmerKg: round2(kilos - keptKg), farmerSacks: sacks - keptSacks };
+}

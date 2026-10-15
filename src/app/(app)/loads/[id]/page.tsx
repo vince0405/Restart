@@ -311,6 +311,39 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                     )}
                   </div>
                 )}
+                {countStep === "harvesting" && (
+                  <fieldset className="flex flex-col gap-2 sm:col-span-2">
+                    <legend className="mb-2 text-sm font-bold text-ink">
+                      How does the farmer pay the {settings.rates.harvest_share_percent}% harvest share?
+                    </legend>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        ["pesos", "In pesos", "Added to the fee"],
+                        ["palay", "In palay", "The co-op keeps the kg"],
+                      ].map(([value, label, hint]) => (
+                        <label
+                          key={value}
+                          className="cursor-pointer rounded-xl border-2 border-line bg-card p-3 text-center text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-soft"
+                        >
+                          <input
+                            type="radio"
+                            name="harvest_fee_in"
+                            value={value}
+                            defaultChecked={value === "pesos"}
+                            className="sr-only"
+                          />
+                          <span className="block font-bold text-ink">{label}</span>
+                          <span className="block text-xs text-muted-foreground">{hint}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      In palay: the harvest fee is ₱0, the co-op keeps{" "}
+                      {settings.rates.harvest_share_percent}% of the kg and sacks, and drying and
+                      milling are worked out on the farmer&rsquo;s share.
+                    </p>
+                  </fieldset>
+                )}
               </div>
               <p className="text-xs text-muted-foreground">
                 {countStep === "harvesting"
@@ -727,7 +760,13 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
           <section className="rounded-2xl border border-line bg-card p-5 shadow-card xl:self-start">
             <h2 className="font-extrabold text-ink">Billing summary</h2>
             <div className="mt-4 space-y-3 text-sm">
-              {load.harvest_fee != null && (
+              {load.harvest_fee_in === "palay" && load.harvest_kept_kg != null && (
+                <MoneyRow
+                  label="Harvest share paid in palay"
+                  value={`${kg.format(Number(load.harvest_kept_kg))} kg`}
+                />
+              )}
+              {load.harvest_fee != null && load.harvest_fee_in !== "palay" && (
                 <MoneyRow
                   label={
                     Number(load.market_price_per_kg) > 0

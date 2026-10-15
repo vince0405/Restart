@@ -100,6 +100,8 @@ export async function moveStage(formData: FormData) {
       const price = parseAmountPaid(formData.get("market_price_per_kg"));
       if (!price.ok) redirect(jobPath(id, "market_price_invalid"));
       changes.market_price_per_kg = price.value;
+      // Pesos (default) or palay (Ticket 30); the database works out the kg.
+      changes.harvest_fee_in = formData.get("harvest_fee_in") === "palay" ? "palay" : "pesos";
     }
   }
 

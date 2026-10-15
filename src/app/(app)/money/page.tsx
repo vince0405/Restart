@@ -28,7 +28,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
   const { data, error } = await supabase
     .from("loads")
     .select(
-      "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at, customer_id, request_status, output_kg, disposition, keep_percent, buyout_status, price_per_kg, payout_done_at",
+      "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at, customer_id, request_status, output_kg, disposition, keep_percent, buyout_status, price_per_kg, payout_done_at, harvest_kept_kg",
     )
     .eq("request_status", "accepted")
     .order("created_at", { ascending: false });
@@ -63,6 +63,14 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
       icon: Wallet,
       tone: "red" as const,
       attention: m.payoutsToMake > 0,
+    },
+    {
+      label: "Harvest share kept in palay",
+      value: kg.format(m.harvestPalayKg),
+      unit: "kg palay",
+      note: "Paid in palay, not pesos",
+      icon: Package,
+      tone: "amber" as const,
     },
     {
       label: "Co-op stock (bought)",

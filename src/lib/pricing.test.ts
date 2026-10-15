@@ -6,6 +6,7 @@ import {
   feeAtIntake,
   feeWithAdjustment,
   harvestFee,
+  harvestShareInPalay,
   harvestShareKg,
   millingFee,
   parseRates,
@@ -92,5 +93,22 @@ describe("price list", () => {
     // An extra charge works the same way, and the fee never goes below zero.
     expect(feeWithAdjustment(list, 500)).toBe(38900);
     expect(feeWithAdjustment(1000, -5000)).toBe(0);
+  });
+});
+
+describe("harvest share paid in palay (Ticket 30)", () => {
+  it("keeps 15% of the kilos and sacks; the farmer has the rest", () => {
+    expect(harvestShareInPalay(2000, 40)).toEqual({ keptKg: 300, farmerKg: 1700, farmerSacks: 34 });
+  });
+
+  it("follows the co-op's own share", () => {
+    const rates = { ...DEFAULT_RATES, harvest_share_percent: 10 };
+    expect(harvestShareInPalay(2000, 40, rates)).toEqual({ keptKg: 200, farmerKg: 1800, farmerSacks: 36 });
+  });
+
+  it("rounds the kept sacks to whole sacks", () => {
+    // 15% of 25 sacks = 3.75, kept as 4.
+    expect(harvestShareInPalay(1250.5, 25).farmerSacks).toBe(21);
+    expect(harvestShareInPalay(1250.5, 25).keptKg).toBe(187.58);
   });
 });
