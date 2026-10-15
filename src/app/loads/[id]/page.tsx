@@ -5,6 +5,8 @@ import { AppHeader } from "@/components/app-header";
 import { PaidBadge, StageBadge } from "@/components/badges";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   daysLeft,
   EXPIRY_WARNING_DAYS,
@@ -18,7 +20,7 @@ import {
   stepsFor,
 } from "@/lib/loads";
 import { createClient } from "@/lib/supabase/server";
-import { moveStage, storeLoad } from "../actions";
+import { markNotPaid, markPaid, moveStage, storeLoad } from "../actions";
 
 const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
 
@@ -78,7 +80,7 @@ export default async function LoadDetailPage({
           <h1 className="text-2xl font-semibold tracking-tight">{load.customer_name}</h1>
           <div className="flex flex-wrap items-center gap-2">
             <StageBadge stage={load.stage} />
-            <PaidBadge isPaid={load.is_paid} />
+            <PaidBadge isPaid={load.is_paid} amount={load.amount_paid} />
             <span className="text-sm text-muted-foreground">{load.service_type}</span>
           </div>
         </div>
@@ -210,6 +212,55 @@ export default async function LoadDetailPage({
 
         <Card>
           <CardHeader>
+            <CardTitle>Payment</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+              <dt className="text-muted-foreground">Agreed price</dt>
+              <dd className="font-medium">{peso.format(load.agreed_price)}</dd>
+              {load.is_paid && (
+                <>
+                  <dt className="text-muted-foreground">Amount received</dt>
+                  <dd className="font-medium">
+                    {load.amount_paid != null ? peso.format(load.amount_paid) : "—"}
+                  </dd>
+                </>
+              )}
+            </dl>
+
+            {load.is_paid ? (
+              <form action={markNotPaid}>
+                <input type="hidden" name="id" value={load.id} />
+                <Button type="submit" variant="outline" className="w-full">
+                  Mark not paid
+                </Button>
+              </form>
+            ) : (
+              <form action={markPaid} className="flex flex-col gap-3">
+                <input type="hidden" name="id" value={load.id} />
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="amount_paid">Amount received (₱)</Label>
+                  <Input
+                    id="amount_paid"
+                    name="amount_paid"
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step={0.01}
+                    defaultValue={load.agreed_price}
+                    required
+                  />
+                </div>
+                <Button type="submit" size="lg" className="w-full">
+                  Mark paid
+                </Button>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Details</CardTitle>
           </CardHeader>
           <CardContent>
@@ -220,14 +271,6 @@ export default async function LoadDetailPage({
               <dd>{load.kilos}</dd>
               <dt className="text-muted-foreground">Service</dt>
               <dd>{load.service_type}</dd>
-              <dt className="text-muted-foreground">Agreed price</dt>
-              <dd>{peso.format(load.agreed_price)}</dd>
-              <dt className="text-muted-foreground">Payment</dt>
-              <dd>
-                {load.is_paid
-                  ? `Paid${load.amount_paid != null ? ` (${peso.format(load.amount_paid)})` : ""}`
-                  : "Not paid"}
-              </dd>
               <dt className="text-muted-foreground">Logged</dt>
               <dd>
                 {new Date(load.created_at).toLocaleString("en-PH", {

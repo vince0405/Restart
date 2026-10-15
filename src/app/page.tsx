@@ -27,7 +27,7 @@ export default async function LoadsPage() {
   // back the signed-in Monitor's own loads.
   const { data: loads, error } = await supabase
     .from("loads")
-    .select("id, customer_name, sacks, service_type, stage, is_paid, stored_at")
+    .select("id, customer_name, sacks, service_type, stage, is_paid, amount_paid, stored_at")
     .order("created_at", { ascending: false });
 
   return (
@@ -87,7 +87,7 @@ export default async function LoadsPage() {
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           <StageBadge stage={load.stage} />
-                          <PaidBadge isPaid={load.is_paid} />
+                          <PaidBadge isPaid={load.is_paid} amount={load.amount_paid} />
                           {load.stage === "Stored" &&
                             load.stored_at &&
                             isServiceType(load.service_type) && (

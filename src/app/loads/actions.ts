@@ -7,6 +7,7 @@ import {
   isServiceType,
   isStage,
   nextStage,
+  parseAmountPaid,
   parseLoadInput,
   prevStage,
 } from "@/lib/loads";
@@ -113,6 +114,45 @@ export async function storeLoad(formData: FormData) {
     .eq("id", id)
     .eq("stage", "Ready")
     .is("stored_at", null);
+
+  if (error) {
+    redirect(`/loads/${id}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`/loads/${id}`);
+}
+
+/** Marks a load paid with the amount the customer actually handed over. */
+export async function markPaid(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+
+  const parsed = parseAmountPaid(formData.get("amount_paid"));
+  if (!parsed.ok) {
+    redirect(`/loads/${id}?error=${encodeURIComponent(parsed.error)}`);
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("loads")
+    .update({ is_paid: true, amount_paid: parsed.value })
+    .eq("id", id);
+
+  if (error) {
+    redirect(`/loads/${id}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`/loads/${id}`);
+}
+
+/** Undo for a mistaken "Mark paid": back to Not paid, amount cleared. */
+export async function markNotPaid(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("loads")
+    .update({ is_paid: false, amount_paid: null })
+    .eq("id", id);
 
   if (error) {
     redirect(`/loads/${id}?error=${encodeURIComponent(error.message)}`);

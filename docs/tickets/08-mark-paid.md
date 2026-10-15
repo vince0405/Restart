@@ -8,9 +8,9 @@ paid" undoes it.
 
 **Status:** todo
 
-- [ ] The payment section shows the agreed price for reference
-- [ ] "Mark paid" needs an amount of zero or more
-- [ ] After marking paid, the detail screen and the list show "Paid" and
+- [x] The payment section shows the agreed price for reference
+- [x] "Mark paid" needs an amount of zero or more
+- [x] After marking paid, the detail screen and the list show "Paid" and
       the amount
-- [ ] "Mark not paid" sets it back to Not paid and clears the amount
+- [x] "Mark not paid" sets it back to Not paid and clears the amount
 - [ ] Works on the live URL — on a phone

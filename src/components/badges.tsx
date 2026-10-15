@@ -23,7 +23,15 @@ export function StageBadge({ stage }: { stage: string }) {
   );
 }
 
-export function PaidBadge({ isPaid }: { isPaid: boolean }) {
+const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
+
+export function PaidBadge({
+  isPaid,
+  amount,
+}: {
+  isPaid: boolean;
+  amount?: number | null;
+}) {
   return (
     <span
       className={cn(
@@ -33,7 +41,7 @@ export function PaidBadge({ isPaid }: { isPaid: boolean }) {
           : "bg-status-alert text-status-alert-foreground",
       )}
     >
-      {isPaid ? "Paid" : "Not paid"}
+      {isPaid ? (amount != null ? `Paid ${peso.format(amount)}` : "Paid") : "Not paid"}
     </span>
   );
 }
