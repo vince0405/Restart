@@ -241,6 +241,12 @@ body::before {
   transform-origin: 50% 90%;
 }
 
+/* Tapping a tab on the landing page glides to its section (off for
+   people who ask for less motion, below). */
+html {
+  scroll-behavior: smooth;
+}
+
 /* One clear, high-contrast focus ring for every keyboard-reachable thing. */
 :focus-visible {
   outline: 2px solid var(--ring);

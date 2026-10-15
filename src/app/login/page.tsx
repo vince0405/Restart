@@ -22,7 +22,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-12">
       <div className="flex justify-center">
-        <Logo />
+        <Link href="/" aria-label="RPS1 home — what is RPS1?">
+          <Logo />
+        </Link>
       </div>
 
       <Card>

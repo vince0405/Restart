@@ -7,7 +7,8 @@ import { NextResponse, type NextRequest } from "next/server";
  * an expiring one for a new one and saves it in the browser's cookies.
  *
  * It does NOT decide who may see what. Each page checks that itself, and
- * Row Level Security checks it again in the database.
+ * Row Level Security checks it again in the database. The one thing it
+ * routes: a signed-out visit to "/" shows the public landing page.
  */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -34,7 +35,19 @@ export async function proxy(request: NextRequest) {
   );
 
   // Asking for the user is what triggers the refresh.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Signed-out visitors to the home address see the public landing page
+  // (Ticket 43); the address stays "/". Signed-in people get their dashboard.
+  if (!user && request.nextUrl.pathname === "/") {
+    const landing = request.nextUrl.clone();
+    landing.pathname = "/welcome";
+    const rewrite = NextResponse.rewrite(landing);
+    response.cookies.getAll().forEach((cookie) => rewrite.cookies.set(cookie));
+    return rewrite;
+  }
 
   return response;
 }
