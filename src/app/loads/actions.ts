@@ -56,26 +56,63 @@ export async function createLoad(formData: FormData) {
  * The form sends the step the Monitor was LOOKING AT ("from"), and the
  * update only happens if the load is still at that step. So a double tap
  * on a slow phone moves the load once, not twice.
+ *
+ * "stored" says whether the load was stored at the mill, which adds a
+ * Stored step before Released. Going back from Stored to Ready un-stores it.
  */
 export async function moveStage(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const service = String(formData.get("service") ?? "");
   const from = String(formData.get("from") ?? "");
+  const stored = formData.get("stored") === "1";
   const direction = formData.get("direction");
 
   if (!isServiceType(service) || !isStage(from)) redirect(`/loads/${id}`);
 
   const to =
-    direction === "back" ? prevStage(service, from) : nextStage(service, from);
+    direction === "back"
+      ? prevStage(service, from, stored)
+      : nextStage(service, from, stored);
   if (!to) redirect(`/loads/${id}`);
+
+  const changes =
+    from === "Stored" && to === "Ready"
+      ? { stage: to, stored_at: null }
+      : { stage: to };
+
+  const supabase = await createClient();
+  let query = supabase
+    .from("loads")
+    .update(changes)
+    .eq("id", id)
+    .eq("service_type", service)
+    .eq("stage", from);
+  query = stored
+    ? query.not("stored_at", "is", null)
+    : query.is("stored_at", null);
+  const { error } = await query;
+
+  if (error) {
+    redirect(`/loads/${id}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`/loads/${id}`);
+}
+
+/**
+ * Stores a Ready load at the mill and starts its expiry clock. Only works
+ * while the load is still Ready and not already stored.
+ */
+export async function storeLoad(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("loads")
-    .update({ stage: to })
+    .update({ stage: "Stored", stored_at: new Date().toISOString() })
     .eq("id", id)
-    .eq("service_type", service)
-    .eq("stage", from);
+    .eq("stage", "Ready")
+    .is("stored_at", null);
 
   if (error) {
     redirect(`/loads/${id}?error=${encodeURIComponent(error.message)}`);

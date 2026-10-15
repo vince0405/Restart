@@ -37,3 +37,24 @@ export function PaidBadge({ isPaid }: { isPaid: boolean }) {
     </span>
   );
 }
+
+// For stored loads: blue while there is time, amber in the last week,
+// red once expired.
+export function ExpiryBadge({ daysLeft, warnAt }: { daysLeft: number; warnAt: number }) {
+  return (
+    <span
+      className={cn(
+        base,
+        daysLeft <= 0
+          ? "bg-status-alert text-status-alert-foreground"
+          : daysLeft <= warnAt
+            ? "bg-status-progress text-status-progress-foreground"
+            : "bg-status-stored text-status-stored-foreground",
+      )}
+    >
+      {daysLeft <= 0
+        ? "Expired"
+        : `Expires in ${daysLeft} ${daysLeft === 1 ? "day" : "days"}`}
+    </span>
+  );
+}

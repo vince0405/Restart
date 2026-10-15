@@ -5,11 +5,26 @@ import { AppHeader } from "@/components/app-header";
 import { PaidBadge, StageBadge } from "@/components/badges";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { isServiceType, isStage, nextStage, prevStage, stepsFor } from "@/lib/loads";
+import {
+  daysLeft,
+  EXPIRY_WARNING_DAYS,
+  expiryDate,
+  isServiceType,
+  isStage,
+  nextStage,
+  prevStage,
+  productFor,
+  SHELF_LIFE_MONTHS,
+  stepsFor,
+} from "@/lib/loads";
 import { createClient } from "@/lib/supabase/server";
-import { moveStage } from "../actions";
+import { moveStage, storeLoad } from "../actions";
 
 const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString("en-PH", { timeZone: "Asia/Manila", dateStyle: "medium" });
+}
 
 export default async function LoadDetailPage({
   params,
@@ -35,9 +50,15 @@ export default async function LoadDetailPage({
     notFound();
   }
 
-  const steps = stepsFor(load.service_type);
-  const next = nextStage(load.service_type, load.stage);
-  const prev = prevStage(load.service_type, load.stage);
+  const stored = load.stored_at != null;
+  const steps = stepsFor(load.service_type, stored);
+  const next = nextStage(load.service_type, load.stage, stored);
+  const prev = prevStage(load.service_type, load.stage, stored);
+
+  const product = productFor(load.service_type);
+  const storedAt = stored ? new Date(load.stored_at) : null;
+  const expires = storedAt ? expiryDate(storedAt, load.service_type) : null;
+  const left = expires ? daysLeft(expires) : null;
 
   const current = steps.indexOf(load.stage);
 
@@ -113,8 +134,9 @@ export default async function LoadDetailPage({
                 <input type="hidden" name="service" value={load.service_type} />
                 <input type="hidden" name="from" value={load.stage} />
                 <input type="hidden" name="direction" value="next" />
+                <input type="hidden" name="stored" value={stored ? "1" : "0"} />
                 <Button type="submit" size="lg" className="w-full">
-                  Move to {next}
+                  {next === "Released" ? "Release to customer" : `Move to ${next}`}
                 </Button>
               </form>
             ) : (
@@ -123,12 +145,26 @@ export default async function LoadDetailPage({
               </p>
             )}
 
+            {load.stage === "Ready" && !stored && (
+              <form action={storeLoad} className="flex flex-col gap-1">
+                <input type="hidden" name="id" value={load.id} />
+                <Button type="submit" variant="secondary" size="lg" className="w-full">
+                  Store {product} at the mill
+                </Button>
+                <p className="text-center text-xs text-muted-foreground">
+                  Stored {product} keeps {SHELF_LIFE_MONTHS[product]}{" "}
+                  {SHELF_LIFE_MONTHS[product] === 1 ? "month" : "months"}.
+                </p>
+              </form>
+            )}
+
             {prev && (
               <form action={moveStage}>
                 <input type="hidden" name="id" value={load.id} />
                 <input type="hidden" name="service" value={load.service_type} />
                 <input type="hidden" name="from" value={load.stage} />
                 <input type="hidden" name="direction" value="back" />
+                <input type="hidden" name="stored" value={stored ? "1" : "0"} />
                 <Button type="submit" variant="outline" className="w-full">
                   Back one step (to {prev})
                 </Button>
@@ -136,6 +172,41 @@ export default async function LoadDetailPage({
             )}
           </CardContent>
         </Card>
+
+        {storedAt && expires && left !== null && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Storage</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <p
+                className={
+                  load.stage === "Released"
+                    ? "rounded-[var(--radius)] bg-status-done px-3 py-2 text-sm font-medium text-status-done-foreground"
+                    : left <= 0
+                      ? "rounded-[var(--radius)] bg-status-alert px-3 py-2 text-sm font-medium text-status-alert-foreground"
+                      : left <= EXPIRY_WARNING_DAYS
+                        ? "rounded-[var(--radius)] bg-status-progress px-3 py-2 text-sm font-medium text-status-progress-foreground"
+                        : "rounded-[var(--radius)] bg-status-stored px-3 py-2 text-sm font-medium text-status-stored-foreground"
+                }
+              >
+                {load.stage === "Released"
+                  ? "Released from storage."
+                  : left <= 0
+                    ? `Expired. This ${product} went past its ${SHELF_LIFE_MONTHS[product]}-month limit.`
+                    : `Expires in ${left} ${left === 1 ? "day" : "days"}.`}
+              </p>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                <dt className="text-muted-foreground">Stored</dt>
+                <dd className="capitalize">{product}</dd>
+                <dt className="text-muted-foreground">Since</dt>
+                <dd>{formatDate(storedAt)}</dd>
+                <dt className="text-muted-foreground">Expires</dt>
+                <dd>{formatDate(expires)}</dd>
+              </dl>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>

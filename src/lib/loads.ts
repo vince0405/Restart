@@ -40,9 +40,14 @@ export function isStage(value: string): value is Stage {
   return (STAGES as readonly string[]).includes(value);
 }
 
-/** The steps this service goes through, in order. */
-export function stepsFor(service: ServiceType): readonly Stage[] {
-  return STEPS[service];
+/**
+ * The steps this service goes through, in order. A load that was stored
+ * at the mill has an extra Stored step just before Released.
+ */
+export function stepsFor(service: ServiceType, stored = false): readonly Stage[] {
+  const steps = STEPS[service];
+  if (!stored) return steps;
+  return [...steps.slice(0, -1), "Stored", "Released"];
 }
 
 /** Where a new load of this service starts. */
@@ -51,18 +56,61 @@ export function firstStage(service: ServiceType): Stage {
 }
 
 /** The step after this one for this service, or null at the end. */
-export function nextStage(service: ServiceType, stage: Stage): Stage | null {
-  const steps = STEPS[service];
+export function nextStage(
+  service: ServiceType,
+  stage: Stage,
+  stored = false,
+): Stage | null {
+  const steps = stepsFor(service, stored);
   const i = steps.indexOf(stage);
   return i >= 0 && i < steps.length - 1 ? steps[i + 1] : null;
 }
 
 /** The step before this one for this service, or null at the start. */
-export function prevStage(service: ServiceType, stage: Stage): Stage | null {
-  const steps = STEPS[service];
+export function prevStage(
+  service: ServiceType,
+  stage: Stage,
+  stored = false,
+): Stage | null {
+  const steps = stepsFor(service, stored);
   const i = steps.indexOf(stage);
   return i > 0 ? steps[i - 1] : null;
 }
+
+// ---- Storage ------------------------------------------------------------
+
+/** What the mill hands back: rice if the service includes milling. */
+export function productFor(service: ServiceType): "rice" | "palay" {
+  return STEPS[service].includes("Milling") ? "rice" : "palay";
+}
+
+/** How long stored grain keeps: palay 3 months, rice 1 month. */
+export const SHELF_LIFE_MONTHS = { palay: 3, rice: 1 } as const;
+
+/**
+ * The date stored grain goes bad. Calendar months, so 31 January plus one
+ * month is 28 (or 29) February, not 3 March.
+ */
+export function expiryDate(storedAt: Date, service: ServiceType): Date {
+  const months = SHELF_LIFE_MONTHS[productFor(service)];
+  const d = new Date(storedAt);
+  const day = d.getUTCDate();
+  d.setUTCDate(1);
+  d.setUTCMonth(d.getUTCMonth() + months);
+  const lastDay = new Date(
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  d.setUTCDate(Math.min(day, lastDay));
+  return d;
+}
+
+/** Whole days from now until the expiry date. Negative once expired. */
+export function daysLeft(expiry: Date, now: Date = new Date()): number {
+  return Math.ceil((expiry.getTime() - now.getTime()) / 86_400_000);
+}
+
+/** Warn when this many days or fewer are left. */
+export const EXPIRY_WARNING_DAYS = 7;
 
 export type LoadInput = {
   customer_name: string;

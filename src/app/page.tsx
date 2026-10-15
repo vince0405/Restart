@@ -2,9 +2,15 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChevronRight, Plus, Wheat } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
-import { PaidBadge, StageBadge } from "@/components/badges";
+import { ExpiryBadge, PaidBadge, StageBadge } from "@/components/badges";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  daysLeft,
+  EXPIRY_WARNING_DAYS,
+  expiryDate,
+  isServiceType,
+} from "@/lib/loads";
 import { createClient } from "@/lib/supabase/server";
 
 // The loads list: the Monitor's home screen.
@@ -21,7 +27,7 @@ export default async function LoadsPage() {
   // back the signed-in Monitor's own loads.
   const { data: loads, error } = await supabase
     .from("loads")
-    .select("id, customer_name, sacks, service_type, stage, is_paid")
+    .select("id, customer_name, sacks, service_type, stage, is_paid, stored_at")
     .order("created_at", { ascending: false });
 
   return (
@@ -82,6 +88,16 @@ export default async function LoadsPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <StageBadge stage={load.stage} />
                           <PaidBadge isPaid={load.is_paid} />
+                          {load.stage === "Stored" &&
+                            load.stored_at &&
+                            isServiceType(load.service_type) && (
+                              <ExpiryBadge
+                                daysLeft={daysLeft(
+                                  expiryDate(new Date(load.stored_at), load.service_type),
+                                )}
+                                warnAt={EXPIRY_WARNING_DAYS}
+                              />
+                            )}
                           <span className="text-xs text-muted-foreground">
                             {load.service_type}
                           </span>

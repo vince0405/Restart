@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  daysLeft,
+  expiryDate,
   firstStage,
   nextStage,
   parseAmountPaid,
   parseLoadInput,
   prevStage,
+  productFor,
   SERVICE_TYPES,
   stepsFor,
 } from "./loads";
@@ -127,5 +130,57 @@ describe("parseAmountPaid", () => {
     expect(parseAmountPaid("").ok).toBe(false);
     expect(parseAmountPaid("-1").ok).toBe(false);
     expect(parseAmountPaid(undefined).ok).toBe(false);
+  });
+});
+
+describe("storage", () => {
+  it("adds a Stored step before Released only for stored loads", () => {
+    expect(stepsFor("Drying only", true)).toEqual([
+      "Received",
+      "Drying",
+      "Ready",
+      "Stored",
+      "Released",
+    ]);
+    expect(nextStage("Package Deal", "Ready")).toBe("Released");
+    expect(nextStage("Package Deal", "Ready", true)).toBe("Stored");
+    expect(nextStage("Package Deal", "Stored", true)).toBe("Released");
+    expect(prevStage("Package Deal", "Released", true)).toBe("Stored");
+    expect(prevStage("Package Deal", "Stored", true)).toBe("Ready");
+  });
+
+  it("stores rice when the service mills, palay otherwise", () => {
+    expect(productFor("Package Deal")).toBe("rice");
+    expect(productFor("Milling only")).toBe("rice");
+    expect(productFor("Drying only")).toBe("palay");
+    expect(productFor("Harvesting + Drying")).toBe("palay");
+  });
+
+  it("keeps rice 1 month and palay 3 months", () => {
+    const stored = new Date("2026-10-15T02:00:00Z");
+    expect(expiryDate(stored, "Milling only").toISOString()).toBe(
+      "2026-11-15T02:00:00.000Z",
+    );
+    expect(expiryDate(stored, "Drying only").toISOString()).toBe(
+      "2027-01-15T02:00:00.000Z",
+    );
+  });
+
+  it("does not spill into the next month at the end of a month", () => {
+    const stored = new Date("2027-01-31T02:00:00Z");
+    expect(expiryDate(stored, "Package Deal").toISOString()).toBe(
+      "2027-02-28T02:00:00.000Z",
+    );
+    const palay = new Date("2026-11-30T02:00:00Z");
+    expect(expiryDate(palay, "Drying only").toISOString()).toBe(
+      "2027-02-28T02:00:00.000Z",
+    );
+  });
+
+  it("counts days left, going negative once expired", () => {
+    const expiry = new Date("2026-11-15T02:00:00Z");
+    expect(daysLeft(expiry, new Date("2026-11-08T02:00:00Z"))).toBe(7);
+    expect(daysLeft(expiry, new Date("2026-11-14T20:00:00Z"))).toBe(1);
+    expect(daysLeft(expiry, new Date("2026-11-17T02:00:00Z"))).toBe(-2);
   });
 });
