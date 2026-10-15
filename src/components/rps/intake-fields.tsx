@@ -92,3 +92,23 @@ export function ServicePicker({ text }: { text: string }) {
     </fieldset>
   );
 }
+
+/** Where to harvest. Needed for Package Deal and Harvesting + Drying. */
+export function HarvestAddressField() {
+  return (
+    <div className="mt-5">
+      <Field
+        label="Farm address — where to harvest"
+        name="harvest_address"
+        type="text"
+        maxLength={300}
+        autoComplete="street-address"
+        placeholder="e.g. Purok 3, Brgy. Batad, near the chapel"
+      />
+      <p className="mt-2 text-xs text-muted-foreground">
+        Needed for <strong>Package Deal</strong> and <strong>Harvesting + Drying</strong> so the
+        harvest team can find the field. Leave it empty for drying only or milling only.
+      </p>
+    </div>
+  );
+}

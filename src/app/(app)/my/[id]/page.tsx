@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Scale, Warehouse } from "lucide-react";
 import { Badge, ExpiryBadge } from "@/components/rps/badge";
+import { HarvestAddress } from "@/components/rps/harvest-address";
 import { PageTitle } from "@/components/rps/page-title";
 import { Timeline } from "@/components/rps/timeline";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -96,6 +97,12 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
       />
 
       <ErrorNote code={error} />
+
+      {load.harvest_address && (
+        <div className="mb-6">
+          <HarvestAddress address={load.harvest_address} />
+        </div>
+      )}
 
       {load.request_status === "pending" && (
         <section className="mb-6 rounded-2xl border-l-4 border-gold bg-gold-soft p-5">

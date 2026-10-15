@@ -8,6 +8,7 @@
 export const ERROR_MESSAGES = {
   // Form input
   name_required: "Customer name is required.",
+  address_required: "Enter the farm address — where to harvest (up to 300 characters).",
   sacks_invalid: "Sacks must be a whole number of 0 or more.",
   kilos_invalid: "Kilos must be 0 or more.",
   service_invalid: "Choose a service type.",

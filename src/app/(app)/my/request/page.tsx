@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { ArrowRight, Building2 } from "lucide-react";
-import { Field, SectionHeading, ServicePicker } from "@/components/rps/intake-fields";
+import {
+  Field,
+  HarvestAddressField,
+  SectionHeading,
+  ServicePicker,
+} from "@/components/rps/intake-fields";
 import { PageTitle } from "@/components/rps/page-title";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ErrorNote } from "@/components/rps/error-note";
@@ -48,6 +53,7 @@ export default async function RequestServicePage({ searchParams }: PageProps<"/m
         <div className="my-8 border-t border-line" />
 
         <ServicePicker text="Choose what the co-op should do with your palay." />
+        <HarvestAddressField />
 
         <div className="my-8 border-t border-line" />
 

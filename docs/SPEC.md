@@ -112,7 +112,8 @@ co-op's own **stock**.
   paid), then my requests and jobs with status, step, output
   weight, storage expiry, and what I owe or will be paid.
 - **Customer: Request a service** — co-op (Batad Multipurpose Cooperative),
-  service cards, sacks, estimated kg, preferred date, note.
+  service cards, farm address (where to harvest — required for Package Deal
+  and Harvesting + Drying), sacks, estimated kg, preferred date, note.
 - **Customer: Job detail** — timeline; at Ready, the keep / sell / split
   choice; buyout result and payout.
 - **Staff: Dashboard** — as now, plus a "Requests" count.

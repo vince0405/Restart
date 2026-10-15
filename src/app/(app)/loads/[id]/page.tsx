@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { ArrowLeft, BadgeCheck, HandCoins, Scale, Trash2, Warehouse, type LucideIcon } from "lucide-react";
 import { Badge, ExpiryBadge, PaidBadge, StageBadge } from "@/components/rps/badge";
+import { HarvestAddress } from "@/components/rps/harvest-address";
 import { PageTitle } from "@/components/rps/page-title";
 import { Timeline } from "@/components/rps/timeline";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -520,6 +521,11 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                 })}
               />
             </div>
+            {load.harvest_address && (
+              <div className="mt-4">
+                <HarvestAddress address={load.harvest_address} />
+              </div>
+            )}
             {(load.preferred_date || load.customer_note) && (
               <div className="mt-4 rounded-xl bg-surface p-3 text-sm">
                 {load.preferred_date && (

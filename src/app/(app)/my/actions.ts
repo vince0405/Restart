@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { codeForDbError } from "@/lib/errors";
-import { firstStage, parseDisposition, parseLoadInput } from "@/lib/loads";
+import { firstStage, parseDisposition, parseHarvestAddress, parseLoadInput } from "@/lib/loads";
 import { isStaff } from "@/lib/roles";
 import { requireRole } from "@/lib/session";
 
@@ -28,6 +28,9 @@ export async function requestService(formData: FormData) {
   });
   if (!parsed.ok) redirect(`/my/request?error=${parsed.error}`);
 
+  const address = parseHarvestAddress(parsed.value.service_type, formData.get("harvest_address"));
+  if (!address.ok) redirect(`/my/request?error=${address.error}`);
+
   const preferred = String(formData.get("preferred_date") ?? "");
   const note = String(formData.get("customer_note") ?? "").trim().slice(0, 500);
 
@@ -38,6 +41,7 @@ export async function requestService(formData: FormData) {
     request_status: "pending",
     preferred_date: /^\d{4}-\d{2}-\d{2}$/.test(preferred) ? preferred : null,
     customer_note: note || null,
+    harvest_address: address.value,
   });
   if (error) redirect(`/my/request?error=${codeForDbError(error)}`);
 

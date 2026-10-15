@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { Field, SectionHeading, ServicePicker } from "@/components/rps/intake-fields";
+import {
+  Field,
+  HarvestAddressField,
+  SectionHeading,
+  ServicePicker,
+} from "@/components/rps/intake-fields";
 import { PageTitle } from "@/components/rps/page-title";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ErrorNote } from "@/components/rps/error-note";
@@ -40,6 +45,7 @@ export default async function NewLoadPage({ searchParams }: PageProps<"/loads/ne
         <div className="my-8 border-t border-line" />
 
         <ServicePicker text="The job will only show the steps this service has." />
+        <HarvestAddressField />
 
         <div className="my-8 border-t border-line" />
 

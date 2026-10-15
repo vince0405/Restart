@@ -1,5 +1,6 @@
 import { BadgeCheck, CalendarDays, Inbox, Phone } from "lucide-react";
 import { Badge } from "@/components/rps/badge";
+import { HarvestAddress } from "@/components/rps/harvest-address";
 import { PageTitle } from "@/components/rps/page-title";
 import { Button } from "@/components/ui/button";
 import { ErrorNote } from "@/components/rps/error-note";
@@ -23,6 +24,7 @@ type Request = {
   service_type: string;
   preferred_date: string | null;
   customer_note: string | null;
+  harvest_address: string | null;
   customer: { full_name: string; phone: string; is_member: boolean } | null;
 };
 
@@ -35,7 +37,7 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
   const { data, error: loadError } = await supabase
     .from("loads")
     .select(
-      "id, created_at, customer_name, sacks, kilos, service_type, preferred_date, customer_note, customer:profiles!loads_customer_id_fkey(full_name, phone, is_member)",
+      "id, created_at, customer_name, sacks, kilos, service_type, preferred_date, customer_note, harvest_address, customer:profiles!loads_customer_id_fkey(full_name, phone, is_member)",
     )
     .eq("request_status", "pending")
     .order("created_at", { ascending: true });
@@ -108,6 +110,8 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
                   <div className="mt-1 text-xs font-extrabold text-ink">{kg.format(r.kilos)} kg</div>
                 </div>
               </div>
+
+              <HarvestAddress address={r.harvest_address} />
 
               <div className="space-y-1 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">

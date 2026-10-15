@@ -16,6 +16,7 @@ import {
   nextStage,
   parseAmountPaid,
   parseDisposition,
+  parseHarvestAddress,
   parseLoadInput,
   prevStage,
 } from "@/lib/loads";
@@ -45,9 +46,13 @@ export async function createLoad(formData: FormData) {
   });
   if (!parsed.ok) redirect(`/loads/new?error=${parsed.error}`);
 
+  const address = parseHarvestAddress(parsed.value.service_type, formData.get("harvest_address"));
+  if (!address.ok) redirect(`/loads/new?error=${address.error}`);
+
   const { error } = await supabase.from("loads").insert({
     ...parsed.value,
     stage: firstStage(parsed.value.service_type),
+    harvest_address: address.value,
   });
   if (error) redirect(`/loads/new?error=${codeForDbError(error)}`);
 

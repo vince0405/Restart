@@ -52,6 +52,25 @@ export function stepsFor(service: ServiceType, stored = false): readonly Stage[]
   return [...steps.slice(0, -1), "Stored", "Released"];
 }
 
+/** Services with a Harvesting step need the farm address. */
+export function needsHarvestAddress(service: ServiceType): boolean {
+  return STEPS[service].includes("Harvesting");
+}
+
+/**
+ * The farm address from a form: required (and at most 300 characters) for
+ * services that harvest, ignored for the rest.
+ */
+export function parseHarvestAddress(
+  service: ServiceType,
+  raw: unknown,
+): ParseResult<string | null> {
+  if (!needsHarvestAddress(service)) return { ok: true, value: null };
+  const address = String(raw ?? "").trim();
+  if (!address || address.length > 300) return { ok: false, error: "address_required" };
+  return { ok: true, value: address };
+}
+
 /** Where a new load of this service starts. */
 export function firstStage(service: ServiceType): Stage {
   return STEPS[service][0];
@@ -161,6 +180,7 @@ export type LoadRow = {
   preferred_date?: string | null;
   customer_note?: string | null;
   cancelled_at?: string | null;
+  harvest_address?: string | null;
 };
 
 /** Days left for a stored load, or null if it is not in storage. */

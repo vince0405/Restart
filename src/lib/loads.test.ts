@@ -11,6 +11,7 @@ import {
   jobRef,
   moneySummary,
   type LoadRow,
+  needsHarvestAddress,
   nextStage,
   parseAmountPaid,
   parseLoadInput,
@@ -18,6 +19,7 @@ import {
   productFor,
   SERVICE_TYPES,
   parseDisposition,
+  parseHarvestAddress,
   settlement,
   stepsFor,
   summarize,
@@ -426,5 +428,24 @@ describe("customer summary", () => {
       owes: 2000, // the in-progress and ready jobs' fees
       toReceive: 39000, // 1,000 kg x 40 = 40,000 minus the 1,000 fee
     });
+  });
+});
+
+describe("harvest address", () => {
+  it("is needed only for services that harvest", () => {
+    expect(needsHarvestAddress("Package Deal")).toBe(true);
+    expect(needsHarvestAddress("Harvesting + Drying")).toBe(true);
+    expect(needsHarvestAddress("Drying only")).toBe(false);
+    expect(needsHarvestAddress("Milling only")).toBe(false);
+  });
+
+  it("requires a sensible address for harvesting, ignores it otherwise", () => {
+    expect(parseHarvestAddress("Package Deal", "  Purok 3, Brgy. Batad  ")).toEqual({
+      ok: true,
+      value: "Purok 3, Brgy. Batad",
+    });
+    expect(parseHarvestAddress("Package Deal", "").ok).toBe(false);
+    expect(parseHarvestAddress("Harvesting + Drying", "x".repeat(301)).ok).toBe(false);
+    expect(parseHarvestAddress("Drying only", "Purok 3")).toEqual({ ok: true, value: null });
   });
 });
