@@ -53,7 +53,7 @@ The harvest is 100 sacks, weighed at 6,000 kg. After drying, there are 95 sacks.
 - [x] A job can't be released until the fee is paid (or covered by a buyout)
 - [x] Any new columns go in a numbered SQL file in `supabase/sql/`, with RLS
       policies to match (009)
-- [ ] The team has run 009 in Supabase
+- [x] The team has run 009 in Supabase
 - [ ] Works on the live URL, on a phone
 
 ## Not in this ticket (park in LATER.md if wanted)
