@@ -1,31 +1,58 @@
-# Spec: RPS1
+# Spec: RPS1 — Batad Multipurpose Cooperative
+
+Follows the team's user-flow chart (`User-Flow.drawio`). Phase 1 is what we
+build now; Phases 2–3 are in `docs/LATER.md`.
+
+Team decision (2026-10-15): this goes beyond the workshop's "one type of
+user" rule, on purpose, to follow the flowchart.
 
 ## Problem
-As the Monitor of a small family rice mill, I have to keep track of every
-load: which service the customer chose, what step it is at, whether it is
-being stored and when that stored palay or rice will go bad, and whether
-the customer has paid. Today that lives in a notebook, loose slips, my
-memory and messages to staff, so checking anything means flipping pages
-and asking around — which costs the mill time and money.
+Batad Multipurpose Cooperative owns a rice mill. Its chairperson (my mother)
+has to keep track of every job: who asked for what service, what step it is
+at, how much came out, what is stored and when it goes bad, who has paid,
+and which grain the co-op bought. Today that lives in a notebook, slips,
+memory and messages to staff, and customers have to come by or call to find
+out where their palay is.
 
 ## Solution
-A simple phone app where the Monitor logs each load with its service, and
-the app shows only the steps that service actually has. The Monitor taps
-the load forward as the work happens, can mark finished palay or rice as
-stored at the mill, and gets a warning before stored grain expires. One
-list shows every load, its step, whether it is paid, and what is about to
-expire.
+One app, five roles. Customers request a service and follow their job from
+their own phone. Co-op staff accept requests, move each job through only its
+service's steps, weigh the finished batch, and keep stored grain from
+expiring. When the grain is ready, the customer chooses to keep it, sell it
+to the co-op, or split it; the co-op approves any purchase and the app works
+out the net payout after fees.
 
-## The user
-The **Monitor**: the one person who watches every load at the mill, from
-the start of the service to payment. In our mill, that is the
-owner-operator. Operators and customers do not use the app in the MVP;
-operators tell the Monitor, and the Monitor records it. Operator and
-customer logins are the planned next step (see `docs/LATER.md`).
+## The users (roles)
+Everyone signs up as a **Customer**. Only the Chairperson can make someone a
+Member or give them a staff role.
+
+| Role | Who |
+|---|---|
+| Customer | Any farmer who wants palay dried or milled. Members are flagged and listed first. |
+| Operator | Mill staff doing harvesting, drying, milling, weighing. |
+| Monitor | Staff in charge of monitoring all jobs, requests and payments. |
+| Chairperson | Head of the co-op. Everything the Monitor can do, plus buyouts, people and settings. |
+| Auditor | Checks the records. Sees everything, changes nothing. |
+
+### Who may do what
+| Action | Customer | Operator | Monitor | Chairperson | Auditor |
+|---|---|---|---|---|---|
+| Request a service | ✅ own | | | | |
+| See jobs | own only | all | all | all | all (read-only) |
+| Accept / reject requests | | | ✅ | ✅ | |
+| Log a walk-in job (no account) | | | ✅ | ✅ | |
+| Move steps, weigh batch, store | | ✅ | ✅ | ✅ | |
+| Choose keep / sell / split | ✅ own | | ✅ walk-ins | ✅ walk-ins | |
+| Record processing payments | | | ✅ | ✅ | |
+| Approve or decline a buyout, record payout | | | | ✅ | |
+| Delete a mistaken job | | | ✅ | ✅ | |
+| Manage people (member flag, roles) | | | | ✅ | |
+| Edit settings (farmgate price) | | | | ✅ | |
+
+The database enforces this table (Row Level Security plus checks on which
+columns each role may change), not just the screens.
 
 ## Services and their steps
-Each load follows only the steps of its service:
-
 | Service | Steps |
 |---|---|
 | Package Deal | Harvesting → Drying → Milling → Ready → Released |
@@ -33,131 +60,129 @@ Each load follows only the steps of its service:
 | Drying only | Received → Drying → Ready → Released |
 | Milling only | Received → Milling → Ready → Released |
 
-- **Ready** means the work is finished and the grain is waiting for the
-  customer.
-- From **Ready**, the Monitor can either release it, or **store it at the
-  mill**. A stored load moves to **Stored**, and later to **Released**.
-- What is stored is **rice** if the service includes Milling (Package Deal,
-  Milling only), otherwise **palay**.
-- **Palay keeps for 3 months. Rice keeps for 1 month**, counted from the
-  day it was stored.
+- A request starts as **Pending**; accepted requests start at the first step;
+  rejected requests stop, with a reason the customer can read.
+- At **Ready** the batch is weighed (output kg). The output is **rice** if the
+  service mills, otherwise **palay**.
+- Kept grain may be **Stored** at the mill: rice lasts **30 days**, palay
+  **3 months**; a warning shows at **14 days** left.
 
-## User stories
-1. As the Monitor, I want to sign in with my email and password, so that
-   only I can see my customers' records.
-2. As the Monitor, I want to log a new load (customer, sacks, kilos,
-   service, agreed price), so that it is recorded when the job starts
-   instead of in the notebook.
-3. As the Monitor, I want to see all loads in one list with their step,
-   paid status and any expiry warning, so that I can monitor the mill at a
-   glance.
-4. As the Monitor, I want to move a load to its next step with one tap,
-   following only the steps of its service, so that the record keeps up
-   with the actual work.
-5. As the Monitor, I want to move a load back one step, so that I can fix
-   a wrong tap.
-6. As the Monitor, I want to mark a Ready load as stored and see when it
-   expires, so that no customer's palay or rice goes bad in storage.
-7. As the Monitor, I want to mark a load paid with the amount received,
-   and undo it if I made a mistake, so that I always know who has paid.
-8. As the Monitor, I want to delete a load I entered by mistake, so that
-   the list stays accurate.
+## Keep, sell or split (disposition)
+At Ready the customer (or staff, for walk-ins) chooses:
+- **Keep 100%** — pay the processing fee, claim or store the grain.
+- **Sell 100%** — ask the co-op to buy everything.
+- **Split** — keep X%, sell the rest.
+
+For any selling, the Chairperson **approves** (price per kg, pre-filled from
+the farmgate reference price) or **declines** (the customer must then claim
+all of it). On approval the app shows:
+
+    sale value  = kg sold × price per kg
+    net payout  = sale value − processing fee
+    (if the fee is bigger than the sale value, the customer still owes the difference)
+
+The Chairperson marks the payout as paid out. Bought grain counts in the
+co-op's own **stock**.
+
+## User stories (Phase 1)
+1. As a Customer, I want to sign up and request drying, milling or a Package
+   Deal, so that I don't have to go to the mill to book.
+2. As a Customer, I want to see my request's status and my job's step, so
+   that I know when my grain is ready without calling.
+3. As a Monitor, I want to see incoming requests, members first, and accept
+   or reject them, so that the mill's work is scheduled.
+4. As an Operator, I want to move a job through its steps and record the
+   output weight, so that the record keeps up with the real work.
+5. As a Customer, I want to choose to keep, sell or split my grain, so that
+   I can turn part of it into cash.
+6. As the Chairperson, I want to approve or decline buyouts at a price per
+   kg and see the net payout, so that the co-op only buys what it can afford.
+7. As a Monitor, I want stored grain to warn me at 14 days left, so that no
+   customer's grain goes bad.
+8. As an Auditor, I want to see every job, payment and buyout without being
+   able to change them, so that I can check the books.
 
 ## Screens
-- **Sign in** — the Monitor enters email and password. Nothing else in
-  the app is visible without signing in.
-- **Navigation** — a sidebar on laptops and a bottom tab bar on phones:
-  Dashboard, Jobs, New load, Storage. The look follows the team's Figma
-  design (green and gold, Inter font), built on real data only.
-- **Dashboard** — the home screen after signing in. Real counts: active
-  jobs, palay and rice in storage (kg), loads expiring soon, and the total
-  not yet paid; a job board with one column per step; alerts for stored
-  grain close to expiry and loads released but not paid; the latest loads.
-- **Storage** — every stored load as a lot card (customer, kg, age, sacks,
-  expiry badge), sorted by earliest expiry, filterable by palay or rice.
-- **Jobs (loads list)** — newest first. Each row shows customer,
-  sacks, service, current step and a Paid / Not paid badge. Stored loads
-  show "Expires in N days", highlighted when 7 days or fewer are left, and
-  "Expired" once past. A big "+ New load" button at the top; "Sign out" at
-  the bottom. Tapping a row opens the load.
-- **New load** — a form: customer name, sacks, kilos, service (pick from
-  the four), agreed price. Saving starts the load at the first step of its
-  service and returns to the list.
-- **Load detail** — all the load's details; the steps of its service with
-  the current one highlighted; a big "Move to <next step>" button; a
-  smaller "Back one step" button; at Ready, a choice of "Release" or
-  "Store at the mill"; when stored, the date stored and the expiry date; a
-  payment section to enter the amount and "Mark paid" (or "Mark not paid"
-  to undo); and a "Delete load" button that asks "Are you sure?" first.
+- **Sign in / Sign up** — email and password. New accounts are Customers.
+- **Customer: My jobs** — my requests and jobs with status, step, output
+  weight, storage expiry, and what I owe or will be paid.
+- **Customer: Request a service** — co-op (Batad Multipurpose Cooperative),
+  service cards, sacks, estimated kg, preferred date, note.
+- **Customer: Job detail** — timeline; at Ready, the keep / sell / split
+  choice; buyout result and payout.
+- **Staff: Dashboard** — as now, plus a "Requests" count.
+- **Staff: Requests** — pending requests, members first, Accept / Reject
+  (with reason).
+- **Staff: Jobs, Job detail, New walk-in job, Storage** — as now, plus weigh
+  batch, disposition and buyout sections; buttons appear only for roles
+  allowed to use them.
+- **Chairperson: People** — everyone's name, role and member flag; change
+  them. **Settings** — farmgate reference price per kg.
+- **Auditor** — the same staff screens, read-only, plus a **Money** summary:
+  fees received, payouts made, outstanding balances, co-op stock (kg).
 
 ## Data
+All tables have Row Level Security ON.
 
-### Table: `loads`
-One row per load.
-
+### `profiles` (new) — one row per account
 | Column | Meaning |
 |---|---|
-| `id` | Unique ID, created automatically |
-| `created_at` | When the load was logged, set automatically |
-| `owner_id` | The Monitor account the load belongs to, set automatically to whoever is signed in |
-| `customer_name` | Text, required |
-| `sacks` | Whole number, required, zero or more |
-| `kilos` | Number with decimals, required, zero or more |
-| `service_type` | One of: `Package Deal`, `Harvesting + Drying`, `Drying only`, `Milling only` |
-| `agreed_price` | Pesos, typed by hand, required, zero or more. Includes any storage charge for now |
-| `stage` | One of: `Received`, `Harvesting`, `Drying`, `Milling`, `Ready`, `Stored`, `Released`. Starts at the first step of the service |
-| `stored_at` | When the load was stored at the mill. Empty unless it has been stored |
-| `is_paid` | Yes / No. Starts at No |
-| `amount_paid` | Pesos. Empty until marked paid |
+| `id` | The account (same as the Supabase user) |
+| `full_name`, `phone` | Shown to staff |
+| `role` | `customer`, `operator`, `monitor`, `chairperson`, `auditor`. Starts as `customer` |
+| `is_member` | Co-op member? Starts false |
 
-The expiry date is not stored; it is worked out from `stored_at` plus 3
-months (palay) or 1 month (rice).
+Who: everyone reads their own row; staff and auditors read all; a user may
+edit their own name and phone only; **only the Chairperson changes `role`
+and `is_member`**.
 
-**Who may read and write (Row Level Security):**
-- RLS is ON.
-- Signed-in users may **read, add, update and delete only rows where
-  `owner_id` is their own account**.
-- Visitors who are not signed in may do **nothing**.
+### `settings` (new) — one row
+`coop_name`, `farmgate_price_per_kg`, `rice_lifeline_days` (30),
+`palay_lifeline_days` (90), `warning_days` (14). Everyone signed in reads;
+only the Chairperson edits.
+
+### `loads` (existing, extended)
+Existing columns stay. New ones:
+| Column | Meaning |
+|---|---|
+| `customer_id` | The customer's account. Empty for walk-ins |
+| `request_status` | `pending`, `accepted`, `rejected` |
+| `reject_reason` | Shown to the customer |
+| `preferred_date`, `customer_note` | From the request |
+| `output_kg` | Weighed at Ready |
+| `disposition` | `keep`, `sell`, `split` |
+| `keep_percent` | 100 for keep, 0 for sell, X for split |
+| `buyout_status` | `none`, `requested`, `approved`, `declined` |
+| `price_per_kg` | Agreed buyout price |
+| `payout_done_at` | When the net payout was handed over |
+
+Who: customers read and create **their own** rows only, and may change only
+the disposition of their own Ready job; staff read all; Operators, Monitors
+and the Chairperson change only the columns their role allows (see the table
+above); Auditors read only. `owner_id` stops being "who can see it" — roles
+decide that now.
 
 ## Login
-Yes — the data is customers' names and money, so it must be private.
-Supabase Auth, email and password.
-
-- **One login type: the Monitor.** The team creates the Monitor's account
-  once in the Supabase dashboard, and public sign-ups are switched off.
-  Even if someone did get an account, RLS means they would see only their
-  own (empty) list.
+Supabase Auth, email and password. **Public sign-ups turn back ON** so
+customers can join. Every new account is a Customer; nobody can promote
+themselves. The first Chairperson is set once by hand in Supabase.
 
 ## Done for the demo
-On the **live URL**, on a phone:
-- [ ] Visiting the app while signed out shows only the sign-in screen.
-- [ ] The Monitor signs in.
-- [ ] The Monitor logs a Package Deal load; it appears at the top of the
-      list at Harvesting / Not paid.
-- [ ] The Monitor taps it through Harvesting → Drying → Milling → Ready,
-      and back one step once.
-- [ ] A Drying only load never shows Harvesting or Milling.
-- [ ] The Monitor stores a Ready load; the list shows "Expires in 30 days"
-      for rice (or about 90 days for palay).
-- [ ] The Monitor marks a load paid with an amount; the list shows Paid.
-- [ ] The Monitor deletes a test load.
-- [ ] Refreshing the page keeps everything (it is really saved).
-- [ ] The Monitor signs out and the list is no longer visible.
-- [ ] Supabase Table Editor shows no "RLS disabled" warning on `loads`.
+On the live URL, with three phones or browser windows:
+- [ ] A new customer signs up and requests a Package Deal.
+- [ ] The Monitor sees it under Requests (a member's request listed first)
+      and accepts it; a second request is rejected with a reason the
+      customer can read.
+- [ ] The Operator moves the job to Ready and records the output weight; the
+      Operator has no payment or buyout buttons.
+- [ ] The customer sees Ready and the weight, and chooses keep 70% / sell 30%.
+- [ ] The Chairperson approves the buyout; both see the same net payout.
+- [ ] Kept rice is stored and shows "30 days left"; the warning appears at 14.
+- [ ] The Auditor sees everything and cannot change anything.
+- [ ] A customer cannot see another customer's job, even by typing its address.
+- [ ] Supabase shows RLS on for every table.
 
-## Out of scope
-Everything in `docs/LATER.md`, including: operator and customer logins,
-storage locations and capacity, a separate storage fee, storing between
-steps (for example dried palay waiting to be milled), reports, offline
-support, payment methods and receipts, automatic pricing, recording
-moisture, and editing a load's details after saving.
-
-## Assumptions to check
-Decided by recommendation, not yet confirmed by the team:
-- Storage only happens once the work is finished (at Ready), not between
-  steps.
-- "1 month" and "3 months" are calendar months from the day stored.
-- Any storage charge is included in the hand-typed agreed price.
-- Real evidence still missing from `docs/PROBLEM.md`: how many loads a
-  busy day has, and when a load, payment or stored grain last slipped
-  through. Ask the Monitor.
+## Out of scope (Phase 1)
+Many cooperatives and admin verification, SMS/push messages, an automatic
+daily job, storage bins, reports and charts, payment methods and receipts,
+grain grading — see `docs/LATER.md`.

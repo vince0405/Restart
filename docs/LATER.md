@@ -5,14 +5,20 @@ Good ideas that are not in the MVP.
 Parking something here is a decision, not a loss. It is how the MVP
 stays small enough to actually ship by Session 3.
 
-## Next up (the first thing to build after the MVP)
-- **Operator login**: operators move loads through the steps themselves,
-  instead of telling the Monitor
+## Phase 2 — from the flowchart's Admin lane
+- Many cooperatives: co-ops register, an Admin verifies and activates them,
+  customers search registered co-ops
+- Admin dashboard: global rules (lifeline days, warning days, farmgate
+  reference price) for every co-op
+- Audit log: who changed what and when, for the Auditor
+- Grain grading when evaluating a buyout; co-op cash ("liquidity") check
+
+## Phase 3 — from the flowchart's Background Monitor
+- SMS or push notifications (ready alert, 14-day warning, buyout result).
+  SMS costs money and is outside the pinned stack: ask the team first
+- An automatic daily check that archives claimed jobs
 
 ## Later
-- **Customer login**: farmers follow their own loads (must only ever see
-  their own)
-- Admin role
 - Storage locations and capacity (where in the warehouse, how full)
 - Storing between steps (e.g. dried palay waiting to be milled)
 - A separate storage fee (for now it is part of the agreed price)

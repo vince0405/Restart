@@ -8,9 +8,9 @@ fill in. Don't invent it, and don't skip it.
 
 ### 1. The person (~45s)
 
-This is about my mother. She runs our family's rice mill. Farmers bring in
-their palay, which is unhusked rice, and she is the one who has to watch
-every single load. From the moment it arrives, through drying and milling,
+This is about my mother. She is the chairperson of a farmers' cooperative,
+and the co-op owns a rice mill. Farmers bring in their palay, which is
+unhusked rice, and she is the one who has to watch every single load. From the moment it arrives, through drying and milling,
 until the customer pays and takes their rice home.
 
 I've watched her do it. [One real moment you saw. For example: the evening

@@ -1,7 +1,8 @@
 # RPS1
 
 ## Who
-My mother — the owner-operator of our family's rice mill.
+My mother — the chairperson of the farmers' cooperative that owns the rice
+mill. She is the one who monitors the mill's operations for the co-op.
 
 ## The struggle
 She spends extra time and money just keeping track of every load: which
@@ -15,22 +16,29 @@ monitor, she flips pages, asks around, and reconciles by hand — which is the
 time and money the mill loses.
 
 ## The MVP
-A one-user app for the Monitor: log a load (customer, sacks, kilos, one of
-four services, and the agreed price typed by hand), tap it through only the
-steps its service has, store finished palay or rice with a warning before it
-expires (palay 3 months, rice 1 month), and mark it paid. Needs a login so
-customer data stays private.
+An app for Batad Multipurpose Cooperative's rice mill that follows the team's
+user-flow chart. Customers (members and non-members) request drying, milling
+or a Package Deal; co-op staff accept or reject requests, run each job
+through only the steps its service has, weigh the finished batch, and keep
+stored grain from expiring (rice 30 days, palay 3 months, warning at 14 days
+left). The customer chooses to keep, sell or split the grain; the co-op can
+buy it at a price per kg, minus processing fees. Five roles, each seeing only
+what it should: Customer, Operator, Monitor, Chairperson, Auditor.
+
+Team decision (2026-10-15): the team chose to go beyond the workshop's "one
+type of user" rule to follow the flowchart, knowing it is a larger build.
 
 ## How we'll know it worked
-Demo: log a Package Deal load, tap it Harvesting → Drying → Milling → Ready,
-store it and see its expiry date, then mark it paid — on her phone.
-My mother tries it before Session 3; if she'd use it instead of the notebook,
-it works.
+Demo: a customer requests a Package Deal on one phone; the Monitor accepts it
+on another; the Operator taps it Harvesting → Drying → Milling → Ready and
+weighs it; the customer chooses "keep 70%, sell 30%"; the Chairperson
+approves the purchase and the app shows the net payout. My mother and at
+least one operator try it before Session 3.
 
 ## Out of scope
-Operator and customer logins (the planned next step), storage locations and
-capacity, a separate storage fee, reports, offline sync, payment methods
-(cash/online/card/e-wallet), automatic pricing.
+Many cooperatives and the admin who verifies them, SMS or push messages,
+storage bins and capacity, reports, offline sync, payment methods and
+receipts — see `docs/LATER.md`.
 
 ## Still to find out
 How many loads arrive on a busy day, and when a load, a payment or stored
@@ -44,13 +52,30 @@ still needs.
 - **Drying**: reducing palay moisture to a safe level.
 - **Milling**: turning palay into rice.
 - **Sack**: 50 kg unit.
-- **Load**: one customer's job that moves through the steps of its service.
-- **Monitor**: the one person who watches every load at the mill. The only
-  user of the MVP.
-- **Operator**: mill staff who do the harvesting, drying and milling. Not a
-  user in the MVP.
+- **Load / job**: one customer's batch that moves through the steps of its
+  service.
+- **Cooperative / co-op**: Batad Multipurpose Cooperative, which owns the
+  mill. The only co-op in the MVP.
+- **Member**: a farmer who belongs to the co-op. Members' requests are
+  listed first.
+- **Customer**: anyone who requests a service, member or not.
+- **Operator**: co-op staff who do the harvesting, drying, milling and
+  weighing.
+- **Monitor**: co-op staff in charge of monitoring every job, accepting
+  requests and recording payments.
+- **Chairperson**: head of the co-op. Everything the Monitor can do, plus
+  approving buyouts, managing people and settings.
+- **Auditor**: checks the co-op's records. Can see everything, change
+  nothing.
+- **Request**: a customer's ask for a service. Becomes a job once accepted.
+- **Disposition**: what the customer does with finished grain — keep 100%,
+  sell 100% to the co-op, or split (keep X%, sell the rest).
+- **Buyout**: the co-op buying the customer's grain at a price per kg, minus
+  processing fees. The farmgate reference price pre-fills the price.
 - **Service**: what the customer paid for — Package Deal, Harvesting +
   Drying, Drying only, or Milling only. It decides the load's steps.
 - **Ready**: the work is finished and the grain is waiting for the customer.
 - **Stored**: finished palay or rice kept at the mill for the customer.
-- **Expiry**: stored palay keeps 3 months; stored rice keeps 1 month.
+- **Expiry (lifeline)**: kept rice lasts 30 days, stored palay 3 months; a
+  warning shows at 14 days left.
+- **Output weight**: the weight of the finished batch, recorded at Ready.
