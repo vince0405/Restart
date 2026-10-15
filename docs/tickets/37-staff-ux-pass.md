@@ -20,7 +20,7 @@
 - [x] Storage: the co-op's own rice and palay supply — goes up with
       approved buyouts (and palay harvest shares), staff add or take out
       stock by hand, low-supply warning at a level the Chairperson sets
-- [ ] Job screen: "Record a payment" shows once the rice is finished
+- [x] Job screen: "Record a payment" shows once the rice is finished
       (Ready and after); before that, a "Customer wants to pay early"
       button opens it
 - [x] Settings: a note that forgotten passwords are reset by the

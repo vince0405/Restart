@@ -182,6 +182,9 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
   // The reference price the harvest count starts from, and since when (Ticket 28).
   const [reference] = countStep === "harvesting" ? await getPriceHistory() : [];
   const canStore = worker && atReady && !stored && weighed && chosen && money.keptKg > 0;
+  // The rice (or palay) is finished from Ready on: that is when payment is
+  // usually taken. Before that, staff can still take an early payment.
+  const riceFinished = ["Ready", "Stored", "Released"].includes(load.stage);
 
   const product = productFor(load.service_type);
   // The fee parts the price list has worked out so far (supabase/sql/009).
@@ -971,7 +974,8 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
               )}
             </div>
 
-            {manager && money.stillOwes > 0 && (
+            {manager && money.stillOwes > 0 &&
+              (riceFinished ? (
               <form action={recordPayment} className="mt-4 flex flex-col gap-3 border-t border-line pt-4">
                 <input type="hidden" name="id" value={load.id} />
                 <h3 className="text-sm font-extrabold text-ink">Record a payment</h3>
@@ -1012,7 +1016,59 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                   Record payment
                 </SubmitButton>
               </form>
-            )}
+              ) : (
+                <details className="group/early mt-4 border-t border-line pt-4">
+                  <summary className="press flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-xl border border-field bg-card px-4 text-sm font-bold text-ink hover:bg-secondary [&::-webkit-details-marker]:hidden">
+                    <HandCoins className="size-4" aria-hidden />
+                    <span className="group-open/early:hidden">Customer wants to pay early</span>
+                    <span className="hidden group-open/early:inline">Close early payment</span>
+                  </summary>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Payment is usually taken when the {product} is ready. The customer can pay part
+                    or all of the fee now; the rest is still owed.
+                  </p>
+              <form action={recordPayment} className="mt-3 flex flex-col gap-3">
+                <input type="hidden" name="id" value={load.id} />
+                <h3 className="text-sm font-extrabold text-ink">Record a payment</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="pay_amount">Amount (₱)</Label>
+                    <Input
+                      id="pay_amount"
+                      name="amount"
+                      type="number"
+                      inputMode="decimal"
+                      min={0.01}
+                      step={0.01}
+                      defaultValue={money.stillOwes}
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="pay_on">Paid on</Label>
+                    <Input id="pay_on" name="paid_on" type="date" max={manilaToday()} defaultValue={manilaToday()} required />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="pay_method">Method</Label>
+                  <Select id="pay_method" name="method" defaultValue="cash">
+                    {PAYMENT_METHODS.map((m) => (
+                      <option key={m} value={m}>
+                        {PAYMENT_METHOD_LABELS[m]}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="pay_ref">Reference number (optional)</Label>
+                  <Input id="pay_ref" name="reference" maxLength={100} placeholder="e.g. GCash ref. no." />
+                </div>
+                <SubmitButton size="lg" className="w-full">
+                  Record payment
+                </SubmitButton>
+              </form>
+                </details>
+              ))}
 
             {manager && money.stillOwes > 0 && (
               <details className="mt-4 border-t border-line pt-4">
