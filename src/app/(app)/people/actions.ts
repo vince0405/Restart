@@ -61,6 +61,10 @@ export async function updateSettings(formData: FormData) {
 
   const town = String(formData.get("town") ?? "").trim().slice(0, 120);
 
+  // Bookings per day (Ticket 41): a whole number from 1 to 50.
+  const perDay = Number(String(formData.get("bookings_per_day") ?? "").trim());
+  if (!Number.isInteger(perDay) || perDay < 1 || perDay > 50) redirect("/settings?error=per_day");
+
   // Low-supply levels (Ticket 37): kg of 0 or more.
   const lowRice = Number(String(formData.get("low_rice_kg") ?? "").trim());
   const lowPalay = Number(String(formData.get("low_palay_kg") ?? "").trim());
@@ -74,6 +78,7 @@ export async function updateSettings(formData: FormData) {
       farmgate_price_per_kg: price.value,
       name: coopName,
       town,
+      bookings_per_day: perDay,
       low_rice_kg: lowRice,
       low_palay_kg: lowPalay,
       cancel_window_hours: windowHours,

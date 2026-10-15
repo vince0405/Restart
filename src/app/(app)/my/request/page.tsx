@@ -18,12 +18,20 @@ import { formatPhMobile } from "@/lib/phone";
 import { requestService } from "../actions";
 
 export default async function RequestServicePage({ searchParams }: PageProps<"/my/request">) {
-  const { profile } = await requireRole((r) => !isStaff(r));
+  const { profile, supabase } = await requireRole((r) => !isStaff(r));
   const { coop_name } = await getSettings();
   const { error } = await searchParams;
 
   // Earliest date someone can ask for: today, in the Philippines.
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
+
+  // Days already full in the next 60 days (Ticket 41). Dates only: the
+  // database never tells a customer who booked them.
+  const until = new Date(Date.parse(`${today}T00:00:00Z`) + 60 * 86_400_000).toISOString().slice(0, 10);
+  const { data: fullRows } = await supabase.rpc("full_days", { from_date: today, to_date: until });
+  const fullDays = ((fullRows ?? []) as string[]).map((d) => String(d));
+  const dayLabel = (d: string) =>
+    new Date(`${d}T00:00:00Z`).toLocaleDateString("en-PH", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" });
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -98,7 +106,29 @@ export default async function RequestServicePage({ searchParams }: PageProps<"/m
         />
         <PalayCountFields invalidField={errorField(error)} />
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Field label="Preferred date" name="preferred_date" type="date" min={today} />
+          <div>
+            <Field
+              label="Preferred date"
+              name="preferred_date"
+              type="date"
+              min={today}
+              invalid={errorField(error) === "preferred_date"}
+            />
+            {fullDays.length > 0 ? (
+              <div className="mt-2 rounded-xl bg-gold-soft p-3 text-xs text-ink">
+                <p className="font-bold">Already booked — please pick another day:</p>
+                <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                  {fullDays.map((d) => (
+                    <li key={d} className="rounded-full bg-card px-2 py-0.5 font-semibold tabular-nums line-through decoration-danger/70">
+                      {dayLabel(d)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground">Every day in the next two months is open.</p>
+            )}
+          </div>
           <Field
             label="Note for the co-op (optional)"
             name="customer_note"

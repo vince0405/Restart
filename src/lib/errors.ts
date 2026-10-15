@@ -23,6 +23,8 @@ export const ERROR_MESSAGES = {
   email_invalid: "That email address doesn't look right.",
   email_taken: "That email already has an account. Find it in the list below and change its role there.",
   phone_invalid: "Enter a Philippine mobile number, like 0917 123 4567.",
+  day_booked: "That day is already booked. Please choose another day.",
+  day_past: "Choose today or a later day.",
   contact_name_required: "Enter the name the co-op should ask for (up to 120 characters).",
   contact_phone_invalid: "Enter a mobile number the co-op can call, like 0917 123 4567.",
   phone_taken: "That mobile number already has an account. Find it in the list below and change its role there.",
@@ -77,6 +79,8 @@ export function codeForDbError(error: { message?: string } | null): ErrorCode {
   if (m.includes("dryer load is full")) return "dryer_full";
   if (m.includes("can only be recorded on accepted jobs")) return "not_allowed";
   if (m.includes("auditor can view but not change")) return "not_allowed";
+  if (m.includes("day is already booked")) return "day_booked";
+  if (m.includes("Choose today or a later day")) return "day_past";
   if (m.includes("dryer load only while drying") || m.includes("before adding the job to a dryer load")) {
     return "dryer_not_drying";
   }
@@ -96,6 +100,8 @@ const ERROR_FIELDS: Partial<Record<ErrorCode, string>> = {
   address_required: "harvest_address",
   contact_name_required: "customer_name",
   contact_phone_invalid: "contact_phone",
+  day_booked: "preferred_date",
+  day_past: "preferred_date",
 };
 
 /** Which field (by name) the error code in the address is about, if any. */

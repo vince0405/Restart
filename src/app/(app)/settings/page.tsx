@@ -15,6 +15,7 @@ const MESSAGES: Record<string, string> = {
   rates:
     "Check the price list: the harvest share is 0–100%, fees are 0 or more, and a dryer load holds at least 1 whole sack.",
   low_supply: "Low-supply levels must be 0 kg or more.",
+  per_day: "Bookings per day must be a whole number from 1 to 50.",
   save: "Could not save. Only the Chairperson can change settings.",
 };
 
@@ -108,6 +109,25 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           <RateField name="low_rice_kg" label="Milled rice (kg)" value={settings.low_supply.rice} step={0.01} />
           <RateField name="low_palay_kg" label="Palay (kg)" value={settings.low_supply.palay} step={0.01} />
         </fieldset>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="bookings_per_day">Bookings per day</Label>
+          <Input
+            id="bookings_per_day"
+            name="bookings_per_day"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={50}
+            step={1}
+            defaultValue={settings.bookings_per_day}
+            required
+          />
+          <p className="text-xs text-muted-foreground">
+            How many service requests one day can take. When a day has this many waiting or
+            accepted requests, customers can&rsquo;t pick it. From 1 to 50.
+          </p>
+        </div>
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="cancel_window_hours">Cancel window (hours)</Label>

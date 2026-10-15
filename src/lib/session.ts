@@ -28,6 +28,8 @@ export type Settings = {
   rates: Rates;
   /** Warn when the co-op's own supply is at or below these kg (Ticket 37). */
   low_supply: { rice: number; palay: number };
+  /** How many requests one day can take before it is full (Ticket 41). */
+  bookings_per_day: number;
 };
 
 /**
@@ -114,6 +116,7 @@ export const getSettings = cache(async (): Promise<Settings> => {
     },
     warning_days: data?.warning_days ?? 14,
     cancel_window_hours: data?.cancel_window_hours ?? 2,
+    bookings_per_day: Number(data?.bookings_per_day ?? 1),
     low_supply: {
       rice: Number(data?.low_rice_kg ?? 100),
       palay: Number(data?.low_palay_kg ?? 500),
