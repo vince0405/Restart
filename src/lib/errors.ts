@@ -23,6 +23,8 @@ export const ERROR_MESSAGES = {
   email_invalid: "That email address doesn't look right.",
   email_taken: "That email already has an account. Find it in the list below and change its role there.",
   phone_invalid: "Enter a Philippine mobile number, like 0917 123 4567.",
+  contact_name_required: "Enter the name the co-op should ask for (up to 120 characters).",
+  contact_phone_invalid: "Enter a mobile number the co-op can call, like 0917 123 4567.",
   phone_taken: "That mobile number already has an account. Find it in the list below and change its role there.",
   password_short: "The password must be at least 8 characters.",
   password_mismatch: "The two passwords don't match.",
@@ -92,6 +94,8 @@ const ERROR_FIELDS: Partial<Record<ErrorCode, string>> = {
   service_invalid: "service_type",
   price_invalid: "agreed_price",
   address_required: "harvest_address",
+  contact_name_required: "customer_name",
+  contact_phone_invalid: "contact_phone",
 };
 
 /** Which field (by name) the error code in the address is about, if any. */

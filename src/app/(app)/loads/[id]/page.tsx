@@ -43,6 +43,7 @@ import type { AuditEntry } from "@/lib/audit";
 import { AuditList } from "@/components/rps/audit-list";
 import { priceListTotal } from "@/lib/pricing";
 import { getPriceHistory, getSettings, requireRole } from "@/lib/session";
+import { formatPhMobile } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 import {
   approveBuyout,
@@ -199,7 +200,8 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
   const walkIn = !load.customer_id;
   // The service can only change before work starts (Ticket 35, supabase/sql/014).
   const atFirstStep = load.stage === firstStage(load.service_type);
-  const name = load.customer?.full_name || load.customer_name;
+  // The name given with the request first (Ticket 40), then the account's.
+  const name = load.customer_name || load.customer?.full_name || "";
   const initials = name
     .split(/\s+/)
     .map((w) => w[0])
@@ -264,7 +266,16 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
             )}
           </div>
           <div className="text-xs text-muted-foreground">
-            {walkIn ? "Walk-in (no account)" : load.customer?.phone || "Has an account"} ·{" "}
+            {load.contact_phone || load.customer?.phone ? (
+              <a href={`tel:${load.contact_phone || load.customer?.phone}`} className="font-bold text-brand">
+                {formatPhMobile(load.contact_phone || load.customer?.phone)}
+              </a>
+            ) : walkIn ? (
+              "Walk-in (no account)"
+            ) : (
+              "Has an account"
+            )}{" "}
+            ·{" "}
             {describeCount(load)}
           </div>
         </div>

@@ -7,6 +7,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { ErrorNote } from "@/components/rps/error-note";
 import { jobRef, needsHarvestAddress, isServiceType } from "@/lib/loads";
 import { feeAtIntake } from "@/lib/pricing";
+import { formatPhMobile } from "@/lib/phone";
 import { canManage } from "@/lib/roles";
 import { getSettings, requireRole } from "@/lib/session";
 import { acceptRequest, rejectRequest } from "../loads/actions";
@@ -21,6 +22,7 @@ type Request = {
   id: string;
   created_at: string;
   customer_name: string;
+  contact_phone: string | null;
   sacks: number;
   kilos: number;
   service_type: string;
@@ -40,7 +42,7 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
   const { data, error: loadError } = await supabase
     .from("loads")
     .select(
-      "id, created_at, customer_name, sacks, kilos, service_type, preferred_date, customer_note, harvest_address, customer:profiles!loads_customer_id_fkey(full_name, phone, is_member)",
+      "id, created_at, customer_name, contact_phone, sacks, kilos, service_type, preferred_date, customer_note, harvest_address, customer:profiles!loads_customer_id_fkey(full_name, phone, is_member)",
     )
     .eq("request_status", "pending")
     .order("created_at", { ascending: true });
@@ -76,7 +78,7 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
                   <div className="text-xs font-bold text-brand">#{jobRef(r.id)}</div>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <span className="truncate font-extrabold text-ink">
-                      {r.customer?.full_name || r.customer_name}
+                      {r.customer_name || r.customer?.full_name}
                     </span>
                     {r.customer?.is_member && (
                       <Badge tone="green">
@@ -85,10 +87,16 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
                       </Badge>
                     )}
                   </div>
-                  {r.customer?.phone && (
-                    <a href={`tel:${r.customer.phone}`} className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                  {r.customer?.full_name && r.customer.full_name !== r.customer_name && (
+                    <div className="text-xs text-muted-foreground">Account: {r.customer.full_name}</div>
+                  )}
+                  {(r.contact_phone || r.customer?.phone) && (
+                    <a
+                      href={`tel:${r.contact_phone || r.customer?.phone}`}
+                      className="mt-1 flex min-h-11 items-center gap-1 text-xs font-bold text-brand"
+                    >
                       <Phone className="size-3.5" aria-hidden />
-                      {r.customer.phone}
+                      {formatPhMobile(r.contact_phone || r.customer?.phone)}
                     </a>
                   )}
                 </div>

@@ -14,6 +14,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { ErrorNote } from "@/components/rps/error-note";
 import { isStaff } from "@/lib/roles";
 import { getSettings, requireRole } from "@/lib/session";
+import { formatPhMobile } from "@/lib/phone";
 import { requestService } from "../actions";
 
 export default async function RequestServicePage({ searchParams }: PageProps<"/my/request">) {
@@ -51,6 +52,37 @@ export default async function RequestServicePage({ searchParams }: PageProps<"/m
                 : "Open to members and non-members. Members are served first."}
             </div>
           </div>
+        </div>
+
+        <div className="my-8 border-t border-line" />
+
+        <SectionHeading
+          title="Your contact details"
+          text="Who the co-op should ask for, and a number they can call or text about this request."
+        />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            label="Name"
+            name="customer_name"
+            invalid={errorField(error) === "customer_name"}
+            type="text"
+            autoComplete="name"
+            maxLength={120}
+            defaultValue={profile.full_name}
+            required
+          />
+          <Field
+            label="Mobile number"
+            name="contact_phone"
+            invalid={errorField(error) === "contact_phone"}
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            maxLength={30}
+            placeholder="0917 123 4567"
+            defaultValue={formatPhMobile(profile.phone)}
+            required
+          />
         </div>
 
         <div className="my-8 border-t border-line" />

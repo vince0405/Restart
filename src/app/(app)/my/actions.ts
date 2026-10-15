@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { codeForDbError } from "@/lib/errors";
 import { firstStage, parseDisposition, parseHarvestAddress, parseLoadInput } from "@/lib/loads";
+import { normalizePhMobile } from "@/lib/phone";
 import { isStaff } from "@/lib/roles";
 import { requireRole } from "@/lib/session";
 
@@ -17,10 +18,17 @@ const isCustomer = (r: Parameters<typeof isStaff>[0]) => !isStaff(r);
  * create an accepted job or one for someone else.
  */
 export async function requestService(formData: FormData) {
-  const { supabase, user, profile } = await requireRole(isCustomer);
+  const { supabase, user } = await requireRole(isCustomer);
+
+  // Who the co-op should ask for, and a number they can call (Ticket 40).
+  // Both are required; the form fills them in from the account.
+  const contactName = String(formData.get("customer_name") ?? "").trim();
+  if (!contactName || contactName.length > 120) redirect("/my/request?error=contact_name_required");
+  const contactPhone = normalizePhMobile(formData.get("contact_phone"));
+  if (!contactPhone) redirect("/my/request?error=contact_phone_invalid");
 
   const parsed = parseLoadInput({
-    customer_name: profile.full_name.slice(0, 120) || formData.get("customer_name"),
+    customer_name: contactName,
     sacks: formData.get("sacks"),
     kilos: formData.get("kilos"),
     service_type: formData.get("service_type"),
@@ -42,6 +50,7 @@ export async function requestService(formData: FormData) {
     preferred_date: /^\d{4}-\d{2}-\d{2}$/.test(preferred) ? preferred : null,
     customer_note: note || null,
     harvest_address: address.value,
+    contact_phone: contactPhone,
   });
   if (error) redirect(`/my/request?error=${codeForDbError(error)}`);
 

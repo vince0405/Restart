@@ -220,6 +220,8 @@ export type LoadRow = {
   harvest_kept_kg?: number | null;
   /** The shared dryer load this job dried in, if any (Ticket 29). */
   dryer_load_id?: string | null;
+  /** The mobile number the customer gave with their request (Ticket 40). */
+  contact_phone?: string | null;
 };
 
 /** Days left for a stored load, or null if it is not in storage. */
