@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { Notice } from "@/components/rps/notice";
-import { BadgeCheck, UserPlus } from "lucide-react";
+import { BadgeCheck, Search, UserPlus, Users } from "lucide-react";
+import { EmptyState } from "@/components/rps/empty-state";
+import { FilterTabs, Pagination, SearchBox } from "@/components/rps/list-controls";
+import { buttonVariants } from "@/components/ui/button";
+import { listHref, pageInfo, parsePage, parseSearch } from "@/lib/list";
+import { matchesPerson } from "@/lib/people";
 import { Badge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -9,7 +14,6 @@ import { Label } from "@/components/ui/label";
 import { ErrorNote } from "@/components/rps/error-note";
 import { canManagePeople, isRole, ROLE_LABELS, ROLES } from "@/lib/roles";
 import { formatPhMobile } from "@/lib/phone";
-import { cn } from "@/lib/utils";
 import { requireRole } from "@/lib/session";
 import { addPerson, updatePerson } from "./actions";
 
@@ -23,19 +27,31 @@ type Person = {
   pay_later: boolean;
 };
 
+const PER_PAGE = 15;
+
 // Chairperson only: add people, and set everyone's role and member flag.
 export default async function PeoplePage({ searchParams }: PageProps<"/people">) {
   const { supabase, user } = await requireRole(canManagePeople);
-  const { error, saved, added, role: roleFilter } = await searchParams;
+  const { error, saved, added, role: roleFilter, q: rawQ, page: rawPage } = await searchParams;
   const filter = isRole(roleFilter) ? roleFilter : null;
+  const q = parseSearch(rawQ);
 
   const { data } = await supabase
     .from("profiles")
     .select("id, created_at, full_name, phone, role, is_member, pay_later")
     .order("created_at", { ascending: false });
   const everyone = (data ?? []) as Person[];
-  const people = filter ? everyone.filter((p) => p.role === filter) : everyone;
-  const count = (r: string) => everyone.filter((p) => p.role === r).length;
+  // RLS only returns the Chairperson's own co-op, so the list stays small:
+  // search, filter and pages are worked out here.
+  const searched = everyone.filter((p) => matchesPerson(p, q));
+  const matching = filter ? searched.filter((p) => p.role === filter) : searched;
+  const count = (r: string) => searched.filter((p) => p.role === r).length;
+  const info = pageInfo(parsePage(rawPage), PER_PAGE, matching.length);
+  const people = matching.slice((info.page - 1) * PER_PAGE, info.page * PER_PAGE);
+  const href = (changes: Record<string, string | number>) =>
+    listHref("/people", { q, role: filter ?? "", page: info.page, ...changes });
+  // Keep the add form open after a problem adding someone.
+  const addProblem = typeof error === "string" && !saved;
 
   return (
     <div>
@@ -54,19 +70,23 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
       )}
       <ErrorNote code={error} />
 
-      <section className="mb-6 rounded-2xl border border-line bg-card p-5 shadow-card md:p-6">
-        <div className="mb-4 flex items-center gap-3">
+      <details open={addProblem} className="group/add mb-6 rounded-2xl border border-line bg-card shadow-card">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 p-4 md:p-5 [&::-webkit-details-marker]:hidden">
           <div className="grid size-10 place-items-center rounded-xl bg-brand-soft text-brand">
             <UserPlus className="size-5" aria-hidden />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <h2 className="font-extrabold text-ink">Add a person</h2>
             <p className="text-xs text-muted-foreground">
               Creates their account with the role you choose. They can sign in straight away.
             </p>
           </div>
-        </div>
-        <form action={addPerson} className="grid gap-4 md:grid-cols-2">
+          <span className="text-sm font-bold text-brand">
+            <span className="group-open/add:hidden">Open</span>
+            <span className="hidden group-open/add:inline">Close</span>
+          </span>
+        </summary>
+        <form action={addPerson} className="grid gap-4 border-t border-line p-4 md:grid-cols-2 md:p-5">
           <div className="flex flex-col gap-2">
             <Label htmlFor="add-name">Full name</Label>
             <Input id="add-name" name="full_name" maxLength={120} autoComplete="off" required />
@@ -124,37 +144,52 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
             Create account
           </SubmitButton>
         </form>
-      </section>
+      </details>
 
-      <div className="mb-3 flex flex-wrap gap-2">
-        <Link
-          href="/people"
-          className={cn(
-            "rounded-full border px-3 py-1.5 text-xs font-bold",
-            !filter ? "border-brand bg-brand-soft text-brand" : "border-line bg-card text-muted-foreground",
-          )}
-        >
-          Everyone ({everyone.length})
-        </Link>
-        {ROLES.map((r) => (
-          <Link
-            key={r}
-            href={`/people?role=${r}`}
-            className={cn(
-              "rounded-full border px-3 py-1.5 text-xs font-bold",
-              filter === r ? "border-brand bg-brand-soft text-brand" : "border-line bg-card text-muted-foreground",
-            )}
-          >
-            {ROLE_LABELS[r]} ({count(r)})
-          </Link>
-        ))}
-      </div>
-
-      <section className="rounded-2xl border border-line bg-card p-2 shadow-card md:p-3">
+      <section className="rounded-2xl border border-line bg-card shadow-card">
+        <div className="flex flex-col gap-3 border-b border-line p-4 sm:p-5">
+          <SearchBox
+            action="/people"
+            q={q}
+            placeholder="Search by name or mobile number"
+            label="Search people by name or mobile number"
+            keep={filter ? { role: filter } : {}}
+          />
+          <FilterTabs
+            label="Role"
+            tabs={[
+              { label: "Everyone", href: href({ role: "", page: 1 }), active: !filter, count: searched.length },
+              ...ROLES.map((r) => ({
+                label: ROLE_LABELS[r],
+                href: href({ role: r, page: 1 }),
+                active: filter === r,
+                count: count(r),
+              })),
+            ]}
+          />
+        </div>
         {people.length === 0 && (
-          <p className="px-3 py-6 text-sm text-muted-foreground">Nobody with this role yet.</p>
+          <div className="p-4 sm:p-5">
+            {q || filter ? (
+              <EmptyState
+                icon={Search}
+                title="Nobody matches"
+                action={
+                  <Link href="/people" className={buttonVariants({ variant: "outline" })}>
+                    Clear search
+                  </Link>
+                }
+              >
+                Try another name, number or role.
+              </EmptyState>
+            ) : (
+              <EmptyState icon={Users} title="Nobody here yet">
+                Add your staff and members above.
+              </EmptyState>
+            )}
+          </div>
         )}
-        <ul>
+        <ul className="p-2 md:p-3">
           {people.map((p) => (
             <li key={p.id} className="border-b border-line/70 last:border-0">
               <form
@@ -220,6 +255,9 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
             </li>
           ))}
         </ul>
+        {matching.length > 0 && (
+          <Pagination {...info} total={matching.length} noun={["person", "people"]} hrefFor={(page) => href({ page })} />
+        )}
       </section>
     </div>
   );
