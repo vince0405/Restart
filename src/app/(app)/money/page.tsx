@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Badge, PaidBadge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
+import { PriceHistory } from "@/components/rps/price-history";
 import { FeesByMonthChart, JobsByServiceChart } from "@/components/rps/money-charts";
 import { StatCard } from "@/components/rps/stat-card";
 import { ErrorNote } from "@/components/rps/error-note";
@@ -94,6 +95,8 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
           <StatCard key={c.label} {...c} />
         ))}
       </div>
+
+      <PriceHistory className="mt-4 bg-card" />
 
       <section aria-labelledby="stats" className="mt-8">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">

@@ -66,6 +66,23 @@ export async function requireRole(allowed: (r: Role) => boolean) {
   return session;
 }
 
+export type PriceChange = { price_per_kg: number; set_at: string; set_by: string | null };
+
+/**
+ * Past farmgate reference prices, newest first (Ticket 28). The database
+ * adds a line each time the Chairperson changes the price (supabase/sql/013).
+ * Empty if 013 has not been run, or for a customer (RLS).
+ */
+export const getPriceHistory = cache(async (): Promise<PriceChange[]> => {
+  const { supabase } = await getSession();
+  const { data } = await supabase
+    .from("price_history")
+    .select("price_per_kg, set_at, set_by")
+    .order("set_at", { ascending: false })
+    .limit(50);
+  return (data ?? []).map((p) => ({ ...p, price_per_kg: Number(p.price_per_kg) }));
+});
+
 /** The co-op's settings row, with safe defaults if it cannot be read. */
 export const getSettings = cache(async (): Promise<Settings> => {
   const { supabase } = await getSession();

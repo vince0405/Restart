@@ -33,7 +33,7 @@ import { canApproveBuyout, canManage, canSeeHistory, canWork, isStaff } from "@/
 import type { AuditEntry } from "@/lib/audit";
 import { AuditList } from "@/components/rps/audit-list";
 import { priceListTotal } from "@/lib/pricing";
-import { getSettings, requireRole } from "@/lib/session";
+import { getPriceHistory, getSettings, requireRole } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import {
   approveBuyout,
@@ -127,6 +127,8 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
     worker && !closed && next !== null && (!atReady || (weighed && chosen)) && !unpaidRelease;
   // After harvesting and after drying, moving on needs the new count.
   const countStep = countsAfter(load.stage);
+  // The reference price the harvest count starts from, and since when (Ticket 28).
+  const [reference] = countStep === "harvesting" ? await getPriceHistory() : [];
   const canStore = worker && atReady && !stored && weighed && chosen && money.keptKg > 0;
 
   const product = productFor(load.service_type);
@@ -293,6 +295,13 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                       defaultValue={load.market_price_per_kg ?? (settings.farmgate_price_per_kg || undefined)}
                       required
                     />
+                    {reference && (
+                      <p className="text-xs text-muted-foreground">
+                        Starts at the co-op&rsquo;s reference price, {peso.format(reference.price_per_kg)}{" "}
+                        (set {formatDate(new Date(reference.set_at))}). Change it if today&rsquo;s
+                        price is different.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

@@ -1,5 +1,6 @@
 import { PageTitle } from "@/components/rps/page-title";
 import { Notice } from "@/components/rps/notice";
+import { PriceHistory } from "@/components/rps/price-history";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,6 +59,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
             Pre-fills the market price at the harvest count and when you approve a buyout. You
             can still change it each time.
           </p>
+          <PriceHistory />
         </div>
 
         <fieldset className="flex flex-col gap-4 rounded-xl border border-line p-4">
