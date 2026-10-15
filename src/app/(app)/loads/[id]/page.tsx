@@ -220,7 +220,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
 
   return (
     <div>
-      <Breadcrumbs items={[{ label: "Jobs", href: "/loads" }, { label: `#${jobRef(load.id)}` }]} />
+      <Breadcrumbs items={[{ label: "Process", href: "/loads" }, { label: `#${jobRef(load.id)}` }]} />
 
       <PageTitle
         eyebrow="Job details"
@@ -240,10 +240,6 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
       />
 
       <ErrorNote code={error} />
-
-      {role === "auditor" && (
-        <Notice tone="info">Read-only: auditors can see everything but change nothing.</Notice>
-      )}
 
       {rejected && (
         <Notice tone="error" title="Request rejected">{load.reject_reason}</Notice>

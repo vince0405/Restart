@@ -56,11 +56,11 @@ function navFor(role: Role): NavItem[] {
     items.push({ label: "Requests", href: "/requests", icon: Inbox, mobile: true });
   }
   items.push(
-    { label: "Jobs", href: "/loads", icon: ClipboardList, mobile: true },
+    { label: "Process", href: "/loads", icon: ClipboardList, mobile: true },
     { label: "Storage", href: "/storage", icon: Warehouse, mobile: true },
   );
   if (canSeeMoney(role)) {
-    items.push({ label: "Money", href: "/money", icon: ReceiptText, mobile: false });
+    items.push({ label: "Statistics", href: "/money", icon: ReceiptText, mobile: false });
   }
   if (canSeeHistory(role)) {
     items.push({ label: "History", href: "/history", icon: History, mobile: false });
@@ -88,10 +88,10 @@ function titleFor(pathname: string) {
   if (pathname.startsWith("/my/")) return "My job";
   if (pathname === "/loads/new") return "New walk-in job";
   if (pathname.startsWith("/loads/")) return "Job details";
-  if (pathname.startsWith("/loads")) return "Jobs";
+  if (pathname.startsWith("/loads")) return "Process";
   if (pathname.startsWith("/requests")) return "Requests";
   if (pathname.startsWith("/storage")) return "Storage";
-  if (pathname.startsWith("/money")) return "Money";
+  if (pathname.startsWith("/money")) return "Statistics";
   if (pathname.startsWith("/people")) return "People";
   if (pathname.startsWith("/settings")) return "Settings";
   if (pathname.startsWith("/history")) return "History";

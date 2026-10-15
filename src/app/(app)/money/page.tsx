@@ -111,7 +111,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
     <div>
       <PageTitle
         eyebrow={role === "auditor" ? "Auditor · read-only" : "Records"}
-        title="Money"
+        title="Statistics"
         description="Fees, buyouts, payouts and the co-op's own stock, from every accepted job."
         action={m.buyoutsWaiting > 0 ? <Badge tone="amber">{m.buyoutsWaiting} buyout(s) waiting</Badge> : undefined}
       />

@@ -34,6 +34,11 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       <div className="lg:pl-64">
         <TopBar role={profile.role} />
         <main className="mx-auto max-w-screen-2xl px-4 pb-28 pt-6 md:px-8 lg:px-10 lg:pb-10 lg:pt-8">
+          {profile.role === "auditor" && (
+            <Notice tone="info" title="Read-only">
+              As the Auditor you can see everything in your co-op but change nothing.
+            </Notice>
+          )}
           {children}
         </main>
       </div>

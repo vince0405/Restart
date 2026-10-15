@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
-/** "Jobs › #RPS-AF8D1": where you are, and one tap back up. */
+/** "Process › #RPS-AF8D1": where you are, and one tap back up. */
 export function Breadcrumbs({ items }: { items: { label: string; href?: string }[] }) {
   return (
     <nav aria-label="Breadcrumb" className="mb-4">

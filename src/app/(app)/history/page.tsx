@@ -18,7 +18,7 @@ const PER_PAGE = 20;
 const WHAT = ["all", "jobs", "payments", "people", "settings"] as const;
 const WHAT_LABELS: Record<(typeof WHAT)[number], string> = {
   all: "Everything",
-  jobs: "Jobs",
+  jobs: "Process",
   payments: "Payments",
   people: "People",
   settings: "Co-op settings",

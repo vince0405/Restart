@@ -78,7 +78,7 @@ export default async function JobsPage({ searchParams }: PageProps<"/loads">) {
     <div>
       <PageTitle
         eyebrow="Job tracking"
-        title="Jobs"
+        title="Process"
         description="Every accepted job, newest first."
         action={
           canManage(role) && (

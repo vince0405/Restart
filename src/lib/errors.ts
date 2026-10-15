@@ -74,6 +74,7 @@ export function codeForDbError(error: { message?: string } | null): ErrorCode {
   if (m.includes("can only be changed before work starts")) return "service_locked";
   if (m.includes("dryer load is full")) return "dryer_full";
   if (m.includes("can only be recorded on accepted jobs")) return "not_allowed";
+  if (m.includes("auditor can view but not change")) return "not_allowed";
   if (m.includes("dryer load only while drying") || m.includes("before adding the job to a dryer load")) {
     return "dryer_not_drying";
   }
