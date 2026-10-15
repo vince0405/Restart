@@ -10,7 +10,7 @@ Maps" link; the customer sees it on their own job.
 **Status:** todo
 
 - [x] SQL 007 adds `harvest_address` (max 300 characters)
-- [ ] The team has run 007 in Supabase
+- [x] The team has run 007 in Supabase
 - [x] Required for harvesting services, ignored for drying / milling only
       (one tested function, `parseHarvestAddress`)
 - [x] Shown on Requests, the staff job page and the customer's job page

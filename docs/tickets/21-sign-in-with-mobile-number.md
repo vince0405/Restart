@@ -15,5 +15,5 @@ their email.
 - [x] Sign-in: one box for "Mobile number or email"
 - [x] Add a person: mobile number required, email optional
 - [x] The internal sign-in name (…@phone.rps1.invalid) is never shown
-- [ ] The team has run 007 in Supabase (adds `profiles.contact_email`)
+- [x] The team has run 007 in Supabase (adds `profiles.contact_email`)
 - [ ] Works on the live URL — on a phone
