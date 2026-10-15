@@ -1,5 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
+
+// Ticket 02: prove the live site can reach the database. Signed out, RLS
+// should hide every row, so the expected answer is "0 loads visible".
+async function getConnectionStatus() {
+  try {
+    const supabase = await createClient();
+    // head: true asks only for the count, not the rows themselves.
+    const { count, error } = await supabase
+      .from("loads")
+      .select("*", { count: "exact", head: true });
+    if (error) return `Not connected: ${error.message}`;
+    return `Connected: ${count ?? 0} loads visible`;
+  } catch (e) {
+    return `Not connected: ${e instanceof Error ? e.message : String(e)}`;
+  }
+}
 
 // This is the starter screen. Once Ticket 01 is done and you can see this
 // page on your phone, delete everything here and build your own app.
@@ -32,7 +49,9 @@ const steps = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const connectionStatus = await getConnectionStatus();
+
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-4 py-12 sm:py-20">
       <header className="flex flex-col gap-3">
@@ -48,6 +67,15 @@ export default function Home() {
           something real, not something on your laptop.
         </p>
       </header>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Database</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm">{connectionStatus}</p>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
