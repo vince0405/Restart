@@ -15,7 +15,7 @@ database enforces who can see which jobs.
 - [x] Nobody can change their own role or member flag, even through the API
 - [x] `loads` RLS rewritten: staff and auditors see all jobs, customers only
       their own; existing jobs stay visible to staff
-- [ ] Public sign-ups switched back on; a Sign up screen with name, phone,
+- [x] Public sign-ups switched back on; a Sign up screen with name, phone,
       email, password
 - [x] The team's chairperson account is set to `chairperson` by hand
 - [x] Customers land on "My jobs"; staff land on the dashboard; the sidebar
