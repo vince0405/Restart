@@ -59,16 +59,19 @@ const FIELD_LABELS: Record<string, string> = {
   harvest_fee_in: "Harvest share paid in",
   harvest_kept_kg: "Palay kept as harvest share (kg)",
   dryer_load_id: "Dryer load",
+  name: "Name",
+  town: "Town",
 };
 
 /** Columns that only repeat who/when, which the entry already shows. */
-const HIDDEN = new Set(["created_at", "owner_id", "customer_id", "cancelled_by", "cancelled_at"]);
+const HIDDEN = new Set(["created_at", "owner_id", "customer_id", "cancelled_by", "cancelled_at", "coop_id"]);
 
 export const TABLE_LABELS: Record<string, string> = {
   loads: "Job",
   profiles: "Person",
   settings: "Settings",
   payments: "Payment",
+  cooperatives: "Co-op",
 };
 
 export const ACTION_LABELS: Record<AuditEntry["action"], string> = {

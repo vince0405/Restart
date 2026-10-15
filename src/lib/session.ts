@@ -12,10 +12,13 @@ export type Profile = {
   phone: string;
   role: Role;
   is_member: boolean;
+  /** The cooperative this person belongs to (Ticket 34). Null for the Admin. */
+  coop_id: string | null;
 };
 
 export type Settings = {
   coop_name: string;
+  town: string;
   farmgate_price_per_kg: number;
   lifeline: Lifeline;
   warning_days: number;
@@ -39,9 +42,13 @@ export const getSession = cache(async () => {
 
   const { data } = await supabase
     .from("profiles")
-    .select("id, full_name, phone, role, is_member")
+    .select("id, full_name, phone, role, is_member, coop_id")
     .eq("id", user.id)
     .maybeSingle();
+
+  // The main Admin (Ticket 34) is listed in its own table, not as a role.
+  // RLS only ever shows a person their own admins row.
+  const { data: admin } = await supabase.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
 
   const profile: Profile = {
     id: user.id,
@@ -52,14 +59,17 @@ export const getSession = cache(async () => {
     // No profile row yet? Treat them as a customer: the safest choice.
     role: isRole(data?.role) ? data.role : "customer",
     is_member: data?.is_member ?? false,
+    coop_id: (data?.coop_id as string | null) ?? null,
   };
 
-  return { supabase, user, profile, role: profile.role };
+  return { supabase, user, profile, role: profile.role, isAdmin: !!admin };
 });
 
 /** Like getSession, but only lets the given roles through. */
 export async function requireRole(allowed: (r: Role) => boolean) {
   const session = await getSession();
+  // The Admin has no co-op: none of the co-op screens are for them.
+  if (session.isAdmin) redirect("/admin");
   if (!allowed(session.role)) {
     redirect(isStaff(session.role) ? "/" : "/my");
   }
@@ -83,12 +93,18 @@ export const getPriceHistory = cache(async (): Promise<PriceChange[]> => {
   return (data ?? []).map((p) => ({ ...p, price_per_kg: Number(p.price_per_kg) }));
 });
 
-/** The co-op's settings row, with safe defaults if it cannot be read. */
+/**
+ * The signed-in person's co-op and its settings (Ticket 34: each co-op has
+ * its own row in `cooperatives`), with safe defaults if it cannot be read.
+ */
 export const getSettings = cache(async (): Promise<Settings> => {
-  const { supabase } = await getSession();
-  const { data } = await supabase.from("settings").select("*").eq("id", 1).maybeSingle();
+  const { supabase, profile } = await getSession();
+  const { data } = profile.coop_id
+    ? await supabase.from("cooperatives").select("*").eq("id", profile.coop_id).maybeSingle()
+    : { data: null };
   return {
-    coop_name: data?.coop_name ?? "Batad Multipurpose Cooperative",
+    coop_name: data?.name ?? "Your cooperative",
+    town: data?.town ?? "",
     farmgate_price_per_kg: Number(data?.farmgate_price_per_kg ?? 0),
     lifeline: {
       rice: data?.rice_lifeline_days ?? DEFAULT_LIFELINE.rice,

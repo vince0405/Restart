@@ -40,9 +40,9 @@ export async function updatePerson(formData: FormData) {
   redirect("/people?saved=1");
 }
 
-/** Chairperson only (RLS on settings): co-op name, prices, cancel window. */
+/** Chairperson only (RLS on cooperatives): their co-op's name, prices, cancel window. */
 export async function updateSettings(formData: FormData) {
-  const { supabase } = await requireRole(canManagePeople);
+  const { supabase, profile } = await requireRole(canManagePeople);
 
   const price = parseAmountPaid(formData.get("farmgate_price_per_kg"));
   if (!price.ok) redirect("/settings?error=price");
@@ -59,15 +59,18 @@ export async function updateSettings(formData: FormData) {
   const rates = parseRates((name) => formData.get(name));
   if (!rates) redirect("/settings?error=rates");
 
+  const town = String(formData.get("town") ?? "").trim().slice(0, 120);
+
   const { data, error } = await supabase
-    .from("settings")
+    .from("cooperatives")
     .update({
       farmgate_price_per_kg: price.value,
-      coop_name: coopName,
+      name: coopName,
+      town,
       cancel_window_hours: windowHours,
       ...rates,
     })
-    .eq("id", 1)
+    .eq("id", profile.coop_id ?? "")
     .select("id");
 
   if (error || !data?.length) redirect("/settings?error=save");
@@ -85,7 +88,7 @@ export async function updateSettings(formData: FormData) {
  * Account.
  */
 export async function addPerson(formData: FormData) {
-  const { supabase } = await requireRole(canManagePeople);
+  const { supabase, profile } = await requireRole(canManagePeople);
 
   const fullName = String(formData.get("full_name") ?? "").trim();
   const phone = normalizePhMobile(formData.get("phone"));
@@ -107,6 +110,8 @@ export async function addPerson(formData: FormData) {
     fullName,
     phone,
     contactEmail,
+    // The new person joins the Chairperson's own co-op (Ticket 34).
+    coopId: profile.coop_id,
   });
 
   if (error) {

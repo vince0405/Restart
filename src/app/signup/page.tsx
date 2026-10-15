@@ -6,6 +6,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/server";
 import { signUp } from "../login/actions";
 
@@ -16,6 +17,7 @@ const MESSAGES: Record<string, string> = {
   weak_password: "Choose a longer password (at least 6 characters).",
   signup_disabled: "Sign-ups are switched off right now. Please ask the co-op.",
   email_address_invalid: "That email address doesn't look right.",
+  coop: "Choose your cooperative.",
   other: "Something went wrong. Please try again.",
 };
 
@@ -27,6 +29,10 @@ export default async function SignUpPage({ searchParams }: PageProps<"/signup">)
   if (user) redirect("/");
 
   const { error } = await searchParams;
+
+  // The co-ops to choose from (names and towns only).
+  const { data: coops } = await supabase.rpc("list_cooperatives");
+  const cooperatives = (coops ?? []) as { id: string; name: string; town: string }[];
   const message = typeof error === "string" ? (MESSAGES[error] ?? MESSAGES.other) : null;
 
   return (
@@ -39,12 +45,26 @@ export default async function SignUpPage({ searchParams }: PageProps<"/signup">)
         <CardHeader>
           <CardTitle className="text-xl">Create an account</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Request drying or milling from Batad Multipurpose Cooperative and follow your
+            Request harvesting, drying or milling from your cooperative and follow your
             palay from your phone.
           </p>
         </CardHeader>
         <CardContent>
           <form action={signUp} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="coop_id">Your cooperative</Label>
+              <Select id="coop_id" name="coop_id" required defaultValue={cooperatives.length === 1 ? cooperatives[0].id : ""}>
+                <option value="" disabled>
+                  Choose…
+                </option>
+                {cooperatives.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                    {c.town ? ` (${c.town})` : ""}
+                  </option>
+                ))}
+              </Select>
+            </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="full_name">Full name</Label>
               <Input id="full_name" name="full_name" autoComplete="name" required />

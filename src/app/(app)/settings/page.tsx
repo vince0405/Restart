@@ -44,6 +44,10 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           <Input id="coop_name" name="coop_name" defaultValue={settings.coop_name} maxLength={120} required />
         </div>
         <div className="flex flex-col gap-2">
+          <Label htmlFor="town">Town</Label>
+          <Input id="town" name="town" defaultValue={settings.town} maxLength={120} />
+        </div>
+        <div className="flex flex-col gap-2">
           <Label htmlFor="farmgate_price_per_kg">Farmgate reference price (₱ per kg)</Label>
           <Input
             id="farmgate_price_per_kg"

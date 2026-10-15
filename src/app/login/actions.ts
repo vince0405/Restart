@@ -47,6 +47,11 @@ export async function signUp(formData: FormData) {
   const contactEmail = parseOptionalEmail(formData.get("email"));
   if (contactEmail === false) redirect("/signup?error=email_address_invalid");
 
+  // Which co-op they are a customer of (Ticket 34). The database keeps it
+  // only if it is a real co-op.
+  const coopId = String(formData.get("coop_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(coopId)) redirect("/signup?error=coop");
+
   // The account signs in with its mobile number (as an internal name). The
   // name, phone and optional email travel as "metadata"; the database copies
   // them into the new profile. The role is NOT sent: every new account is a
@@ -55,7 +60,7 @@ export async function signUp(formData: FormData) {
     email: phoneSignInEmail(phone),
     password: String(formData.get("password") ?? ""),
     options: {
-      data: { full_name: fullName.slice(0, 120), phone, contact_email: contactEmail },
+      data: { full_name: fullName.slice(0, 120), phone, contact_email: contactEmail, coop_id: coopId },
     },
   });
 

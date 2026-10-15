@@ -19,6 +19,8 @@ export async function createAccount(input: {
   fullName: string;
   phone: string;
   contactEmail: string | null;
+  /** The co-op the account joins (Ticket 34). The database checks it exists. */
+  coopId: string | null;
 }) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -32,7 +34,12 @@ export async function createAccount(input: {
     email: input.signInEmail,
     password: input.password,
     options: {
-      data: { full_name: input.fullName, phone: input.phone, contact_email: input.contactEmail },
+      data: {
+        full_name: input.fullName,
+        phone: input.phone,
+        contact_email: input.contactEmail,
+        coop_id: input.coopId,
+      },
     },
   });
 }
