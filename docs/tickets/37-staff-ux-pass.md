@@ -45,7 +45,7 @@
   -> Drying -> dryer load -> Ready -> weigh -> keep -> release refused
   while unpaid -> payment -> release; supply entry; a customer's request
   accepted; a harvest count paid in palay. All passed.
-- 120 unit tests pass; lint and build are clean. Screenshots of the
+- 115 unit tests pass; lint and build are clean. Screenshots of the
   sign-in and sign-up pages checked in light and dark.
 
 ## Decisions (team, 15 Oct 2026)
