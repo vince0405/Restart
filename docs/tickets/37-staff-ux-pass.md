@@ -17,13 +17,13 @@
       optional line chart, amounts shortened (1k, 10k, 1m)
 - [x] History: simple filters, pages, easier to read
 - [x] People: search, pages, role filter
-- [ ] Storage: the co-op's own rice and palay supply — goes up with
+- [x] Storage: the co-op's own rice and palay supply — goes up with
       approved buyouts (and palay harvest shares), staff add or take out
       stock by hand, low-supply warning at a level the Chairperson sets
 - [ ] Job screen: "Record a payment" shows once the rice is finished
       (Ready and after); before that, a "Customer wants to pay early"
       button opens it
-- [ ] Settings: a note that forgotten passwords are reset by the
+- [x] Settings: a note that forgotten passwords are reset by the
       Chairperson (self-service password change stays as it is)
 - [ ] Look: a warm rice-paddy background, earth tones, light and dark
 - [ ] Buttons press in when tapped; loading screens while pages load
@@ -40,6 +40,10 @@
   Chairperson's reset in People). The main Admin cannot reset passwords:
   that would need the Supabase secret key, which this project never uses.
 - Payment method is still recorded on payments and receipts.
+- There is NO Chairperson password reset in People (Ticket 36's note was
+  wrong): resetting someone else's password needs the Supabase secret
+  key. The Settings note says so honestly. Mobile-number accounts need
+  Ticket 33 (SMS) to reset their own.
 
 ## Not in this ticket
 

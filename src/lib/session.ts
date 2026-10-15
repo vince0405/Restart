@@ -26,6 +26,8 @@ export type Settings = {
   cancel_window_hours: number;
   /** The price list the Chairperson sets (Ticket 25). */
   rates: Rates;
+  /** Warn when the co-op's own supply is at or below these kg (Ticket 37). */
+  low_supply: { rice: number; palay: number };
 };
 
 /**
@@ -112,6 +114,10 @@ export const getSettings = cache(async (): Promise<Settings> => {
     },
     warning_days: data?.warning_days ?? 14,
     cancel_window_hours: data?.cancel_window_hours ?? 2,
+    low_supply: {
+      rice: Number(data?.low_rice_kg ?? 100),
+      palay: Number(data?.low_palay_kg ?? 500),
+    },
     rates: {
       harvest_share_percent: Number(data?.harvest_share_percent ?? DEFAULT_RATES.harvest_share_percent),
       dryer_load_fee: Number(data?.dryer_load_fee ?? DEFAULT_RATES.dryer_load_fee),

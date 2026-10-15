@@ -61,12 +61,21 @@ export async function updateSettings(formData: FormData) {
 
   const town = String(formData.get("town") ?? "").trim().slice(0, 120);
 
+  // Low-supply levels (Ticket 37): kg of 0 or more.
+  const lowRice = Number(String(formData.get("low_rice_kg") ?? "").trim());
+  const lowPalay = Number(String(formData.get("low_palay_kg") ?? "").trim());
+  if (!Number.isFinite(lowRice) || lowRice < 0 || !Number.isFinite(lowPalay) || lowPalay < 0) {
+    redirect("/settings?error=low_supply");
+  }
+
   const { data, error } = await supabase
     .from("cooperatives")
     .update({
       farmgate_price_per_kg: price.value,
       name: coopName,
       town,
+      low_rice_kg: lowRice,
+      low_palay_kg: lowPalay,
       cancel_window_hours: windowHours,
       ...rates,
     })

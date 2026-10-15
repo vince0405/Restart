@@ -38,6 +38,8 @@ export const ERROR_MESSAGES = {
   not_changed: "Nothing changed. The job may have moved on already — refresh and try again.",
   payment_invalid: "Enter an amount above 0 and choose how it was paid.",
   payment_date_invalid: "Enter the date it was paid (today or earlier).",
+  supply_invalid: "Choose rice or palay and enter an amount above 0 kg.",
+  supply_too_much: "That is more than the co-op has. Check the amount.",
   dryer_full: "That dryer load is full. Choose another one or start a new load.",
   dryer_not_drying: "Only a job that is drying, with its sacks counted, can go into a dryer load.",
   service_locked: "The service can only be changed before work starts on the job.",

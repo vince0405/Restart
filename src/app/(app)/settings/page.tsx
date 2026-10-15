@@ -14,6 +14,7 @@ const MESSAGES: Record<string, string> = {
   window: "The cancel window must be a whole number of hours from 1 to 24.",
   rates:
     "Check the price list: the harvest share is 0–100%, fees are 0 or more, and a dryer load holds at least 1 whole sack.",
+  low_supply: "Low-supply levels must be 0 kg or more.",
   save: "Could not save. Only the Chairperson can change settings.",
 };
 
@@ -99,6 +100,15 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           />
         </fieldset>
 
+        <fieldset className="flex flex-col gap-4 rounded-xl border border-line p-4">
+          <legend className="px-1 font-bold text-ink">Low-supply warning</legend>
+          <p className="text-xs text-muted-foreground">
+            Storage warns when the co-op&rsquo;s own rice or palay is at or below these amounts.
+          </p>
+          <RateField name="low_rice_kg" label="Milled rice (kg)" value={settings.low_supply.rice} step={0.01} />
+          <RateField name="low_palay_kg" label="Palay (kg)" value={settings.low_supply.palay} step={0.01} />
+        </fieldset>
+
         <div className="flex flex-col gap-2">
           <Label htmlFor="cancel_window_hours">Cancel window (hours)</Label>
           <Input
@@ -127,6 +137,16 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           Save settings
         </SubmitButton>
       </form>
+
+      <section className="mt-6 rounded-2xl border border-line bg-card p-5 shadow-card md:p-7">
+        <h2 className="font-extrabold text-ink">Passwords</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Everyone changes their own password under <strong className="text-ink">Account</strong>. If
+          someone forgets theirs and signs in with an email, they can use &ldquo;Forgot password?&rdquo;
+          on the sign-in page. People who sign in with a mobile number can&rsquo;t reset it themselves
+          yet: that needs text messages, which are not set up.
+        </p>
+      </section>
     </div>
   );
 }
