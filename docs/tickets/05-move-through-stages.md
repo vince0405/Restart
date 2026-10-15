@@ -9,8 +9,8 @@ stage" to fix a wrong tap.
 
 **Status:** todo
 
-- [ ] Tapping a load opens a detail screen showing all its details
-- [ ] The big button names the next stage, e.g. "Move to Drying"
-- [ ] At Released there is no next stage; at Received there is no back
-- [ ] The list shows the new stage after going back to it
+- [x] Tapping a load opens a detail screen showing all its details
+- [x] The big button names the next stage, e.g. "Move to Drying"
+- [x] At Released there is no next stage; at Received there is no back
+- [x] The list shows the new stage after going back to it
 - [ ] Works on the live URL — on a phone

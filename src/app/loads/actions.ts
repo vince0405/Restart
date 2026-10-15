@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { parseLoadInput } from "@/lib/loads";
+import { isStage, nextStage, parseLoadInput, prevStage } from "@/lib/loads";
 
 /**
  * Runs on the server when the "New load" form is submitted. It checks the
@@ -38,4 +38,35 @@ export async function createLoad(formData: FormData) {
   }
 
   redirect("/");
+}
+
+/**
+ * Moves a load one stage forward or one stage back.
+ *
+ * The form sends the stage the Monitor was LOOKING AT ("from"), and the
+ * update only happens if the load is still at that stage. So a double tap
+ * on a slow phone moves the load once, not twice.
+ */
+export async function moveStage(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const from = String(formData.get("from") ?? "");
+  const direction = formData.get("direction");
+
+  if (!isStage(from)) redirect(`/loads/${id}`);
+
+  const to = direction === "back" ? prevStage(from) : nextStage(from);
+  if (!to) redirect(`/loads/${id}`);
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("loads")
+    .update({ stage: to })
+    .eq("id", id)
+    .eq("stage", from);
+
+  if (error) {
+    redirect(`/loads/${id}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`/loads/${id}`);
 }
