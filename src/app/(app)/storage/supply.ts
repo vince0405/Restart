@@ -1,26 +1,31 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { LoadRow } from "@/lib/loads";
-import { type SupplyEntry, supplyLevels } from "@/lib/supply";
+import type { Product, SupplyEntry, SupplyLevel } from "@/lib/supply";
 
 /**
- * The co-op's supply levels and its hand entries, newest first (Ticket 37).
- * RLS only returns the signed-in person's own co-op (supabase/sql/019).
+ * The co-op's supply levels and its latest hand entries (Ticket 37). The
+ * totals are added up in the database by supply_levels() (023), so they
+ * are right however many jobs there are; the database also refuses taking
+ * out more than there is. RLS only returns the person's own co-op.
  */
 export async function getSupply(supabase: SupabaseClient) {
-  const [{ data: loads, error: loadsError }, { data: entries, error: entriesError }] = await Promise.all([
-    supabase
-      .from("loads")
-      .select(
-        "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at, request_status, output_kg, keep_percent, disposition, buyout_status, price_per_kg, harvest_kept_kg",
-      )
-      .eq("request_status", "accepted")
-      .or("buyout_status.eq.approved,harvest_kept_kg.not.is.null"),
-    supabase.from("supply_entries").select("*").order("created_at", { ascending: false }),
+  const [{ data: rows, error: levelsError }, { data: entries, error: entriesError }] = await Promise.all([
+    supabase.rpc("supply_levels"),
+    supabase.from("supply_entries").select("*").order("created_at", { ascending: false }).limit(8),
   ]);
-  const rows = (entries ?? []).map((e) => ({ ...e, kg: Number(e.kg) })) as SupplyEntry[];
+  const empty = (): SupplyLevel => ({ bought: 0, harvestShare: 0, manual: 0, total: 0 });
+  const levels: Record<Product, SupplyLevel> = { rice: empty(), palay: empty() };
+  for (const r of (rows ?? []) as { product: Product; bought: number; harvest_share: number; manual: number; total: number }[]) {
+    if (r.product !== "rice" && r.product !== "palay") continue;
+    levels[r.product] = {
+      bought: Number(r.bought),
+      harvestShare: Number(r.harvest_share),
+      manual: Number(r.manual),
+      total: Number(r.total),
+    };
+  }
   return {
-    levels: supplyLevels((loads ?? []) as LoadRow[], rows),
-    entries: rows,
-    error: loadsError ?? entriesError,
+    levels,
+    entries: ((entries ?? []) as SupplyEntry[]).map((e) => ({ ...e, kg: Number(e.kg) })),
+    error: levelsError ?? entriesError,
   };
 }

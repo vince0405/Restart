@@ -955,9 +955,15 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                         <form action={deletePayment}>
                           <input type="hidden" name="id" value={load.id} />
                           <input type="hidden" name="payment" value={p.id} />
-                          <SubmitButton variant="ghost" size="sm" className="text-danger hover:text-danger">
-                            Remove
-                          </SubmitButton>
+                          <details className="relative">
+                            <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-lg px-2 text-sm font-bold text-danger [&::-webkit-details-marker]:hidden">
+                              Remove
+                            </summary>
+                            <div className="mt-1 flex flex-col gap-2 rounded-xl border border-danger/40 bg-danger-soft p-2 text-xs text-ink">
+                              Remove this {peso.format(Number(p.amount))} payment? It stays in the history.
+                              <SubmitButton variant="destructive" size="sm">Yes, remove</SubmitButton>
+                            </div>
+                          </details>
                         </form>
                       )}
                     </li>
@@ -996,6 +1002,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                       inputMode="decimal"
                       min={0.01}
                       step={0.01}
+                      max={money.stillOwes}
                       defaultValue={money.stillOwes}
                       required
                     />
@@ -1047,6 +1054,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                       inputMode="decimal"
                       min={0.01}
                       step={0.01}
+                      max={money.stillOwes}
                       defaultValue={money.stillOwes}
                       required
                     />

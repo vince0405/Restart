@@ -13,15 +13,21 @@ import { createClient } from "@/lib/supabase/server";
  * - ?token_hash=…&type=…  if the email template is changed to use
  *                         {{ .TokenHash }} (works on any device)
  */
+/** Only these pages may follow an email link (Ticket 42: no open redirect). */
+const NEXT_PAGES = ["/reset-password", "/"];
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
+  // An exact page from the list, never a path to build an address from:
+  // tricks like "/\evil.com" or a hidden tab would otherwise leave the site.
   const rawNext = searchParams.get("next") ?? "/";
-  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+  const next = NEXT_PAGES.includes(rawNext) ? rawNext : "/";
 
   const supabase = await createClient();
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
-  const type = searchParams.get("type") as EmailOtpType | null;
+  // Only password-reset links are used by RPS1.
+  const type: EmailOtpType | null = searchParams.get("type") === "recovery" ? "recovery" : null;
 
   let ok = false;
   if (code) {

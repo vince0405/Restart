@@ -47,6 +47,9 @@ export async function signUp(formData: FormData) {
   const contactEmail = parseOptionalEmail(formData.get("email"));
   if (contactEmail === false) redirect("/signup?error=email_address_invalid");
 
+  // At least 8 characters, like everywhere else in RPS1 (Ticket 42).
+  if (String(formData.get("password") ?? "").length < 8) redirect("/signup?error=weak_password");
+
   // Which co-op they are a customer of (Ticket 34). The database keeps it
   // only if it is a real co-op.
   const coopId = String(formData.get("coop_id") ?? "");

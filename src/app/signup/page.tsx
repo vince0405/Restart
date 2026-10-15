@@ -14,7 +14,7 @@ const MESSAGES: Record<string, string> = {
   name: "Please enter your name.",
   phone_taken: "That mobile number already has an account. Sign in instead.",
   phone_invalid: "Enter a Philippine mobile number, like 0917 123 4567.",
-  weak_password: "Choose a longer password (at least 6 characters).",
+  weak_password: "Choose a longer password (at least 8 characters).",
   signup_disabled: "Sign-ups are switched off right now. Please ask the co-op.",
   email_address_invalid: "That email address doesn't look right.",
   coop: "Choose your cooperative.",
@@ -93,7 +93,7 @@ export default async function SignUpPage({ searchParams }: PageProps<"/signup">)
                 name="password"
                 type="password"
                 autoComplete="new-password"
-                minLength={6}
+                minLength={8}
                 required
               />
             </div>

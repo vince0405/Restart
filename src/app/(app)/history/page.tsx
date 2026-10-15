@@ -78,6 +78,9 @@ export default async function HistoryPage({ searchParams }: PageProps<"/history"
   };
 
   let { data, error, count } = await buildQuery(requested);
+  // Asked for a page past the end: the database answers "out of range"
+  // without a count, so count from page 1 first (Ticket 42).
+  if (error?.code === "PGRST103") ({ data, error, count } = await buildQuery(1));
   const info = pageInfo(requested, PER_PAGE, count ?? 0);
   if (info.page !== requested && (count ?? 0) > 0) ({ data, error, count } = await buildQuery(info.page));
   const entries = (data ?? []) as AuditEntry[];

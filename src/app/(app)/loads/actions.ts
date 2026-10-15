@@ -111,6 +111,7 @@ export async function moveStage(formData: FormData) {
     .from("loads")
     .update(changes)
     .eq("id", id)
+    .eq("request_status", "accepted")
     .eq("service_type", service)
     .eq("stage", from);
   query = stored ? query.not("stored_at", "is", null) : query.is("stored_at", null);
@@ -138,6 +139,7 @@ export async function storeLoad(formData: FormData) {
     .from("loads")
     .update({ stage: "Stored", stored_at: new Date().toISOString() })
     .eq("id", id)
+    .eq("request_status", "accepted")
     .eq("stage", "Ready")
     .is("stored_at", null)
     .not("output_kg", "is", null)
@@ -193,6 +195,8 @@ export async function updateFee(formData: FormData) {
     .from("loads")
     .update({ agreed_price: fee.value })
     .eq("id", id)
+    .eq("request_status", "accepted")
+    .neq("stage", "Released")
     .select("id");
   if (error || !data?.length) redirect(jobPath(id, codeForDbError(error)));
 
@@ -284,6 +288,7 @@ export async function recordOutput(formData: FormData) {
     .from("loads")
     .update({ output_kg: weight.value })
     .eq("id", id)
+    .eq("request_status", "accepted")
     .eq("stage", "Ready")
     .is("disposition", null)
     .select("id");
@@ -420,19 +425,17 @@ export async function updateDetails(formData: FormData) {
  * (supabase/sql/016).
  */
 export async function joinDryerLoad(formData: FormData) {
-  const { supabase, user } = await requireRole(canWork);
+  const { supabase } = await requireRole(canWork);
   const id = String(formData.get("id") ?? "");
-  let dryerLoad = String(formData.get("dryer_load") ?? "");
+  const dryerLoad = String(formData.get("dryer_load") ?? "");
   if (!dryerLoad) redirect(jobPath(id, "not_changed"));
 
+  // A new load is made and joined in one step in the database, so a job
+  // that can't join never leaves an empty dryer load behind (023).
   if (dryerLoad === "new") {
-    const { data, error } = await supabase
-      .from("dryer_loads")
-      .insert({ created_by: user.id })
-      .select("id")
-      .single();
-    if (error || !data) redirect(jobPath(id, codeForDbError(error)));
-    dryerLoad = data.id as string;
+    const { error } = await supabase.rpc("join_new_dryer_load", { job: id });
+    if (error) redirect(jobPath(id, codeForDbError(error)));
+    redirect(jobPath(id));
   }
 
   const { data, error } = await supabase

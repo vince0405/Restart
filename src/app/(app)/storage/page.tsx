@@ -38,7 +38,7 @@ export default async function StoragePage({ searchParams }: PageProps<"/storage"
   // The co-op's own supply (Ticket 37): buyouts, palay harvest shares and
   // hand entries.
   const supply = await getSupply(supabase);
-  const recent = supply.entries.slice(0, 8);
+  const recent = supply.entries;
   const lowCount = (["rice", "palay"] as const).filter((p) => isLow(supply.levels[p].total, low_supply[p])).length;
   const filter = type === "palay" || type === "rice" ? type : null;
 

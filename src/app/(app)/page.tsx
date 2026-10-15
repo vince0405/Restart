@@ -30,6 +30,7 @@ import {
   storedDaysLeft,
   summarize,
 } from "@/lib/loads";
+import { fetchAll } from "@/lib/fetch-all";
 import { canManage, isStaff } from "@/lib/roles";
 import { getSettings, requireRole } from "@/lib/session";
 import { cn } from "@/lib/utils";
@@ -79,13 +80,18 @@ export default async function DashboardPage() {
   const { supabase, role } = await requireRole(isStaff);
 
   // RLS hands back only the signed-in Monitor's loads.
-  const { data, error } = await supabase
-    .from("loads")
-    .select(
-      "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at, request_status, output_kg, disposition, keep_percent, buyout_status, price_per_kg, payout_done_at",
-    )
-    .eq("request_status", "accepted")
-    .order("created_at", { ascending: false });
+  // Every accepted job, past Supabase's 1,000-row limit (Ticket 42).
+  const { data, error } = await fetchAll((from, to) =>
+    supabase
+      .from("loads")
+      .select(
+        "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at, request_status, output_kg, disposition, keep_percent, buyout_status, price_per_kg, payout_done_at",
+      )
+      .eq("request_status", "accepted")
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
   const loads = (data ?? []) as LoadRow[];
 
   // Pending requests are counted separately: they are not jobs yet.

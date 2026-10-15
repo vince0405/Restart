@@ -74,6 +74,8 @@ export async function requireRole(allowed: (r: Role) => boolean) {
   const session = await getSession();
   // The Admin has no co-op: none of the co-op screens are for them.
   if (session.isAdmin) redirect("/admin");
+  // Not linked to a co-op yet: nothing in a co-op is for them (Ticket 42).
+  if (!session.profile.coop_id) redirect("/no-coop");
   if (!allowed(session.role)) {
     redirect(isStaff(session.role) ? "/" : "/my");
   }

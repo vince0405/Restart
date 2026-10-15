@@ -86,6 +86,7 @@ export function parseRates(get: (name: string) => unknown): Rates | null {
     milling_fee_per_sack: num("milling_fee_per_sack"),
   };
   const ok =
+    Object.values(rates).every(Number.isFinite) &&
     rates.harvest_share_percent >= 0 &&
     rates.harvest_share_percent <= 100 &&
     rates.dryer_load_fee >= 0 &&

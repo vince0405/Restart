@@ -133,3 +133,13 @@ describe("sharing one dryer load (Ticket 29)", () => {
     expect(splitDryerLoad(9000, [40, 90])).toEqual([2769.23, 6230.77]);
   });
 });
+
+describe("rates from the Settings form (Ticket 42)", () => {
+  const form = { harvest_share_percent: "15", dryer_load_fee: "9000", dryer_load_max_sacks: "130", milling_fee_per_sack: "120" };
+  const get = (f: Record<string, string>) => (name: string) => f[name];
+  it("accepts normal rates and refuses Infinity", () => {
+    expect(parseRates(get(form))).not.toBeNull();
+    expect(parseRates(get({ ...form, dryer_load_fee: "Infinity" }))).toBeNull();
+    expect(parseRates(get({ ...form, milling_fee_per_sack: "1e999" }))).toBeNull();
+  });
+});

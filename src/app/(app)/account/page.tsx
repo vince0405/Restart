@@ -65,6 +65,10 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
       <form action={changePassword} className="flex flex-col gap-4 rounded-2xl border border-line bg-card p-5 shadow-card">
         <h2 className="font-extrabold text-ink">Change password</h2>
         <div className="flex flex-col gap-2">
+          <Label htmlFor="current">Current password</Label>
+          <Input id="current" name="current" type="password" autoComplete="current-password" required />
+        </div>
+        <div className="flex flex-col gap-2">
           <Label htmlFor="password">New password</Label>
           <Input id="password" name="password" type="password" minLength={8} autoComplete="new-password" required />
         </div>

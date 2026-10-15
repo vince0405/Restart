@@ -16,6 +16,7 @@ import { StatCard } from "@/components/rps/stat-card";
 import { ErrorNote } from "@/components/rps/error-note";
 import { jobRef, type LoadRow, moneyStats, moneySummary, parseStatsRange, type Payment, paymentMethodLabel, settlement, type StatsRange } from "@/lib/loads";
 import { canSeeMoney } from "@/lib/roles";
+import { fetchAll } from "@/lib/fetch-all";
 import { pesoShort } from "@/lib/format";
 import { requireRole } from "@/lib/session";
 
@@ -26,13 +27,18 @@ const kg = new Intl.NumberFormat("en-PH", { maximumFractionDigits: 2 });
 export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
   const { supabase, role } = await requireRole(canSeeMoney);
 
-  const { data, error } = await supabase
-    .from("loads")
-    .select(
-      "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at, customer_id, request_status, output_kg, disposition, keep_percent, buyout_status, price_per_kg, payout_done_at, harvest_kept_kg",
-    )
-    .eq("request_status", "accepted")
-    .order("created_at", { ascending: false });
+  // Every accepted job, past Supabase's 1,000-row limit (Ticket 42).
+  const { data, error } = await fetchAll((from, to) =>
+    supabase
+      .from("loads")
+      .select(
+        "id, created_at, customer_name, sacks, kilos, service_type, stage, agreed_price, is_paid, amount_paid, stored_at, customer_id, request_status, output_kg, disposition, keep_percent, buyout_status, price_per_kg, payout_done_at, harvest_kept_kg",
+      )
+      .eq("request_status", "accepted")
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
   const loads = (data ?? []) as LoadRow[];
   const m = moneySummary(loads);
 

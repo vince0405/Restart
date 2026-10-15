@@ -702,3 +702,16 @@ describe("recent jobs grouped by day", () => {
     expect(groups[2].label).toMatch(/12/);
   });
 });
+
+describe("input checks from the security test (Ticket 42)", () => {
+  it("refuses impossible payment dates", () => {
+    const base = { amount: "100", method: "cash", reference: "" };
+    expect(parsePayment({ ...base, paid_on: "2026-02-31" }, "2026-10-16")).toEqual({ ok: false, error: "payment_date_invalid" });
+    expect(parsePayment({ ...base, paid_on: "2026-02-28" }, "2026-10-16").ok).toBe(true);
+  });
+
+  it("refuses customer names over 120 characters", () => {
+    const r = parseLoadInput({ customer_name: "x".repeat(121), sacks: "1", kilos: "1", service_type: "Drying only", agreed_price: "" });
+    expect(r).toEqual({ ok: false, error: "name_required" });
+  });
+});

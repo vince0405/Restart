@@ -7,7 +7,7 @@
 
 export const ERROR_MESSAGES = {
   // Form input
-  name_required: "Customer name is required.",
+  name_required: "Customer name is required (up to 120 characters).",
   address_required: "Enter the farm address — where to harvest (up to 300 characters).",
   sacks_invalid: "Sacks must be a whole number of 0 or more.",
   kilos_invalid: "Kilos must be 0 or more.",
@@ -23,6 +23,13 @@ export const ERROR_MESSAGES = {
   email_invalid: "That email address doesn't look right.",
   email_taken: "That email already has an account. Find it in the list below and change its role there.",
   phone_invalid: "Enter a Philippine mobile number, like 0917 123 4567.",
+  payment_too_much: "That is more than what is still owed. Check the amount.",
+  payment_locked: "This job is released, so its payments can't be removed.",
+  fee_locked: "The fee can't change after the job is released or paid out.",
+  request_closed: "This request is closed. Nothing more can be done with it.",
+  request_waiting: "Accept the request first.",
+  requests_limit: "You already have 3 requests waiting. Wait for the co-op to answer, or cancel one.",
+  password_current: "Your current password is not right.",
   day_booked: "That day is already booked. Please choose another day.",
   day_past: "Choose today or a later day.",
   contact_name_required: "Enter the name the co-op should ask for (up to 120 characters).",
@@ -80,6 +87,13 @@ export function codeForDbError(error: { message?: string } | null): ErrorCode {
   if (m.includes("can only be recorded on accepted jobs")) return "not_allowed";
   if (m.includes("auditor can view but not change")) return "not_allowed";
   if (m.includes("day is already booked")) return "day_booked";
+  if (m.includes("more than what is still owed")) return "payment_too_much";
+  if (m.includes("payment on a released job")) return "payment_locked";
+  if (m.includes("fee cannot change after release")) return "fee_locked";
+  if (m.includes("request is closed")) return "request_closed";
+  if (m.includes("Accept the request first")) return "request_waiting";
+  if (m.includes("requests waiting")) return "requests_limit";
+  if (m.includes("more than the co-op has")) return "supply_too_much";
   if (m.includes("Choose today or a later day")) return "day_past";
   if (m.includes("dryer load only while drying") || m.includes("before adding the job to a dryer load")) {
     return "dryer_not_drying";

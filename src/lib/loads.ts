@@ -630,7 +630,7 @@ export function parseLoadInput(raw: {
   agreed_price: unknown;
 }): ParseResult<LoadInput> {
   const customer_name = String(raw.customer_name ?? "").trim();
-  if (customer_name.length === 0) {
+  if (customer_name.length === 0 || customer_name.length > 120) {
     return { ok: false, error: "name_required" };
   }
 
@@ -775,7 +775,9 @@ export function parsePayment(
   if (amount === null || amount <= 0) return { ok: false, error: "payment_invalid" };
 
   const paidOn = String(raw.paid_on ?? "").trim() || today;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(paidOn) || paidOn > today) return { ok: false, error: "payment_date_invalid" };
+  // A real calendar day (not 31 February), today or earlier.
+  const real = /^\d{4}-\d{2}-\d{2}$/.test(paidOn) && new Date(`${paidOn}T00:00:00Z`).toISOString().slice(0, 10) === paidOn;
+  if (!real || paidOn > today) return { ok: false, error: "payment_date_invalid" };
 
   const method = String(raw.method ?? "cash");
   if (!(PAYMENT_METHODS as readonly string[]).includes(method)) return { ok: false, error: "payment_invalid" };
