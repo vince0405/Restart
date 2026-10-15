@@ -115,3 +115,29 @@ export function harvestShareInPalay(kilos: number, sacks: number, rates: Rates =
   const keptSacks = Math.round((sacks * rates.harvest_share_percent) / 100);
   return { keptKg, farmerKg: round2(kilos - keptKg), farmerSacks: sacks - keptSacks };
 }
+
+/**
+ * A shared dryer load's fee split between its jobs by sacks (Ticket 29).
+ * Each job pays fee x its sacks / all sacks, to the centavo; the job with
+ * the fewest sacks gets what is left, so the parts add up to the fee.
+ * Returns the parts in the same order as `sacks`. Same rule as
+ * share_dryer_load() in supabase/sql/016-shared-dryer-load.sql.
+ */
+export function splitDryerLoad(fee: number, sacks: number[]): number[] {
+  const total = sacks.reduce((a, b) => a + b, 0);
+  // Most sacks first; ties keep their order.
+  const order = sacks.map((s, i) => ({ s, i })).sort((a, b) => b.s - a.s || a.i - b.i);
+  const parts = new Array<number>(sacks.length).fill(0);
+  let given = 0;
+  order.forEach(({ s, i }, k) => {
+    const part =
+      k === order.length - 1
+        ? round2(fee - given)
+        : total > 0
+          ? round2((fee * s) / total)
+          : round2(fee / sacks.length);
+    parts[i] = part;
+    given = round2(given + part);
+  });
+  return parts;
+}

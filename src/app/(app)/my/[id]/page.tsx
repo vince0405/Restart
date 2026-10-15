@@ -256,6 +256,12 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
                   value={`${kg.format(Number(load.harvest_kept_kg))} kg`}
                 />
               )}
+              {load.dryer_load_id && load.drying_fee != null && (
+                <MoneyRow
+                  label="Drying: your share of a shared dryer load"
+                  value={peso.format(Number(load.drying_fee))}
+                />
+              )}
               <MoneyRow label="Processing fee" value={load.agreed_price > 0 ? peso.format(load.agreed_price) : "To be set"} />
               <MoneyRow label="Paid in cash" value={peso.format(money.paidCash)} />
               {load.buyout_status === "requested" && (

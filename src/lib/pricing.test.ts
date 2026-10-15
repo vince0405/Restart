@@ -7,6 +7,7 @@ import {
   feeWithAdjustment,
   harvestFee,
   harvestShareInPalay,
+  splitDryerLoad,
   harvestShareKg,
   millingFee,
   parseRates,
@@ -110,5 +111,25 @@ describe("harvest share paid in palay (Ticket 30)", () => {
     // 15% of 25 sacks = 3.75, kept as 4.
     expect(harvestShareInPalay(1250.5, 25).farmerSacks).toBe(21);
     expect(harvestShareInPalay(1250.5, 25).keptKg).toBe(187.58);
+  });
+});
+
+describe("sharing one dryer load (Ticket 29)", () => {
+  it("splits the fee by sacks, as in the ticket", () => {
+    expect(splitDryerLoad(9000, [90, 40])).toEqual([6230.77, 2769.23]);
+  });
+
+  it("charges a job alone the whole load", () => {
+    expect(splitDryerLoad(9000, [25])).toEqual([9000]);
+  });
+
+  it("always adds up to the full fee, to the centavo", () => {
+    const parts = splitDryerLoad(9000, [43, 43, 44]);
+    expect(Math.round(parts.reduce((a, b) => a + b, 0) * 100) / 100).toBe(9000);
+    expect(parts).toEqual([2976.92, 2976.93, 3046.15]);
+  });
+
+  it("keeps the order the jobs were given in", () => {
+    expect(splitDryerLoad(9000, [40, 90])).toEqual([2769.23, 6230.77]);
   });
 });

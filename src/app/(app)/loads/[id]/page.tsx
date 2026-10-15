@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Notice } from "@/components/rps/notice";
 import { notFound, redirect } from "next/navigation";
-import { BadgeCheck, HandCoins, History, Scale, Trash2, Warehouse } from "lucide-react";
+import { BadgeCheck, Droplet, HandCoins, History, Scale, Trash2, Warehouse } from "lucide-react";
 import { Badge, ExpiryBadge, PaidBadge, StageBadge } from "@/components/rps/badge";
 import { HarvestAddress } from "@/components/rps/harvest-address";
 import { Breadcrumbs } from "@/components/rps/breadcrumbs";
@@ -43,6 +43,8 @@ import {
   approveBuyout,
   declineBuyout,
   deleteLoad,
+  joinDryerLoad,
+  leaveDryerLoad,
   markNotPaid,
   markPaid,
   markPayoutDone,
@@ -107,6 +109,35 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
 
   // Which buttons this person gets. The database enforces the same rules.
   const worker = canWork(role);
+
+  // Shared dryer load (Ticket 29): the other jobs in this job's load, or
+  // the loads still drying that have room for this job.
+  const maxSacks = settings.rates.dryer_load_max_sacks;
+  let dryerMates: { id: string; customer_name: string; sacks: number; drying_fee: number | null }[] = [];
+  let openDryerLoads: { id: string; jobs: number; sacks: number }[] = [];
+  if (load.dryer_load_id) {
+    const { data: mates } = await supabase
+      .from("loads")
+      .select("id, customer_name, sacks, drying_fee")
+      .eq("dryer_load_id", load.dryer_load_id);
+    dryerMates = (mates ?? []).filter((m) => m.id !== load.id);
+  } else if (worker && load.stage === "Drying" && load.request_status === "accepted") {
+    const { data: inLoads } = await supabase
+      .from("loads")
+      .select("dryer_load_id, sacks")
+      .eq("stage", "Drying")
+      .not("dryer_load_id", "is", null);
+    const byLoad = new Map<string, { id: string; jobs: number; sacks: number }>();
+    for (const row of inLoads ?? []) {
+      const key = row.dryer_load_id as string;
+      const entry = byLoad.get(key) ?? { id: key, jobs: 0, sacks: 0 };
+      entry.jobs++;
+      entry.sacks += Number(row.sacks);
+      byLoad.set(key, entry);
+    }
+    openDryerLoads = [...byLoad.values()].filter((d) => d.sacks + load.sacks <= maxSacks);
+  }
+  const dryerSacks = load.sacks + dryerMates.reduce((n, m) => n + Number(m.sacks), 0);
   const manager = canManage(role);
   const chair = canApproveBuyout(role);
 
@@ -400,6 +431,98 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_22rem]">
         <div className="space-y-4">
+          {!closed && (load.dryer_load_id || (worker && load.stage === "Drying")) && (
+            <Panel>
+              <PanelHead
+                icon={Droplet}
+                tone="bg-info-soft text-info-dark"
+                title="Dryer load"
+                right={
+                  load.dryer_load_id ? (
+                    <Badge tone="blue">
+                      {dryerMates.length
+                        ? `Shared with ${dryerMates.length} other ${dryerMates.length === 1 ? "job" : "jobs"}`
+                        : "On its own so far"}
+                    </Badge>
+                  ) : undefined
+                }
+              />
+              {load.dryer_load_id ? (
+                <div className="mt-4 space-y-3 text-sm">
+                  <MoneyRow
+                    label="This job's share of the load fee"
+                    value={load.drying_fee != null ? peso.format(Number(load.drying_fee)) : "—"}
+                  />
+                  <MoneyRow label="Sacks in the load" value={`${dryerSacks} of ${maxSacks}`} />
+                  {dryerMates.length > 0 && (
+                    <ul className="divide-y divide-line rounded-xl border border-line">
+                      {dryerMates.map((m) => (
+                        <li key={m.id} className="flex flex-wrap justify-between gap-x-3 px-3 py-2">
+                          <Link href={`/loads/${m.id}`} className="font-bold text-brand">
+                            #{jobRef(m.id)} · {m.customer_name}
+                          </Link>
+                          <span className="text-muted-foreground">
+                            {m.sacks} sacks
+                            {m.drying_fee != null ? ` · ${peso.format(Number(m.drying_fee))}` : ""}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    The {peso.format(settings.rates.dryer_load_fee)} load fee is split by sacks.
+                  </p>
+                  {worker && load.stage === "Drying" && (
+                    <form action={leaveDryerLoad}>
+                      <input type="hidden" name="id" value={load.id} />
+                      <SubmitButton variant="outline" className="w-full sm:w-auto">
+                        Take out of this dryer load
+                      </SubmitButton>
+                    </form>
+                  )}
+                </div>
+              ) : load.sacks > 0 ? (
+                <form action={joinDryerLoad} className="mt-4 flex flex-col gap-3">
+                  <input type="hidden" name="id" value={load.id} />
+                  <p className="text-sm text-muted-foreground">
+                    Drying with other farmers&rsquo; palay? Put this job ({load.sacks} sacks) in a
+                    shared load and the {peso.format(settings.rates.dryer_load_fee)} fee is split by
+                    sacks. Up to {maxSacks} sacks per load.
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {openDryerLoads.map((d) => (
+                      <label
+                        key={d.id}
+                        className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-line p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-soft"
+                      >
+                        <input type="radio" name="dryer_load" value={d.id} required />
+                        <span>
+                          <span className="font-bold text-ink">
+                            Dryer load with {d.jobs} {d.jobs === 1 ? "job" : "jobs"}
+                          </span>{" "}
+                          <span className="text-muted-foreground">
+                            · {d.sacks} of {maxSacks} sacks used
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                    <label className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-line p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-soft">
+                      <input type="radio" name="dryer_load" value="new" required />
+                      <span className="font-bold text-ink">Start a new dryer load</span>
+                    </label>
+                  </div>
+                  <SubmitButton variant="secondary" className="sm:self-start">
+                    Put in dryer load
+                  </SubmitButton>
+                </form>
+              ) : (
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Count the sacks first to share a dryer load.
+                </p>
+              )}
+            </Panel>
+          )}
+
           {(atReady || weighed) && !closed && (
             <Panel className={cn(atReady && !weighed && "border-2 border-gold")}>
               <PanelHead
@@ -776,7 +899,12 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                   value={peso.format(Number(load.harvest_fee))}
                 />
               )}
-              {load.drying_fee != null && <MoneyRow label="Drying" value={peso.format(Number(load.drying_fee))} />}
+              {load.drying_fee != null && (
+                <MoneyRow
+                  label={load.dryer_load_id ? "Drying (share of a shared load)" : "Drying"}
+                  value={peso.format(Number(load.drying_fee))}
+                />
+              )}
               {load.milling_fee != null && <MoneyRow label="Milling" value={peso.format(Number(load.milling_fee))} />}
               {adjusted && (
                 <MoneyRow

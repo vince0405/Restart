@@ -218,6 +218,8 @@ export type LoadRow = {
   /** How the harvest share was paid (Ticket 30), and the palay kept if in palay. */
   harvest_fee_in?: string | null;
   harvest_kept_kg?: number | null;
+  /** The shared dryer load this job dried in, if any (Ticket 29). */
+  dryer_load_id?: string | null;
 };
 
 /** Days left for a stored load, or null if it is not in storage. */

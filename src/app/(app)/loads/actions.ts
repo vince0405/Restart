@@ -400,3 +400,52 @@ export async function updateDetails(formData: FormData) {
 
   redirect(jobPath(id));
 }
+
+/**
+ * Put a drying job into a shared dryer load (Ticket 29): an existing one,
+ * or a new one ("new"). The database checks the job is drying and the load
+ * has room, then splits the load fee between its jobs by sacks
+ * (supabase/sql/016).
+ */
+export async function joinDryerLoad(formData: FormData) {
+  const { supabase, user } = await requireRole(canWork);
+  const id = String(formData.get("id") ?? "");
+  let dryerLoad = String(formData.get("dryer_load") ?? "");
+  if (!dryerLoad) redirect(jobPath(id, "not_changed"));
+
+  if (dryerLoad === "new") {
+    const { data, error } = await supabase
+      .from("dryer_loads")
+      .insert({ created_by: user.id })
+      .select("id")
+      .single();
+    if (error || !data) redirect(jobPath(id, codeForDbError(error)));
+    dryerLoad = data.id as string;
+  }
+
+  const { data, error } = await supabase
+    .from("loads")
+    .update({ dryer_load_id: dryerLoad })
+    .eq("id", id)
+    .eq("stage", "Drying")
+    .select("id");
+  if (error || !data?.length) redirect(jobPath(id, error ? codeForDbError(error) : "dryer_not_drying"));
+
+  redirect(jobPath(id));
+}
+
+/** Take a job out of its shared dryer load: it pays a full load again. */
+export async function leaveDryerLoad(formData: FormData) {
+  const { supabase } = await requireRole(canWork);
+  const id = String(formData.get("id") ?? "");
+
+  const { data, error } = await supabase
+    .from("loads")
+    .update({ dryer_load_id: null })
+    .eq("id", id)
+    .eq("stage", "Drying")
+    .select("id");
+  if (error || !data?.length) redirect(jobPath(id, codeForDbError(error)));
+
+  redirect(jobPath(id));
+}
