@@ -5,7 +5,7 @@
 
 **Blocked by:** 31, 34
 
-**Status:** in progress
+**Status:** built — 019 run in Supabase; check on the live URL, on a phone
 
 ## Checklist
 
@@ -27,9 +27,26 @@
       Chairperson (self-service password change stays as it is)
 - [x] Look: a warm rice-paddy background, earth tones, light and dark
 - [x] Buttons press in when tapped; loading screens while pages load
-- [ ] Basic security checks: inputs, sessions, RLS on new tables
-- [ ] Main workflows tested again after the changes
+- [x] Basic security checks: inputs, sessions, RLS on new tables
+- [x] Main workflows tested again after the changes
 - [ ] Works on the live URL, on a phone
+
+## Checks done (15 Oct 2026)
+
+- Security: no secret keys in the repo; `.env.local` ignored; only the
+  Supabase URL and publishable key reach the browser. All 10 tables have
+  RLS on with policies and no anonymous access; every security-definer
+  function pins its search_path. Signed-out visitors are sent to sign-in
+  from every staff page, /admin and receipts (also with junk in the
+  address). Error text cannot be injected through the address bar; the
+  reset link cannot redirect to another site. Added browser security
+  headers (no framing, nosniff, referrer policy, no camera/mic/location).
+- Workflow, as Batad's Chairperson in a rolled-back transaction: walk-in
+  -> Drying -> dryer load -> Ready -> weigh -> keep -> release refused
+  while unpaid -> payment -> release; supply entry; a customer's request
+  accepted; a harvest count paid in palay. All passed.
+- 120 unit tests pass; lint and build are clean. Screenshots of the
+  sign-in and sign-up pages checked in light and dark.
 
 ## Decisions (team, 15 Oct 2026)
 

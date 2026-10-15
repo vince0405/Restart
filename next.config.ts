@@ -12,6 +12,24 @@ const nextConfig: NextConfig = {
   //
   // Turn them back on later if you want them, and read:
   // https://nextjs.org/docs/messages/blocking-prerender-dynamic
+  // Basic browser security headers on every page (Ticket 37):
+  // - no showing RPS1 inside another site's frame (stops "clickjacking")
+  // - no guessing file types (stops a file being run as a script)
+  // - only our own address is shared when someone follows a link out
+  // - no camera, microphone or location: the app does not use them
+  headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
+  },
   turbopack: {
     rules: {
       "*.css": {
