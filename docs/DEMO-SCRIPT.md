@@ -8,7 +8,9 @@ can fill in. Don't invent it, and don't skip it.
 
 - [ ] Open the live URL on the phone you'll demo with. Sign in once.
 - [ ] Have three accounts ready: **Chairperson**, **Operator**, **Customer**.
-- [ ] Set the farmgate price in **Settings** (e.g. ₱20 per kg).
+- [ ] In **Settings**, set the farmgate price (e.g. ₱20 per kg) and check the
+      price list is back to 15% / ₱9,000 / 130 sacks / ₱120 (undo any test
+      changes).
 - [ ] Prepare one **Package Deal** job that is already at **Drying**, so you
       don't wait through every step live.
 - [ ] Check the phone has internet and the battery is above 50%.
@@ -67,7 +69,10 @@ At the harvest count, I enter 100 sacks, 6,000 kg, and today's price,
 
 After drying, the palay is lighter. I count again: 95 sacks. Milling is
 95 times ₱120: **₱11,400**. The total is **₱38,400**. Nobody had to
-calculate anything, and the breakdown is on the screen."
+calculate anything, and the breakdown is on the screen.
+
+If the co-op changes its rates, the Chairperson changes them in
+**Settings**: no developer needed."
 
 **d. Weigh, choose, pay, release (~60s)**
 
@@ -91,36 +96,33 @@ the payment, and now I can release it."
 - The **database itself** checks who may change what, and does the fee
   maths. Even someone who gets past the screens can't type in a fake fee or
   release unpaid grain.
-- The Auditor can see everything but change nothing."
+- The Auditor can see everything but change nothing, including a
+  **History** of who changed what and when, which nobody can edit."
 
 ### 5. What it can't do yet: the limitations (~60s)
 
 "We want to be honest about what RPS1 doesn't do yet:
 
-1. **The rates are fixed in the code.** If the co-op changes ₱9,000 or
-   ₱120 or 15%, a developer has to change them. There's no settings screen
-   for them yet.
-2. **The market price is typed in by hand** for each harvest. The app
-   doesn't look up palay prices or keep a price history.
-3. **One job, one dryer.** If two farmers share one dryer load, the app
+1. **The market price is typed in by hand** for each harvest. It starts
+   with the Chairperson's reference price, but the app doesn't look up
+   palay prices or keep a price history.
+2. **One job, one dryer.** If two farmers share one dryer load, the app
    still charges each of them a full load. It doesn't split a load between
    jobs.
-4. **Paying the harvest fee in palay isn't tracked.** The fee is always shown
+3. **Paying the harvest fee in palay isn't tracked.** The fee is always shown
    in pesos. If the farmer pays with palay instead, the app doesn't take
    those kilos out of their grain.
-5. **A discount can be overwritten.** If staff lower the fee and the job is
+4. **A discount can be overwritten.** If staff lower the fee and the job is
    counted again later, the price list replaces the discount.
-6. **Payments are simple.** One cash amount per job. No receipts, no GCash
+5. **Payments are simple.** One cash amount per job. No receipts, no GCash
    or Maya, no record of the payment date, and no "pay later" exception for
    trusted members.
-7. **It needs internet.** In a mill with weak signal, it won't work offline.
-8. **No text messages.** Customers only see updates when they open the app.
-9. **One cooperative only.** Other co-ops can't sign up yet.
-10. **No history of who changed what.** The Auditor sees the current
-    records, not every change made to them.
-11. **Most details can't be edited after saving.** If a name or service is
-    wrong, the job has to be deleted and entered again.
-12. **Forgot password** needs the Chairperson to reset it.
+6. **It needs internet.** In a mill with weak signal, it won't work offline.
+7. **No text messages.** Customers only see updates when they open the app.
+8. **One cooperative only.** Other co-ops can't sign up yet.
+9. **Most details can't be edited after saving.** If a name or service is
+   wrong, the job has to be deleted and entered again.
+10. **Forgot password** needs the Chairperson to reset it.
 
 All of these are written down in our **Later** list. We cut them on purpose
 to ship something that works now."
