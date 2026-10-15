@@ -32,6 +32,12 @@
   --info-dark: #1f5a91;
   --info-soft: #e6f0fa;
 
+  /* Chart series (validated with the dataviz palette checker: lightness
+     band, colour-blind separation and 3:1 against the card, both themes).
+     1 = collected / single series, 2 = still owed. */
+  --chart-1: #236b28;
+  --chart-2: #b07700;
+
   /* Names the UI building blocks in src/components/ui use */
   --background: var(--canvas);
   --foreground: var(--ink);
@@ -77,6 +83,8 @@
   --info: #6aa7e3;
   --info-dark: #93c4f3;
   --info-soft: #132739;
+  --chart-1: #2a7d36;
+  --chart-2: #bf8a1c;
 
   --card: #1b221c;
   --muted-foreground: #a9b2a7;
@@ -106,6 +114,8 @@
   --color-info: var(--info);
   --color-info-dark: var(--info-dark);
   --color-info-soft: var(--info-soft);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);

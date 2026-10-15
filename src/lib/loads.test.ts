@@ -11,6 +11,7 @@ import {
   expiryTone,
   firstStage,
   jobRef,
+  moneyStats,
   moneySummary,
   type LoadRow,
   needsHarvestAddress,
@@ -23,6 +24,7 @@ import {
   SERVICE_TYPES,
   parseDisposition,
   parseHarvestAddress,
+  parseStatsRange,
   settlement,
   stepsFor,
   summarize,
@@ -484,5 +486,58 @@ describe("counting sacks after harvesting and drying", () => {
     expect(parseCount("", "10").ok).toBe(false);
     expect(parseCount("3.5", "10").ok).toBe(false);
     expect(parseCount("3", "-1").ok).toBe(false);
+  });
+});
+
+describe("money statistics", () => {
+  const now = new Date("2026-10-15T04:00:00Z");
+  const base = {
+    customer_name: "X", sacks: 10, kilos: 500, stage: "Ready", stored_at: null,
+    request_status: "accepted", is_paid: false, amount_paid: null,
+  };
+  const loads: LoadRow[] = [
+    // October: 5,000 fee, nothing paid yet.
+    { ...base, id: "a", created_at: "2026-10-02T02:00:00Z", service_type: "Package Deal", agreed_price: 5000 },
+    // September: 3,000 fee paid in cash.
+    { ...base, id: "b", created_at: "2026-09-10T02:00:00Z", service_type: "Drying only", agreed_price: 3000, is_paid: true, amount_paid: 3000 },
+    // September: 2,000 fee taken out of a 300 kg buyout at 40/kg.
+    { ...base, id: "c", created_at: "2026-09-20T02:00:00Z", service_type: "Milling only", agreed_price: 2000,
+      output_kg: 1000, keep_percent: 70, disposition: "split", buyout_status: "approved", price_per_kg: 40 },
+    // March: outside a 6-month window.
+    { ...base, id: "d", created_at: "2026-03-05T02:00:00Z", service_type: "Drying only", agreed_price: 999 },
+    // Rejected requests never count.
+    { ...base, id: "e", created_at: "2026-10-03T02:00:00Z", service_type: "Drying only", agreed_price: 7777, request_status: "rejected" },
+  ];
+
+  it("shows the last six months, oldest first, ending this month", () => {
+    const s = moneyStats(loads, "6m", now);
+    expect(s.months.map((m) => m.key)).toEqual(["2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"]);
+    expect(s.months.at(-1)).toMatchObject({ collected: 0, owed: 5000, jobs: 1 });
+    expect(s.months.at(-2)).toMatchObject({ collected: 5000, owed: 0, jobs: 2 });
+  });
+
+  it("totals only what is in the range, counting buyout-covered fees as collected", () => {
+    const s = moneyStats(loads, "6m", now);
+    expect(s.totals).toEqual({
+      jobs: 3, fees: 10000, collected: 5000, owed: 5000, boughtKg: 300,
+      averageFee: 3333.33, collectedShare: 0.5,
+    });
+  });
+
+  it("widens to 12 months, or back to the first job", () => {
+    expect(moneyStats(loads, "12m", now).months).toHaveLength(12);
+    expect(moneyStats(loads, "12m", now).totals.jobs).toBe(4);
+    expect(moneyStats(loads, "all", now).months[0].key).toBe("2026-03");
+  });
+
+  it("lists every service, most jobs first", () => {
+    const s = moneyStats(loads, "6m", now);
+    expect(s.byService.map((x) => x.service)).toHaveLength(4);
+    expect(s.byService.find((x) => x.service === "Harvesting + Drying")).toEqual({ service: "Harvesting + Drying", jobs: 0, fees: 0 });
+  });
+
+  it("treats an unknown range as six months", () => {
+    expect(parseStatsRange("nonsense")).toBe("6m");
+    expect(parseStatsRange("12m")).toBe("12m");
   });
 });

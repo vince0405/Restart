@@ -442,6 +442,80 @@ export function customerSummary(
   return summary;
 }
 
+/** How far back the Money statistics look. */
+export type StatsRange = "6m" | "12m" | "all";
+
+export function parseStatsRange(raw: unknown): StatsRange {
+  return raw === "12m" || raw === "all" ? raw : "6m";
+}
+
+/**
+ * The Money statistics, from accepted jobs only. Grouped by the month the
+ * job was LOGGED (Manila time) — the app does not record payment dates.
+ *
+ *   collected = fee - what the customer still owes
+ *               (cash paid, or taken out of an approved buyout)
+ */
+export function moneyStats(loads: LoadRow[], range: StatsRange, now: Date = new Date()) {
+  const monthKey = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" }).slice(0, 7);
+  const accepted = loads.filter((l) => !l.request_status || l.request_status === "accepted");
+
+  // The months to show, oldest first, ending with this month.
+  const thisMonth = monthKey(now);
+  let count = range === "12m" ? 12 : 6;
+  if (range === "all") {
+    const first = accepted.map((l) => monthKey(new Date(l.created_at))).sort()[0] ?? thisMonth;
+    const [fy, fm] = first.split("-").map(Number);
+    const [ty, tm] = thisMonth.split("-").map(Number);
+    count = Math.min(24, Math.max(1, (ty - fy) * 12 + (tm - fm) + 1));
+  }
+  const [ty, tm] = thisMonth.split("-").map(Number);
+  const months = Array.from({ length: count }, (_, i) => {
+    const d = new Date(Date.UTC(ty, tm - 1 - (count - 1 - i), 1));
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("en-PH", { month: "short", timeZone: "UTC" });
+    return { key, label, year: d.getUTCFullYear(), collected: 0, owed: 0, jobs: 0 };
+  });
+  const byKey = new Map(months.map((m) => [m.key, m]));
+
+  const services = new Map<string, { service: string; jobs: number; fees: number }>();
+  const totals = { jobs: 0, fees: 0, collected: 0, owed: 0, boughtKg: 0 };
+
+  for (const load of accepted) {
+    const month = byKey.get(monthKey(new Date(load.created_at)));
+    if (!month) continue; // outside the chosen range
+    const s = settlement(load);
+    const collected = round2(load.agreed_price - s.stillOwes);
+    month.collected = round2(month.collected + collected);
+    month.owed = round2(month.owed + s.stillOwes);
+    month.jobs++;
+
+    const svc = services.get(load.service_type) ?? { service: load.service_type, jobs: 0, fees: 0 };
+    svc.jobs++;
+    svc.fees = round2(svc.fees + load.agreed_price);
+    services.set(load.service_type, svc);
+
+    totals.jobs++;
+    totals.fees = round2(totals.fees + load.agreed_price);
+    totals.collected = round2(totals.collected + collected);
+    totals.owed = round2(totals.owed + s.stillOwes);
+    if (load.buyout_status === "approved") totals.boughtKg = round2(totals.boughtKg + s.soldKg);
+  }
+
+  return {
+    months,
+    // Every service, most jobs first (services with no jobs show as 0).
+    byService: SERVICE_TYPES.map((name) => services.get(name) ?? { service: name, jobs: 0, fees: 0 }).sort(
+      (a, b) => b.jobs - a.jobs,
+    ),
+    totals: {
+      ...totals,
+      averageFee: totals.jobs ? round2(totals.fees / totals.jobs) : 0,
+      collectedShare: totals.fees ? totals.collected / totals.fees : 0,
+    },
+  };
+}
+
 /** Turn a keep / sell / split choice into the database columns. */
 export function parseDisposition(
   choice: unknown,
