@@ -29,6 +29,13 @@ import {
   stepsFor,
 } from "@/lib/loads";
 import { canApproveBuyout, canManage, canWork, isStaff } from "@/lib/roles";
+import {
+  DRYER_LOAD_FEE,
+  DRYER_LOAD_MAX_SACKS,
+  HARVEST_SHARE,
+  MILLING_FEE_PER_SACK,
+  priceListTotal,
+} from "@/lib/pricing";
 import { getSettings, requireRole } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import {
@@ -42,6 +49,7 @@ import {
   recordOutput,
   setDisposition,
   storeLoad,
+  updateFee,
 } from "../actions";
 
 const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
@@ -102,6 +110,10 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
   const canStore = worker && atReady && !stored && weighed && chosen && money.keptKg > 0;
 
   const product = productFor(load.service_type);
+  // The fee parts the price list has worked out so far (supabase/sql/009).
+  const hasParts = load.harvest_fee != null || load.drying_fee != null || load.milling_fee != null;
+  const listTotal = priceListTotal(load);
+  const adjusted = hasParts && listTotal !== Number(load.agreed_price);
   const storedAt = stored ? new Date(load.stored_at as string) : null;
   const expires = storedAt ? expiryDate(storedAt, load.service_type, settings.lifeline) : null;
   const left = expires ? daysLeft(expires) : null;
@@ -246,7 +258,29 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                     required
                   />
                 </div>
+                {countStep === "harvesting" && (
+                  <div className="flex flex-col gap-2 sm:col-span-2">
+                    <Label htmlFor="market_price_per_kg">Today&rsquo;s market price of palay (₱ per kg)</Label>
+                    <Input
+                      id="market_price_per_kg"
+                      name="market_price_per_kg"
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step={0.01}
+                      defaultValue={load.market_price_per_kg ?? (settings.farmgate_price_per_kg || undefined)}
+                      required
+                    />
+                  </div>
+                )}
               </div>
+              <p className="text-xs text-muted-foreground">
+                {countStep === "harvesting"
+                  ? `The fee is worked out from these numbers: harvesting is ${HARVEST_SHARE * 100}% of the kg × the market price; drying is ${peso.format(DRYER_LOAD_FEE)} per dryer load of up to ${DRYER_LOAD_MAX_SACKS} sacks.`
+                  : load.service_type === "Package Deal"
+                    ? `Milling is ${peso.format(MILLING_FEE_PER_SACK)} per sack, counted now.`
+                    : null}
+              </p>
               <SubmitButton size="lg" className="w-full sm:w-auto sm:self-start">
                 Save count and move to {next}
               </SubmitButton>
@@ -552,6 +586,21 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
           <section className="rounded-2xl border border-line bg-card p-5 shadow-card xl:self-start">
             <h2 className="font-extrabold text-ink">Billing summary</h2>
             <div className="mt-4 space-y-3 text-sm">
+              {load.harvest_fee != null && (
+                <MoneyRow
+                  label={
+                    Number(load.market_price_per_kg) > 0
+                      ? `Harvesting: ${kg.format(Number(load.harvest_fee) / Number(load.market_price_per_kg))} kg × ${peso.format(Number(load.market_price_per_kg))}`
+                      : `Harvesting (${HARVEST_SHARE * 100}%)`
+                  }
+                  value={peso.format(Number(load.harvest_fee))}
+                />
+              )}
+              {load.drying_fee != null && <MoneyRow label="Drying" value={peso.format(Number(load.drying_fee))} />}
+              {load.milling_fee != null && <MoneyRow label="Milling" value={peso.format(Number(load.milling_fee))} />}
+              {adjusted && (
+                <MoneyRow label="Changed by staff" value={peso.format(Number(load.agreed_price) - listTotal)} />
+              )}
               <MoneyRow label="Processing fee" value={peso.format(load.agreed_price)} strong />
               <MoneyRow label="Paid in cash" value={peso.format(money.paidCash)} />
               {load.buyout_status === "approved" && (
@@ -594,6 +643,34 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                   </SubmitButton>
                 </form>
               ))}
+
+            {manager && !load.is_paid && (
+              <details className="mt-4 border-t border-line pt-4">
+                <summary className="min-h-11 cursor-pointer text-sm font-bold text-brand">
+                  Change the fee (e.g. a discount)
+                </summary>
+                <form action={updateFee} className="mt-2 flex flex-col gap-3">
+                  <input type="hidden" name="id" value={load.id} />
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="new_fee">Processing fee (₱)</Label>
+                    <Input
+                      id="new_fee"
+                      name="agreed_price"
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step={0.01}
+                      defaultValue={load.agreed_price}
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    The next count (after harvesting or drying) works the fee out again from the price list.
+                  </p>
+                  <SubmitButton variant="outline">Save fee</SubmitButton>
+                </form>
+              </details>
+            )}
           </section>
         )}
       </div>

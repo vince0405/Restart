@@ -134,7 +134,9 @@ describe("parseLoadInput", () => {
   });
 
   it("rejects empty or negative price", () => {
-    expect(parseLoadInput({ ...valid, agreed_price: "" }).ok).toBe(false);
+    // Empty = use the price list.
+    const priceList = parseLoadInput({ ...valid, agreed_price: "" });
+    expect(priceList.ok && priceList.value.agreed_price).toBe(0);
     expect(parseLoadInput({ ...valid, agreed_price: "-5" }).ok).toBe(false);
   });
 });

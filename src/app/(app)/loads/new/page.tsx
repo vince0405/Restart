@@ -5,6 +5,7 @@ import {
   Field,
   HarvestAddressField,
   PalayCountFields,
+  PriceList,
   SectionHeading,
   ServicePicker,
 } from "@/components/rps/intake-fields";
@@ -53,22 +54,22 @@ export default async function NewLoadPage({ searchParams }: PageProps<"/loads/ne
 
         <div className="my-8 border-t border-line" />
 
-        <SectionHeading title="Intake details" text="Record the palay received and the agreed price." />
+        <SectionHeading title="Intake details" text="Record the palay received. The fee comes from the price list." />
         <PalayCountFields weightLabel="Total weight" invalidField={errorField(error)} />
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field
-            label="Agreed price"
+            label="Agreed price (optional)"
             name="agreed_price"
             invalid={errorField(error) === "agreed_price"}
             type="number"
             inputMode="decimal"
             min={0}
             step={0.01}
-            placeholder="5000"
+            placeholder="Price list"
             suffix="PHP"
-            required
           />
         </div>
+        <PriceList />
 
         <div className="mt-8 flex items-center justify-between border-t border-line pt-5">
           <Link href="/loads" className={buttonVariants({ variant: "outline" })}>

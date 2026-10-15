@@ -5,7 +5,8 @@ import { HarvestAddress } from "@/components/rps/harvest-address";
 import { PageTitle } from "@/components/rps/page-title";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ErrorNote } from "@/components/rps/error-note";
-import { jobRef } from "@/lib/loads";
+import { jobRef, needsHarvestAddress, isServiceType } from "@/lib/loads";
+import { feeAtIntake } from "@/lib/pricing";
 import { canManage } from "@/lib/roles";
 import { requireRole } from "@/lib/session";
 import { acceptRequest, rejectRequest } from "../loads/actions";
@@ -133,9 +134,15 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
                       inputMode="decimal"
                       min={0}
                       step={0.01}
+                      defaultValue={feeAtIntake(r.service_type, r.sacks)}
                       required
                       className="min-h-12 rounded-xl border border-field bg-card px-3 text-base text-ink focus-visible:border-brand md:text-sm"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      {isServiceType(r.service_type) && needsHarvestAddress(r.service_type)
+                        ? "Worked out from the price list after the harvest count."
+                        : "From the price list. Change it for a discount."}
+                    </p>
                     <SubmitButton>Accept</SubmitButton>
                   </form>
                   <form action={rejectRequest} className="flex flex-col gap-2">

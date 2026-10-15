@@ -93,6 +93,13 @@ export async function moveStage(formData: FormData) {
     const count = parseCount(formData.get("sacks"), formData.get("kilos"));
     if (!count.ok) redirect(jobPath(id, count.error));
     changes = { ...changes, ...count.value };
+    // With the harvest count comes the day's palay price: the database
+    // works out the harvesting fee from it (supabase/sql/009).
+    if (from === "Harvesting") {
+      const price = parseAmountPaid(formData.get("market_price_per_kg"));
+      if (!price.ok) redirect(jobPath(id, "market_price_invalid"));
+      changes.market_price_per_kg = price.value;
+    }
   }
 
   let query = supabase
@@ -150,6 +157,27 @@ export async function markPaid(formData: FormData) {
   const { data, error } = await supabase
     .from("loads")
     .update({ is_paid: true, amount_paid: amount.value })
+    .eq("id", id)
+    .select("id");
+  if (error || !data?.length) redirect(jobPath(id, codeForDbError(error)));
+
+  redirect(jobPath(id));
+}
+
+/**
+ * Change the processing fee, e.g. for a discount. The price list fills it
+ * in; this overrides it until the next count re-applies the price list.
+ */
+export async function updateFee(formData: FormData) {
+  const { supabase } = await requireRole(canManage);
+  const id = String(formData.get("id") ?? "");
+
+  const fee = parseAmountPaid(formData.get("agreed_price"));
+  if (!fee.ok) redirect(jobPath(id, fee.error));
+
+  const { data, error } = await supabase
+    .from("loads")
+    .update({ agreed_price: fee.value })
     .eq("id", id)
     .select("id");
   if (error || !data?.length) redirect(jobPath(id, codeForDbError(error)));

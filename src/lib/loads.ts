@@ -209,6 +209,10 @@ export type LoadRow = {
   customer_note?: string | null;
   cancelled_at?: string | null;
   harvest_address?: string | null;
+  market_price_per_kg?: number | null;
+  harvest_fee?: number | null;
+  drying_fee?: number | null;
+  milling_fee?: number | null;
 };
 
 /** Days left for a stored load, or null if it is not in storage. */
@@ -593,7 +597,8 @@ export function parseLoadInput(raw: {
     return { ok: false, error: "kilos_invalid" };
   }
 
-  const agreed_price = parseNumber(raw.agreed_price);
+  // Left empty = use the price list (the database fills it in).
+  const agreed_price = blank(raw.agreed_price) ? 0 : parseNumber(raw.agreed_price);
   if (agreed_price === null || agreed_price < 0) {
     return { ok: false, error: "price_invalid" };
   }

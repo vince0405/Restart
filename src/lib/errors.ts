@@ -13,6 +13,7 @@ export const ERROR_MESSAGES = {
   kilos_invalid: "Kilos must be 0 or more.",
   service_invalid: "Choose a service type.",
   price_invalid: "Enter an amount of 0 or more.",
+  market_price_invalid: "Enter today's market price of palay per kg (0 or more).",
   weight_invalid: "Enter the output weight in kg (0 or more).",
   reason_required: "Give the customer a reason for rejecting.",
   choice_required: "Choose keep, sell or split.",
