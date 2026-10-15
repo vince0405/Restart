@@ -33,6 +33,7 @@ export const ERROR_MESSAGES = {
   // Rules the database refused
   choose_first: "The customer must choose keep, sell or split first.",
   nothing_kept: "Nothing was kept, so there is nothing to store.",
+  unpaid_release: "The customer still owes money. Record the payment first, then release.",
   not_allowed: "Your role is not allowed to do that.",
   not_changed: "Nothing changed. The job may have moved on already — refresh and try again.",
   cancel_closed:
@@ -61,6 +62,7 @@ export function codeForDbError(error: { message?: string } | null): ErrorCode {
   const m = error.message ?? "";
   if (m.includes("must choose keep, sell or split first")) return "choose_first";
   if (m.includes("Nothing was kept")) return "nothing_kept";
+  if (m.includes("must pay before release")) return "unpaid_release";
   if (m.includes("can no longer be cancelled")) return "cancel_closed";
   if (m.includes("cannot") || m.includes("Only the") || m.includes("permission denied")) {
     return "not_allowed";

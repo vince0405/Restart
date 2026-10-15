@@ -50,6 +50,7 @@ The harvest is 100 sacks, weighed at 6,000 kg. After drying, there are 95 sacks.
 - [x] The harvest count form asks for today's market price per kg
       (pre-filled from Settings)
 - [x] The job screen shows the breakdown (harvest, drying, milling)
+- [x] A job can't be released until the fee is paid (or covered by a buyout)
 - [x] Any new columns go in a numbered SQL file in `supabase/sql/`, with RLS
       policies to match (009)
 - [ ] The team has run 009 in Supabase

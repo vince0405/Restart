@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  canRelease,
   cancelDeadline,
   countsAfter,
   describeCount,
@@ -541,5 +542,18 @@ describe("money statistics", () => {
   it("treats an unknown range as six months", () => {
     expect(parseStatsRange("nonsense")).toBe("6m");
     expect(parseStatsRange("12m")).toBe("12m");
+  });
+});
+
+describe("release needs the fee settled", () => {
+  const job = { agreed_price: 5000, is_paid: false, amount_paid: null, output_kg: 1000, keep_percent: 100 };
+  it("blocks release while the customer owes", () => {
+    expect(canRelease(job)).toBe(false);
+    expect(canRelease({ ...job, is_paid: true, amount_paid: 4000 })).toBe(false);
+  });
+  it("allows release once paid, covered by a buyout, or free", () => {
+    expect(canRelease({ ...job, is_paid: true, amount_paid: 5000 })).toBe(true);
+    expect(canRelease({ ...job, keep_percent: 50, buyout_status: "approved", price_per_kg: 20 })).toBe(true);
+    expect(canRelease({ ...job, agreed_price: 0 })).toBe(true);
   });
 });

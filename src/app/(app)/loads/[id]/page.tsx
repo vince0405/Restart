@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorNote } from "@/components/rps/error-note";
 import {
+  canRelease,
   describeCount,
   countsAfter,
   daysLeft,
@@ -104,7 +105,10 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
   // Leaving Ready needs the batch weighed AND the customer's keep / sell /
   // split choice. Storing also needs something kept. (The database and the
   // server actions refuse these too.)
-  const canAdvance = worker && !closed && next !== null && (!atReady || (weighed && chosen));
+  // Releasing also needs the fee settled (paid, or covered by a buyout).
+  const unpaidRelease = next === "Released" && !canRelease(load);
+  const canAdvance =
+    worker && !closed && next !== null && (!atReady || (weighed && chosen)) && !unpaidRelease;
   // After harvesting and after drying, moving on needs the new count.
   const countStep = countsAfter(load.stage);
   const canStore = worker && atReady && !stored && weighed && chosen && money.keptKg > 0;
@@ -285,6 +289,13 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                 Save count and move to {next}
               </SubmitButton>
             </form>
+          )}
+
+          {worker && !closed && unpaidRelease && (!atReady || (weighed && chosen)) && (
+            <Notice tone="warning" className="mb-0 mt-5">
+              Release is locked: the customer still owes {peso.format(money.stillOwes)}. Record the
+              payment in the billing summary first.
+            </Notice>
           )}
 
           {worker && atReady && weighed && !chosen && (

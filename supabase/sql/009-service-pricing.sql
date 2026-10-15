@@ -15,6 +15,7 @@
 -- - Staff can still change the total (agreed_price), as before, for a
 --   discount. The next count re-applies the price list.
 -- - Operators may set market_price_per_kg (they record the harvest count).
+-- - A job cannot be Released while the customer still owes money.
 
 -- 1. The new columns ------------------------------------------------------
 
@@ -86,8 +87,9 @@ create trigger loads_price
 
 -- 3. The update guard -----------------------------------------------------
 --
--- The 008 version with ONE change: market_price_per_kg is on the lists
--- for the Chairperson, Monitors and Operators.
+-- The 008 version with TWO changes: market_price_per_kg is on the lists
+-- for the Chairperson, Monitors and Operators, and a job cannot be
+-- released while the customer still owes money.
 
 create or replace function public.loads_before_update() returns trigger
 language plpgsql set search_path = public as $$
@@ -119,6 +121,25 @@ begin
       and new.buyout_status <> 'declined' then
       raise exception 'Nothing was kept for storage';
     end if;
+  end if;
+
+  -- No release until the fee is settled (Ticket 24): paid in cash, or
+  -- covered by an approved buyout. Same sum as settlement() in
+  -- src/lib/loads.ts.
+  if new.stage = 'Released' and old.stage <> 'Released' then
+    declare
+      kept_pct numeric := case when old.buyout_status = 'declined' then 100
+                               else coalesce(old.keep_percent, 100) end;
+      sold_kg  numeric := coalesce(old.output_kg, 0)
+                        - round(coalesce(old.output_kg, 0) * kept_pct / 100, 2);
+      sale     numeric := case when old.buyout_status = 'approved'
+                               then round(sold_kg * coalesce(old.price_per_kg, 0), 2) else 0 end;
+      paid     numeric := case when old.is_paid then coalesce(old.amount_paid, 0) else 0 end;
+    begin
+      if greatest(0, old.agreed_price - paid) - sale > 0 then
+        raise exception 'The customer must pay before release';
+      end if;
+    end;
   end if;
 
   -- Only the customer can cancel, and only through the path below.

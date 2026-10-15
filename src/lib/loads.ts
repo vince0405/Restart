@@ -364,6 +364,14 @@ export function settlement(load: {
   };
 }
 
+/**
+ * Can this job be released? Only once the fee is settled: paid in cash or
+ * covered by an approved buyout. (The database checks the same, 009.)
+ */
+export function canRelease(load: Parameters<typeof settlement>[0]): boolean {
+  return settlement(load).stillOwes === 0;
+}
+
 /** The co-op's money and stock totals, for the Money screen. */
 export function moneySummary(loads: LoadRow[]) {
   const totals = {
