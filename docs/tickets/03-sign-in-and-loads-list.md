@@ -10,11 +10,11 @@ the sign-in screen. The Monitor can sign out.
 
 - [ ] The Monitor's account is created in the Supabase dashboard
 - [ ] Public sign-ups are switched off in Supabase
-- [ ] Visiting the app signed out shows only the sign-in screen
-- [ ] A wrong password shows a clear error message
-- [ ] After signing in, the Monitor sees the loads list with a friendly
+- [x] Visiting the app signed out shows only the sign-in screen
+- [x] A wrong password shows a clear error message
+- [x] After signing in, the Monitor sees the loads list with a friendly
       "No loads yet" message
-- [ ] Sign out returns to the sign-in screen, and the list is no longer
+- [x] Sign out returns to the sign-in screen, and the list is no longer
       reachable
-- [ ] The starter page is gone
+- [x] The starter page is gone
 - [ ] Works on the live URL — on a phone
