@@ -20,6 +20,7 @@ type Person = {
   phone: string;
   role: keyof typeof ROLE_LABELS;
   is_member: boolean;
+  pay_later: boolean;
 };
 
 // Chairperson only: add people, and set everyone's role and member flag.
@@ -30,7 +31,7 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
 
   const { data } = await supabase
     .from("profiles")
-    .select("id, created_at, full_name, phone, role, is_member")
+    .select("id, created_at, full_name, phone, role, is_member, pay_later")
     .order("created_at", { ascending: false });
   const everyone = (data ?? []) as Person[];
   const people = filter ? everyone.filter((p) => p.role === filter) : everyone;
@@ -192,15 +193,26 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
                   </select>
                   {p.id === user.id && <input type="hidden" name="role" value={p.role} />}
                 </label>
-                <label className="flex items-center gap-2 text-sm font-semibold text-ink">
-                  <input
-                    type="checkbox"
-                    name="is_member"
-                    defaultChecked={p.is_member}
-                    className="size-5 accent-[var(--brand)]"
-                  />
-                  Member
-                </label>
+                <div className="flex flex-col gap-2">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-ink">
+                    <input
+                      type="checkbox"
+                      name="is_member"
+                      defaultChecked={p.is_member}
+                      className="size-5 accent-[var(--brand)]"
+                    />
+                    Member
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-ink">
+                    <input
+                      type="checkbox"
+                      name="pay_later"
+                      defaultChecked={p.pay_later}
+                      className="size-5 accent-[var(--brand)]"
+                    />
+                    Pay later
+                  </label>
+                </div>
                 <SubmitButton variant="outline">
                   Save
                 </SubmitButton>

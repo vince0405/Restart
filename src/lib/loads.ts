@@ -372,11 +372,12 @@ export function settlement(load: {
 }
 
 /**
- * Can this job be released? Only once the fee is settled: paid in cash or
- * covered by an approved buyout. (The database checks the same, 009.)
+ * Can this job be released? Only once the fee is settled: paid or covered
+ * by an approved buyout — or the customer is a member the Chairperson
+ * trusts to pay later (Ticket 31). The database checks the same (017).
  */
-export function canRelease(load: Parameters<typeof settlement>[0]): boolean {
-  return settlement(load).stillOwes === 0;
+export function canRelease(load: Parameters<typeof settlement>[0], payLater = false): boolean {
+  return payLater || settlement(load).stillOwes === 0;
 }
 
 /** The co-op's money and stock totals, for the Money screen. */
@@ -693,4 +694,62 @@ export function parseJobDetails(
     }
   }
   return { ok: true, value: details };
+}
+
+// ---- Payments (Ticket 31) ----------------------------------------------
+
+export const PAYMENT_METHODS = ["cash", "gcash", "maya", "bank"] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  cash: "Cash",
+  gcash: "GCash",
+  maya: "Maya",
+  bank: "Bank transfer",
+};
+
+export function paymentMethodLabel(method: string): string {
+  return (PAYMENT_METHOD_LABELS as Record<string, string>)[method] ?? method;
+}
+
+/** One payment on a job, as the payments table holds it (supabase/sql/017). */
+export type Payment = {
+  id: string;
+  load_id: string;
+  amount: number;
+  paid_on: string;
+  method: string;
+  reference: string | null;
+  recorded_by: string | null;
+  created_at: string;
+};
+
+/**
+ * The "Record a payment" form: an amount above 0, a date (YYYY-MM-DD, not
+ * in the future), a method from the list and an optional reference number.
+ * `today` is the date in Manila, passed in so this stays testable.
+ */
+export function parsePayment(
+  raw: { amount: unknown; paid_on: unknown; method: unknown; reference: unknown },
+  today: string,
+): ParseResult<{ amount: number; paid_on: string; method: PaymentMethod; reference: string | null }> {
+  const amount = parseNumber(raw.amount);
+  if (amount === null || amount <= 0) return { ok: false, error: "payment_invalid" };
+
+  const paidOn = String(raw.paid_on ?? "").trim() || today;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(paidOn) || paidOn > today) return { ok: false, error: "payment_date_invalid" };
+
+  const method = String(raw.method ?? "cash");
+  if (!(PAYMENT_METHODS as readonly string[]).includes(method)) return { ok: false, error: "payment_invalid" };
+
+  const reference = String(raw.reference ?? "").trim().slice(0, 100);
+  return {
+    ok: true,
+    value: { amount: Math.round(amount * 100) / 100, paid_on: paidOn, method: method as PaymentMethod, reference: reference || null },
+  };
+}
+
+/** Today's date in Manila, YYYY-MM-DD. */
+export function manilaToday(now: Date = new Date()): string {
+  return now.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
 }

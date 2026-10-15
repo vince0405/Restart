@@ -14,7 +14,7 @@ import { PriceHistory } from "@/components/rps/price-history";
 import { FeesByMonthChart, JobsByServiceChart } from "@/components/rps/money-charts";
 import { StatCard } from "@/components/rps/stat-card";
 import { ErrorNote } from "@/components/rps/error-note";
-import { jobRef, type LoadRow, moneyStats, moneySummary, parseStatsRange, settlement, type StatsRange } from "@/lib/loads";
+import { jobRef, type LoadRow, moneyStats, moneySummary, parseStatsRange, type Payment, paymentMethodLabel, settlement, type StatsRange } from "@/lib/loads";
 import { canSeeMoney } from "@/lib/roles";
 import { requireRole } from "@/lib/session";
 
@@ -35,6 +35,17 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
   const loads = (data ?? []) as LoadRow[];
   const m = moneySummary(loads);
 
+  // The latest payments, from the payments table (Ticket 31). The totals
+  // above use each job's paid total, which the database keeps equal to its
+  // payments (supabase/sql/017).
+  const { data: paymentRows } = await supabase
+    .from("payments")
+    .select("*, load:loads(customer_name)")
+    .order("paid_on", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(20);
+  const payments = (paymentRows ?? []) as (Payment & { load: { customer_name: string } | null })[];
+
   // Statistics for the chosen period (6 months by default).
   const { range: rawRange } = await searchParams;
   const range = parseStatsRange(rawRange);
@@ -47,7 +58,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
   ];
 
   const cards = [
-    { label: "Cash received (fees)", value: peso.format(m.cashReceived), icon: Banknote, tone: "green" as const },
+    { label: "Payments received (fees)", value: peso.format(m.cashReceived), icon: Banknote, tone: "green" as const },
     { label: "Fees taken from buyouts", value: peso.format(m.feesCoveredByBuyouts), icon: HandCoins, tone: "green" as const },
     {
       label: "Customers still owe",
@@ -113,7 +124,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
               Statistics
             </h2>
             <p className="text-sm text-muted-foreground">
-              Jobs grouped by the month they were logged (payment dates aren&rsquo;t recorded).
+              Jobs grouped by the month they were logged.
             </p>
           </div>
           {/* One filter row, above everything it changes. */}
@@ -227,7 +238,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
                   <span className="text-xs font-bold text-brand">#{jobRef(load.id)}</span>
                   <span className="truncate text-sm font-bold text-ink">{load.customer_name}</span>
                   <span className="flex flex-wrap gap-1.5">
-                    <PaidBadge isPaid={load.is_paid} amount={load.amount_paid} />
+                    <PaidBadge isPaid={load.is_paid} amount={load.amount_paid} fee={load.agreed_price} />
                     {s.stillOwes > 0 && <Badge tone="amber">Owes {peso.format(s.stillOwes)}</Badge>}
                     {load.buyout_status === "requested" && <Badge tone="amber">Buyout to decide</Badge>}
                     {load.buyout_status === "approved" && !load.payout_done_at && s.payout > 0 && (
@@ -235,6 +246,39 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
                     )}
                   </span>
                   <ChevronRight className="hidden size-4 text-muted-foreground md:block" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-line bg-card p-2 shadow-card md:p-3">
+        <div className="px-3 pb-3 pt-2">
+          <h2 className="font-extrabold text-ink">Latest payments</h2>
+          <p className="text-xs text-muted-foreground">The last 20 payments recorded. Tap one for its receipt.</p>
+        </div>
+        {payments.length === 0 ? (
+          <p className="px-3 pb-6 text-sm text-muted-foreground">No payments recorded yet.</p>
+        ) : (
+          <ul>
+            {payments.map((p) => (
+              <li key={p.id} className="border-t border-line/70">
+                <Link
+                  href={`/receipts/${p.id}`}
+                  className="grid items-center gap-1 rounded-xl px-3 py-3 hover:bg-surface md:grid-cols-[0.9fr_1.4fr_1.4fr_auto]"
+                >
+                  <span className="text-xs font-bold text-brand">
+                    {new Date(`${p.paid_on}T00:00:00+08:00`).toLocaleDateString("en-PH", { timeZone: "Asia/Manila", dateStyle: "medium" })}
+                  </span>
+                  <span className="truncate text-sm font-bold text-ink">
+                    #{jobRef(p.load_id)} · {p.load?.customer_name ?? ""}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {paymentMethodLabel(p.method)}
+                    {p.reference ? ` · ${p.reference}` : ""}
+                  </span>
+                  <span className="text-sm font-extrabold tabular-nums text-ink">{peso.format(Number(p.amount))}</span>
                 </Link>
               </li>
             ))}

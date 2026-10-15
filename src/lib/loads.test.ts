@@ -26,6 +26,8 @@ import {
   parseDisposition,
   parseHarvestAddress,
   parseJobDetails,
+  parsePayment,
+  manilaToday,
   parseStatsRange,
   settlement,
   stepsFor,
@@ -631,5 +633,39 @@ describe("harvest share paid in palay on the Money page (Ticket 30)", () => {
     const m = moneySummary([job, { ...job, id: "q", harvest_kept_kg: 120.5 }]);
     expect(m.harvestPalayKg).toBe(420.5);
     expect(m.cashReceived).toBe(0);
+  });
+});
+
+describe("payments (Ticket 31)", () => {
+  const today = "2026-10-15";
+  const form = { amount: "2500", paid_on: "2026-10-14", method: "gcash", reference: " 1234 5678 " };
+
+  it("reads a payment", () => {
+    expect(parsePayment(form, today)).toEqual({
+      ok: true,
+      value: { amount: 2500, paid_on: "2026-10-14", method: "gcash", reference: "1234 5678" },
+    });
+  });
+
+  it("uses today and cash when left out", () => {
+    const r = parsePayment({ amount: "100", paid_on: "", method: undefined, reference: "" }, today);
+    expect(r).toEqual({ ok: true, value: { amount: 100, paid_on: today, method: "cash", reference: null } });
+  });
+
+  it("refuses 0, unknown methods and future dates", () => {
+    expect(parsePayment({ ...form, amount: "0" }, today).ok).toBe(false);
+    expect(parsePayment({ ...form, method: "paypal" }, today).ok).toBe(false);
+    expect(parsePayment({ ...form, paid_on: "2026-10-16" }, today)).toEqual({ ok: false, error: "payment_date_invalid" });
+  });
+
+  it("lets a trusted member be released while owing", () => {
+    const job = { agreed_price: 5000, is_paid: true, amount_paid: 2000 };
+    expect(canRelease(job)).toBe(false);
+    expect(canRelease(job, true)).toBe(true);
+  });
+
+  it("knows today's date in Manila", () => {
+    // 20:00 UTC on 14 Oct is already 15 Oct in Manila (UTC+8).
+    expect(manilaToday(new Date("2026-10-14T20:00:00Z"))).toBe("2026-10-15");
   });
 });

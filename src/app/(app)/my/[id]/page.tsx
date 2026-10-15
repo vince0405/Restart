@@ -19,6 +19,8 @@ import {
   isStage,
   jobRef,
   type LoadRow,
+  type Payment,
+  paymentMethodLabel,
   productFor,
   settlement,
   stepsFor,
@@ -59,6 +61,16 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
   const { data } = await supabase.from("loads").select("*").eq("id", id).maybeSingle();
   const load = data as LoadRow | null;
   if (!load || !isServiceType(load.service_type) || !isStage(load.stage)) notFound();
+
+  // Their payments on this job, each with a receipt (Ticket 31). RLS only
+  // ever returns payments on the customer's own jobs.
+  const { data: paymentRows } = await supabase
+    .from("payments")
+    .select("*")
+    .eq("load_id", id)
+    .order("paid_on")
+    .order("created_at");
+  const payments = (paymentRows ?? []) as Payment[];
 
   const status = customerStatus(load);
   const product = productFor(load.service_type);
@@ -263,7 +275,22 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
                 />
               )}
               <MoneyRow label="Processing fee" value={load.agreed_price > 0 ? peso.format(load.agreed_price) : "To be set"} />
-              <MoneyRow label="Paid in cash" value={peso.format(money.paidCash)} />
+              <MoneyRow label="Paid so far" value={peso.format(money.paidCash)} />
+              {payments.length > 0 && (
+                <ul className="divide-y divide-line rounded-xl border border-line">
+                  {payments.map((p) => (
+                    <li key={p.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2">
+                      <Link href={`/receipts/${p.id}`} className="font-bold text-brand">
+                        {peso.format(Number(p.amount))}
+                      </Link>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(new Date(`${p.paid_on}T00:00:00+08:00`))} · {paymentMethodLabel(p.method)}
+                        {p.reference ? ` · ${p.reference}` : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
               {load.buyout_status === "requested" && (
                 <p className="rounded-xl bg-gold-soft p-3 text-gold-dark">
                   The chairperson is deciding on your sale.

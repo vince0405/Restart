@@ -26,6 +26,11 @@ import {
   isStage,
   jobRef,
   type LoadRow,
+  manilaToday,
+  PAYMENT_METHOD_LABELS,
+  PAYMENT_METHODS,
+  type Payment,
+  paymentMethodLabel,
   nextStage,
   prevStage,
   productFor,
@@ -43,13 +48,13 @@ import {
   approveBuyout,
   declineBuyout,
   deleteLoad,
+  deletePayment,
   joinDryerLoad,
   leaveDryerLoad,
-  markNotPaid,
-  markPaid,
   markPayoutDone,
   moveStage,
   recordOutput,
+  recordPayment,
   setDisposition,
   storeLoad,
   updateDetails,
@@ -67,7 +72,7 @@ type Job = LoadRow & {
   reject_reason: string | null;
   preferred_date: string | null;
   customer_note: string | null;
-  customer: { full_name: string; phone: string; is_member: boolean } | null;
+  customer: { full_name: string; phone: string; is_member: boolean; pay_later: boolean } | null;
 };
 
 export default async function LoadDetailPage({ params, searchParams }: PageProps<"/loads/[id]">) {
@@ -80,7 +85,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
   // RLS: staff see every job. A made-up id is simply "not found".
   const { data } = await supabase
     .from("loads")
-    .select("*, customer:profiles!loads_customer_id_fkey(full_name, phone, is_member)")
+    .select("*, customer:profiles!loads_customer_id_fkey(full_name, phone, is_member, pay_later)")
     .eq("id", id)
     .maybeSingle();
   const load = data as Job | null;
@@ -106,6 +111,15 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
       historyNames = new Map((people ?? []).map((p) => [p.id as string, (p.full_name as string) || "Unnamed"]));
     }
   }
+
+  // Every payment on this job (Ticket 31, supabase/sql/017).
+  const { data: paymentRows } = await supabase
+    .from("payments")
+    .select("*")
+    .eq("load_id", id)
+    .order("paid_on")
+    .order("created_at");
+  const payments = (paymentRows ?? []) as Payment[];
 
   // Which buttons this person gets. The database enforces the same rules.
   const worker = canWork(role);
@@ -158,7 +172,9 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
   // split choice. Storing also needs something kept. (The database and the
   // server actions refuse these too.)
   // Releasing also needs the fee settled (paid, or covered by a buyout).
-  const unpaidRelease = next === "Released" && !canRelease(load);
+  // A member the Chairperson trusts to pay later can be released while owing.
+  const payLater = !!load.customer?.pay_later;
+  const unpaidRelease = next === "Released" && !canRelease(load, payLater);
   const canAdvance =
     worker && !closed && next !== null && (!atReady || (weighed && chosen)) && !unpaidRelease;
   // After harvesting and after drying, moving on needs the new count.
@@ -255,7 +271,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
         </div>
         <div className="ml-auto flex flex-wrap gap-2">
           <StageBadge stage={load.stage} />
-          <PaidBadge isPaid={load.is_paid} amount={load.amount_paid} />
+          <PaidBadge isPaid={load.is_paid} amount={load.amount_paid} fee={load.agreed_price} />
         </div>
       </div>
 
@@ -913,7 +929,31 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                 />
               )}
               <MoneyRow label="Processing fee" value={peso.format(load.agreed_price)} strong />
-              <MoneyRow label="Paid in cash" value={peso.format(money.paidCash)} />
+              <MoneyRow label="Paid so far" value={peso.format(money.paidCash)} />
+              {payments.length > 0 && (
+                <ul className="divide-y divide-line rounded-xl border border-line">
+                  {payments.map((p) => (
+                    <li key={p.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2">
+                      <Link href={`/receipts/${p.id}`} className="font-bold text-brand">
+                        {peso.format(Number(p.amount))}
+                      </Link>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(new Date(`${p.paid_on}T00:00:00+08:00`))} · {paymentMethodLabel(p.method)}
+                        {p.reference ? ` · ${p.reference}` : ""}
+                      </span>
+                      {manager && (
+                        <form action={deletePayment}>
+                          <input type="hidden" name="id" value={load.id} />
+                          <input type="hidden" name="payment" value={p.id} />
+                          <SubmitButton variant="ghost" size="sm" className="text-danger hover:text-danger">
+                            Remove
+                          </SubmitButton>
+                        </form>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
               {load.buyout_status === "approved" && (
                 <MoneyRow
                   label="Covered by the buyout"
@@ -923,39 +963,58 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
               <div className={cn("rounded-xl p-3", money.stillOwes > 0 ? "bg-gold-soft" : "bg-brand-soft")}>
                 <MoneyRow label="Balance due" value={peso.format(money.stillOwes)} strong />
               </div>
+              {payLater && money.stillOwes > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Pay later: the Chairperson trusts this member, so the job can be released before
+                  it is fully paid.
+                </p>
+              )}
             </div>
 
-            {manager &&
-              (load.is_paid ? (
-                <form action={markNotPaid} className="mt-4">
-                  <input type="hidden" name="id" value={load.id} />
-                  <SubmitButton variant="outline" className="w-full">
-                    Mark not paid
-                  </SubmitButton>
-                </form>
-              ) : (
-                <form action={markPaid} className="mt-4 flex flex-col gap-3">
-                  <input type="hidden" name="id" value={load.id} />
+            {manager && money.stillOwes > 0 && (
+              <form action={recordPayment} className="mt-4 flex flex-col gap-3 border-t border-line pt-4">
+                <input type="hidden" name="id" value={load.id} />
+                <h3 className="text-sm font-extrabold text-ink">Record a payment</h3>
+                <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="amount_paid">Cash received (₱)</Label>
+                    <Label htmlFor="pay_amount">Amount (₱)</Label>
                     <Input
-                      id="amount_paid"
-                      name="amount_paid"
+                      id="pay_amount"
+                      name="amount"
                       type="number"
                       inputMode="decimal"
-                      min={0}
+                      min={0.01}
                       step={0.01}
-                      defaultValue={money.stillOwes || load.agreed_price}
+                      defaultValue={money.stillOwes}
                       required
                     />
                   </div>
-                  <SubmitButton size="lg" className="w-full">
-                    Mark paid
-                  </SubmitButton>
-                </form>
-              ))}
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="pay_on">Paid on</Label>
+                    <Input id="pay_on" name="paid_on" type="date" max={manilaToday()} defaultValue={manilaToday()} required />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="pay_method">Method</Label>
+                  <Select id="pay_method" name="method" defaultValue="cash">
+                    {PAYMENT_METHODS.map((m) => (
+                      <option key={m} value={m}>
+                        {PAYMENT_METHOD_LABELS[m]}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="pay_ref">Reference number (optional)</Label>
+                  <Input id="pay_ref" name="reference" maxLength={100} placeholder="e.g. GCash ref. no." />
+                </div>
+                <SubmitButton size="lg" className="w-full">
+                  Record payment
+                </SubmitButton>
+              </form>
+            )}
 
-            {manager && !load.is_paid && (
+            {manager && money.stillOwes > 0 && (
               <details className="mt-4 border-t border-line pt-4">
                 <summary className="min-h-11 cursor-pointer text-sm font-bold text-brand">
                   Change the fee (e.g. a discount)

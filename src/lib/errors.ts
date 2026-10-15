@@ -36,6 +36,8 @@ export const ERROR_MESSAGES = {
   unpaid_release: "The customer still owes money. Record the payment first, then release.",
   not_allowed: "Your role is not allowed to do that.",
   not_changed: "Nothing changed. The job may have moved on already — refresh and try again.",
+  payment_invalid: "Enter an amount above 0 and choose how it was paid.",
+  payment_date_invalid: "Enter the date it was paid (today or earlier).",
   dryer_full: "That dryer load is full. Choose another one or start a new load.",
   dryer_not_drying: "Only a job that is drying, with its sacks counted, can go into a dryer load.",
   service_locked: "The service can only be changed before work starts on the job.",
@@ -69,6 +71,7 @@ export function codeForDbError(error: { message?: string } | null): ErrorCode {
   if (m.includes("can no longer be cancelled")) return "cancel_closed";
   if (m.includes("can only be changed before work starts")) return "service_locked";
   if (m.includes("dryer load is full")) return "dryer_full";
+  if (m.includes("can only be recorded on accepted jobs")) return "not_allowed";
   if (m.includes("dryer load only while drying") || m.includes("before adding the job to a dryer load")) {
     return "dryer_not_drying";
   }

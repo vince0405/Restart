@@ -49,6 +49,16 @@ const FIELD_LABELS: Record<string, string> = {
   dryer_load_fee: "Dryer load fee",
   dryer_load_max_sacks: "Sacks per dryer load",
   milling_fee_per_sack: "Milling fee per sack",
+  amount: "Amount",
+  paid_on: "Paid on",
+  method: "Method",
+  reference: "Reference",
+  load_id: "Job",
+  recorded_by: "Recorded by",
+  pay_later: "Pay later (trusted)",
+  harvest_fee_in: "Harvest share paid in",
+  harvest_kept_kg: "Palay kept as harvest share (kg)",
+  dryer_load_id: "Dryer load",
 };
 
 /** Columns that only repeat who/when, which the entry already shows. */
@@ -58,6 +68,7 @@ export const TABLE_LABELS: Record<string, string> = {
   loads: "Job",
   profiles: "Person",
   settings: "Settings",
+  payments: "Payment",
 };
 
 export const ACTION_LABELS: Record<AuditEntry["action"], string> = {

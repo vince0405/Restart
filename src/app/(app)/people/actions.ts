@@ -27,8 +27,16 @@ export async function updatePerson(formData: FormData) {
     new_role: role,
     new_is_member: formData.get("is_member") === "on",
   });
-
   if (error) redirect(`/people?error=${codeForDbError(error)}`);
+
+  // Pay later (Ticket 31): a trusted member's job can be released while
+  // still owing. The database lets only the Chairperson set it.
+  const { error: trustError } = await supabase.rpc("set_pay_later", {
+    target,
+    trusted: formData.get("pay_later") === "on",
+  });
+  if (trustError) redirect(`/people?error=${codeForDbError(trustError)}`);
+
   redirect("/people?saved=1");
 }
 

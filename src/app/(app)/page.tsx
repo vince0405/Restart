@@ -405,7 +405,7 @@ export default async function DashboardPage() {
                   <span className="hidden md:inline">
                     <StageBadge stage={load.stage} />
                   </span>
-                  <PaidBadge isPaid={load.is_paid} amount={load.amount_paid} />
+                  <PaidBadge isPaid={load.is_paid} amount={load.amount_paid} fee={load.agreed_price} />
                 </span>
               </Link>
             ))}

@@ -39,10 +39,26 @@ export function StageBadge({ stage }: { stage: string }) {
 
 const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
 
-export function PaidBadge({ isPaid, amount }: { isPaid: boolean; amount?: number | null }) {
+export function PaidBadge({
+  isPaid,
+  amount,
+  fee,
+}: {
+  isPaid: boolean;
+  amount?: number | null;
+  /** The job's fee: with it, a payment below the fee shows as "Part paid". */
+  fee?: number;
+}) {
+  const part = isPaid && fee != null && amount != null && Number(amount) < Number(fee);
   return (
-    <Badge tone={isPaid ? "green" : "red"}>
-      {isPaid ? (amount != null ? `Paid ${peso.format(amount)}` : "Paid") : "Not paid"}
+    <Badge tone={part ? "amber" : isPaid ? "green" : "red"}>
+      {part
+        ? `Part paid ${peso.format(Number(amount))}`
+        : isPaid
+          ? amount != null
+            ? `Paid ${peso.format(amount)}`
+            : "Paid"
+          : "Not paid"}
     </Badge>
   );
 }

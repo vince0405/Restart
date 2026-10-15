@@ -14,6 +14,7 @@ import {
   firstStage,
   isServiceType,
   isStage,
+  manilaToday,
   nextStage,
   parseAmountPaid,
   parseCount,
@@ -21,6 +22,7 @@ import {
   parseHarvestAddress,
   parseJobDetails,
   parseLoadInput,
+  parsePayment,
   prevStage,
 } from "@/lib/loads";
 import { canApproveBuyout, canManage, canWork } from "@/lib/roles";
@@ -149,20 +151,28 @@ export async function storeLoad(formData: FormData) {
   redirect(jobPath(id));
 }
 
-/** Records the processing fee paid in cash. */
-export async function markPaid(formData: FormData) {
+/**
+ * Records one payment on a job (Ticket 31): amount, date, method and
+ * reference. The database adds it to the job's paid total
+ * (supabase/sql/017), and fills in who recorded it.
+ */
+export async function recordPayment(formData: FormData) {
   const { supabase } = await requireRole(canManage);
   const id = String(formData.get("id") ?? "");
 
-  const amount = parseAmountPaid(formData.get("amount_paid"));
-  if (!amount.ok) redirect(jobPath(id, amount.error));
+  const parsed = parsePayment(
+    {
+      amount: formData.get("amount"),
+      paid_on: formData.get("paid_on"),
+      method: formData.get("method"),
+      reference: formData.get("reference"),
+    },
+    manilaToday(),
+  );
+  if (!parsed.ok) redirect(jobPath(id, parsed.error));
 
-  const { data, error } = await supabase
-    .from("loads")
-    .update({ is_paid: true, amount_paid: amount.value })
-    .eq("id", id)
-    .select("id");
-  if (error || !data?.length) redirect(jobPath(id, codeForDbError(error)));
+  const { error } = await supabase.from("payments").insert({ load_id: id, ...parsed.value });
+  if (error) redirect(jobPath(id, codeForDbError(error)));
 
   redirect(jobPath(id));
 }
@@ -189,15 +199,17 @@ export async function updateFee(formData: FormData) {
   redirect(jobPath(id));
 }
 
-/** Undo for a mistaken "Mark paid": back to Not paid, amount cleared. */
-export async function markNotPaid(formData: FormData) {
+/** Removes a payment recorded by mistake. It stays in the history. */
+export async function deletePayment(formData: FormData) {
   const { supabase } = await requireRole(canManage);
   const id = String(formData.get("id") ?? "");
+  const payment = String(formData.get("payment") ?? "");
 
   const { data, error } = await supabase
-    .from("loads")
-    .update({ is_paid: false, amount_paid: null })
-    .eq("id", id)
+    .from("payments")
+    .delete()
+    .eq("id", payment)
+    .eq("load_id", id)
     .select("id");
   if (error || !data?.length) redirect(jobPath(id, codeForDbError(error)));
 

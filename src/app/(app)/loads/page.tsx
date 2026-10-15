@@ -85,7 +85,7 @@ export default async function JobsPage() {
                     </span>
                     <span className="flex flex-wrap items-center gap-1.5">
                       <StageBadge stage={load.stage} />
-                      <PaidBadge isPaid={load.is_paid} amount={load.amount_paid} />
+                      <PaidBadge isPaid={load.is_paid} amount={load.amount_paid} fee={load.agreed_price} />
                       {left !== null && <ExpiryBadge daysLeft={left} warningDays={warning_days} />}
                     </span>
                     <ChevronRight
