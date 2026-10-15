@@ -14,5 +14,5 @@ finish Drying (dried palay is lighter and may fill fewer sacks).
 - [x] "Move to …" from Harvesting or Drying requires the new sacks and kg
 - [x] Screens say "To be counted after harvest" until the first count
 - [x] SQL 008 lets Operators change `sacks` and `kilos` (nothing else new)
-- [ ] The team has run 008 in Supabase
+- [x] The team has run 008 in Supabase
 - [ ] Works on the live URL — on a phone
