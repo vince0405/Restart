@@ -346,6 +346,54 @@ export function moneySummary(loads: LoadRow[]) {
   ) as typeof totals;
 }
 
+/**
+ * The summary at the top of a customer's My jobs page, from their own jobs
+ * only (RLS never hands a customer anyone else's).
+ */
+export function customerSummary(
+  loads: LoadRow[],
+  now: Date = new Date(),
+  lifeline: Lifeline = DEFAULT_LIFELINE,
+) {
+  const summary = {
+    waiting: 0, // pending requests
+    inProgress: 0, // accepted, still being worked on
+    toChoose: 0, // ready and weighed, keep / sell / split not chosen yet
+    stored: 0,
+    soonestExpiryDays: null as number | null,
+    owes: 0,
+    toReceive: 0,
+  };
+
+  for (const load of loads) {
+    if (load.request_status === "pending") {
+      summary.waiting++;
+      continue;
+    }
+    if (load.request_status !== "accepted") continue; // rejected or cancelled
+
+    if (load.stage === "Stored") {
+      summary.stored++;
+      const left = storedDaysLeft(load, now, lifeline);
+      if (left !== null && (summary.soonestExpiryDays === null || left < summary.soonestExpiryDays)) {
+        summary.soonestExpiryDays = left;
+      }
+    } else if (load.stage === "Ready" && load.output_kg != null && !load.disposition) {
+      summary.toChoose++;
+    } else if (load.stage !== "Released") {
+      summary.inProgress++;
+    }
+
+    const money = settlement(load);
+    summary.owes += money.stillOwes;
+    if (!load.payout_done_at) summary.toReceive += money.payout;
+  }
+
+  summary.owes = round2(summary.owes);
+  summary.toReceive = round2(summary.toReceive);
+  return summary;
+}
+
 /** Turn a keep / sell / split choice into the database columns. */
 export function parseDisposition(
   choice: unknown,

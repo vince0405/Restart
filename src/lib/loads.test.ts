@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   cancelDeadline,
+  customerSummary,
   customerStatus,
   daysLeft,
   expiryDate,
@@ -395,5 +396,35 @@ describe("cancelling a request", () => {
       amount_paid: null, stored_at: null, request_status: "cancelled",
     };
     expect(customerStatus(load)).toEqual({ label: "Cancelled", tone: "gray" });
+  });
+});
+
+describe("customer summary", () => {
+  const now = new Date("2026-10-15T04:00:00Z");
+  const base = {
+    created_at: "2026-10-01T02:00:00Z", customer_name: "Me", sacks: 10, kilos: 1000,
+    agreed_price: 1000, is_paid: false, amount_paid: null, stored_at: null, request_status: "accepted",
+  };
+  const loads: LoadRow[] = [
+    { ...base, id: "p", service_type: "Drying only", stage: "Received", request_status: "pending", agreed_price: 0 },
+    { ...base, id: "w", service_type: "Package Deal", stage: "Drying" },
+    { ...base, id: "r", service_type: "Milling only", stage: "Ready", output_kg: 600 },
+    { ...base, id: "s", service_type: "Milling only", stage: "Stored", stored_at: "2026-09-20T02:00:00Z",
+      output_kg: 600, disposition: "keep", keep_percent: 100, is_paid: true, amount_paid: 1000 },
+    { ...base, id: "b", service_type: "Package Deal", stage: "Released", output_kg: 1000, disposition: "sell",
+      keep_percent: 0, buyout_status: "approved", price_per_kg: 40 },
+    { ...base, id: "x", service_type: "Drying only", stage: "Received", request_status: "cancelled" },
+  ];
+
+  it("counts my jobs by what I need to know", () => {
+    expect(customerSummary(loads, now)).toEqual({
+      waiting: 1,
+      inProgress: 1,
+      toChoose: 1,
+      stored: 1,
+      soonestExpiryDays: 5, // rice stored 20 Sep, 30-day lifeline
+      owes: 2000, // the in-progress and ready jobs' fees
+      toReceive: 39000, // 1,000 kg x 40 = 40,000 minus the 1,000 fee
+    });
   });
 });

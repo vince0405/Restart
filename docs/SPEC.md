@@ -107,7 +107,9 @@ co-op's own **stock**.
 
 ## Screens
 - **Sign in / Sign up** — email and password. New accounts are Customers.
-- **Customer: My jobs** — my requests and jobs with status, step, output
+- **Customer: My jobs** — a summary at the top (waiting, being processed,
+  ready for my choice, stored with soonest expiry, what I owe and will be
+  paid), then my requests and jobs with status, step, output
   weight, storage expiry, and what I owe or will be paid.
 - **Customer: Request a service** — co-op (Batad Multipurpose Cooperative),
   service cards, sacks, estimated kg, preferred date, note.

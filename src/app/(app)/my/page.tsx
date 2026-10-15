@@ -1,10 +1,30 @@
 import Link from "next/link";
-import { ChevronRight, ClipboardList, Plus } from "lucide-react";
+import {
+  CalendarClock,
+  ChevronRight,
+  ClipboardList,
+  HandCoins,
+  Hourglass,
+  Plus,
+  Scale,
+  Warehouse,
+  type LucideIcon,
+} from "lucide-react";
 import { Badge, ExpiryBadge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
 import { buttonVariants } from "@/components/ui/button";
 import { ErrorNote } from "@/components/rps/error-note";
-import { customerStatus, jobRef, type LoadRow, settlement, storedDaysLeft } from "@/lib/loads";
+import {
+  customerStatus,
+  customerSummary,
+  expiryLabel,
+  expiryTone,
+  jobRef,
+  type LoadRow,
+  settlement,
+  storedDaysLeft,
+} from "@/lib/loads";
+import { cn } from "@/lib/utils";
 import { isStaff } from "@/lib/roles";
 import { getSettings, requireRole } from "@/lib/session";
 
@@ -28,6 +48,47 @@ export default async function MyJobsPage() {
     )
     .order("created_at", { ascending: false });
   const loads = (data ?? []) as LoadRow[];
+  const sum = customerSummary(loads, new Date(), lifeline);
+
+  // My dashboard: what is happening with my palay, and my money.
+  const tiles: { label: string; value: string; note: string; icon: LucideIcon; tone: string; highlight?: boolean }[] = [
+    {
+      label: "Waiting for the co-op",
+      value: String(sum.waiting),
+      note: sum.waiting === 1 ? "request" : "requests",
+      icon: Hourglass,
+      tone: "bg-gold-soft text-gold-dark",
+    },
+    {
+      label: "Being processed",
+      value: String(sum.inProgress),
+      note: sum.inProgress === 1 ? "job" : "jobs",
+      icon: Scale,
+      tone: "bg-brand-soft text-brand",
+    },
+    {
+      label: "Ready: your choice",
+      value: String(sum.toChoose),
+      note: sum.toChoose > 0 ? "Choose keep, sell or split" : "Nothing to choose",
+      icon: HandCoins,
+      tone: "bg-brand-soft text-brand",
+      highlight: sum.toChoose > 0,
+    },
+    {
+      label: "Stored at the mill",
+      value: String(sum.stored),
+      note:
+        sum.soonestExpiryDays === null
+          ? "Nothing stored"
+          : `Soonest: ${expiryLabel(sum.soonestExpiryDays).toLowerCase()}`,
+      icon: sum.soonestExpiryDays !== null && expiryTone(sum.soonestExpiryDays, warning_days) !== "green" ? CalendarClock : Warehouse,
+      tone:
+        sum.soonestExpiryDays !== null && expiryTone(sum.soonestExpiryDays, warning_days) === "red"
+          ? "bg-danger-soft text-danger"
+          : "bg-info-soft text-info-dark",
+      highlight: sum.soonestExpiryDays !== null && expiryTone(sum.soonestExpiryDays, warning_days) !== "green",
+    },
+  ];
 
   return (
     <div>
@@ -44,6 +105,44 @@ export default async function MyJobsPage() {
       />
 
       <ErrorNote code={error ? "load_failed" : null} />
+
+      {loads.length > 0 && (
+        <div className="mb-6 grid gap-3 lg:grid-cols-[1fr_18rem]">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {tiles.map((t) => (
+              <div
+                key={t.label}
+                className={cn(
+                  "rounded-2xl border bg-white p-4 shadow-card",
+                  t.highlight ? "border-2 border-gold" : "border-line",
+                )}
+              >
+                <div className={cn("mb-3 grid size-9 place-items-center rounded-xl", t.tone)}>
+                  <t.icon className="size-5" aria-hidden />
+                </div>
+                <div className="text-2xl font-extrabold tracking-tight text-ink">{t.value}</div>
+                <div className="text-xs font-bold text-ink">{t.label}</div>
+                <div className="mt-1 text-[11px] text-muted-foreground">{t.note}</div>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-2xl bg-brand p-5 text-white shadow-logo">
+            <div className="text-xs font-bold uppercase tracking-wider text-white/70">My money</div>
+            <div className="mt-3 flex items-baseline justify-between gap-2">
+              <span className="text-sm text-white/80">You owe</span>
+              <span className="text-2xl font-extrabold">{peso.format(sum.owes)}</span>
+            </div>
+            <div className="mt-2 flex items-baseline justify-between gap-2">
+              <span className="text-sm text-white/80">The co-op will pay you</span>
+              <span className="text-2xl font-extrabold">{peso.format(sum.toReceive)}</span>
+            </div>
+            <p className="mt-3 text-[11px] leading-relaxed text-white/70">
+              Fees count once the co-op accepts your request. Sales count once the chairperson
+              approves them.
+            </p>
+          </div>
+        </div>
+      )}
 
       {loads.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-line bg-white px-6 py-14 text-center shadow-card">
