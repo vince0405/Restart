@@ -58,3 +58,19 @@ export function coopListHref({ q, show, page }: { q: string; show: CoopFilter; p
   const query = params.toString();
   return query ? `/admin?${query}` : "/admin";
 }
+
+/**
+ * The page buttons to show: always the first and last page, the pages next
+ * to the current one, and "gap" where pages are skipped.
+ * 10 pages, on page 5: [1, "gap", 4, 5, 6, "gap", 10].
+ */
+export function pageNumbers(page: number, pages: number): (number | "gap")[] {
+  const keep = new Set([1, pages, page - 1, page, page + 1].filter((n) => n >= 1 && n <= pages));
+  const sorted = [...keep].sort((a, b) => a - b);
+  const out: (number | "gap")[] = [];
+  sorted.forEach((n, i) => {
+    if (i > 0 && n - sorted[i - 1] > 1) out.push(n - sorted[i - 1] === 2 ? n - 1 : "gap");
+    out.push(n);
+  });
+  return out;
+}

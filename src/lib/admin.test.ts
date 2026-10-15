@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type CoopRow, coopListHref, parseCoopQuery, searchCoops } from "./admin";
+import { type CoopRow, coopListHref, pageNumbers, parseCoopQuery, searchCoops } from "./admin";
 
 const coop = (i: number, extra: Partial<CoopRow> = {}): CoopRow => ({
   id: `id-${i}`,
@@ -49,5 +49,19 @@ describe("admin co-op list", () => {
   it("builds short addresses", () => {
     expect(coopListHref({ q: "", show: "all", page: 1 })).toBe("/admin");
     expect(coopListHref({ q: "san jose", show: "no-chair", page: 2 })).toBe("/admin?q=san+jose&show=no-chair&page=2");
+  });
+});
+
+describe("page buttons", () => {
+  it("skips far pages with a gap", () => {
+    expect(pageNumbers(5, 10)).toEqual([1, "gap", 4, 5, 6, "gap", 10]);
+  });
+  it("shows a single skipped page instead of a gap", () => {
+    expect(pageNumbers(3, 5)).toEqual([1, 2, 3, 4, 5]);
+  });
+  it("handles the ends and a single page", () => {
+    expect(pageNumbers(1, 10)).toEqual([1, 2, "gap", 10]);
+    expect(pageNumbers(10, 10)).toEqual([1, "gap", 9, 10]);
+    expect(pageNumbers(1, 1)).toEqual([1]);
   });
 });
