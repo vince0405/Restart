@@ -3,41 +3,65 @@
 /* Design tokens. Change these to re-skin the whole app at once —
    every component below reads from them. */
 :root {
-  --background: #ffffff;
-  --foreground: #0a0a0a;
+  /* RPS1: rice-field green on a warm, paper-like background. */
+  --background: #f7f6f1;
+  --foreground: #1c1917;
   --card: #ffffff;
-  --card-foreground: #0a0a0a;
-  --primary: #1a1a1a;
-  --primary-foreground: #fafafa;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #1a1a1a;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --destructive: #dc2626;
-  --destructive-foreground: #fafafa;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #0a0a0a;
-  --radius: 0.625rem;
+  --card-foreground: #1c1917;
+  --primary: #166534;
+  --primary-foreground: #ffffff;
+  --secondary: #efede4;
+  --secondary-foreground: #1c1917;
+  --muted: #efede4;
+  --muted-foreground: #6b675c;
+  --destructive: #b91c1c;
+  --destructive-foreground: #ffffff;
+  --border: #e3e0d4;
+  --input: #d6d2c3;
+  --ring: #166534;
+  --radius: 0.75rem;
+
+  /* Status colours for badges: soft background + strong text. */
+  --status-progress: #fef3c7;
+  --status-progress-foreground: #92400e;
+  --status-ready: #dcfce7;
+  --status-ready-foreground: #166534;
+  --status-stored: #dbeafe;
+  --status-stored-foreground: #1e40af;
+  --status-done: #e7e5e4;
+  --status-done-foreground: #44403c;
+  --status-alert: #fee2e2;
+  --status-alert-foreground: #991b1b;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #fafafa;
-    --card: #141414;
-    --card-foreground: #fafafa;
-    --primary: #fafafa;
-    --primary-foreground: #1a1a1a;
-    --secondary: #27272a;
-    --secondary-foreground: #fafafa;
-    --muted: #27272a;
-    --muted-foreground: #a1a1aa;
-    --destructive: #ef4444;
-    --destructive-foreground: #fafafa;
-    --border: #27272a;
-    --input: #3f3f46;
-    --ring: #d4d4d8;
+    --background: #12110f;
+    --foreground: #f5f5f4;
+    --card: #1c1b18;
+    --card-foreground: #f5f5f4;
+    --primary: #4ade80;
+    --primary-foreground: #052e16;
+    --secondary: #2a2824;
+    --secondary-foreground: #f5f5f4;
+    --muted: #2a2824;
+    --muted-foreground: #a8a29e;
+    --destructive: #f87171;
+    --destructive-foreground: #1c1917;
+    --border: #2f2d28;
+    --input: #44403c;
+    --ring: #4ade80;
+
+    --status-progress: #451a03;
+    --status-progress-foreground: #fcd34d;
+    --status-ready: #052e16;
+    --status-ready-foreground: #86efac;
+    --status-stored: #172554;
+    --status-stored-foreground: #93c5fd;
+    --status-done: #292524;
+    --status-done-foreground: #d6d3d1;
+    --status-alert: #450a0a;
+    --status-alert-foreground: #fca5a5;
   }
 }
 
@@ -57,6 +81,16 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-status-progress: var(--status-progress);
+  --color-status-progress-foreground: var(--status-progress-foreground);
+  --color-status-ready: var(--status-ready);
+  --color-status-ready-foreground: var(--status-ready-foreground);
+  --color-status-stored: var(--status-stored);
+  --color-status-stored-foreground: var(--status-stored-foreground);
+  --color-status-done: var(--status-done);
+  --color-status-done-foreground: var(--status-done-foreground);
+  --color-status-alert: var(--status-alert);
+  --color-status-alert-foreground: var(--status-alert-foreground);
   --radius-base: var(--radius);
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
