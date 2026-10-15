@@ -93,8 +93,8 @@ begin
   return new;
 end $$;
 
-drop trigger if exists loads_price on public.loads;
-create trigger loads_price
+-- create or replace: swaps the 010 trigger in place, no drop needed.
+create or replace trigger loads_price
   before insert or update on public.loads
   for each row execute function public.loads_apply_prices();
 
