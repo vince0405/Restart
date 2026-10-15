@@ -1,9 +1,13 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Building2 } from "lucide-react";
+import { Building2, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { Logo } from "@/components/rps/logo";
 import { Notice } from "@/components/rps/notice";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { buttonVariants } from "@/components/ui/button";
+import { coopListHref, type CoopFilter, type CoopRow, parseCoopQuery, searchCoops } from "@/lib/admin";
+import { cn } from "@/lib/utils";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { getSession } from "@/lib/session";
 import { signOut } from "../actions";
@@ -20,14 +24,6 @@ const MESSAGES: Record<string, string> = {
   save_failed: "Could not save. Please try again.",
 };
 
-type Coop = {
-  id: string;
-  name: string;
-  town: string;
-  created_at: string;
-  chairpersons: string;
-  people: number;
-};
 
 /** Name, mobile, optional email and starting password of a Chairperson. */
 function ChairFields({ prefix }: { prefix: string }) {
@@ -60,9 +56,18 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
   const { supabase, isAdmin, profile } = await getSession();
   if (!isAdmin) redirect("/");
 
-  const { error, added } = await searchParams;
+  const { error, added, ...rawQuery } = await searchParams;
   const { data, error: listError } = await supabase.rpc("admin_list_cooperatives");
-  const coops = (data ?? []) as Coop[];
+  const coops = (data ?? []) as CoopRow[];
+
+  // Search, filter and pages all live in the address (?q=&show=&page=), so
+  // Back and shared links keep them.
+  const query = parseCoopQuery(rawQuery);
+  const result = searchCoops(coops, query);
+  const filters: { value: CoopFilter; label: string }[] = [
+    { value: "all", label: "All" },
+    { value: "no-chair", label: "Needs a Chairperson" },
+  ];
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8">
@@ -87,8 +92,57 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         {listError && <Notice tone="error">Could not load the co-ops. Has 018 been run in Supabase?</Notice>}
       </div>
 
+      <form action="/admin" method="get" role="search" className="mb-3 flex gap-2">
+        {query.show !== "all" && <input type="hidden" name="show" value={query.show} />}
+        <label htmlFor="q" className="sr-only">
+          Search co-ops by name or town
+        </label>
+        <Input id="q" name="q" type="search" defaultValue={query.q} placeholder="Search by name or town" maxLength={100} />
+        <SubmitButton variant="outline" aria-label="Search">
+          <Search className="size-4" aria-hidden />
+          <span className="hidden sm:inline">Search</span>
+        </SubmitButton>
+      </form>
+
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <nav aria-label="Filter" className="flex gap-1 rounded-xl border border-line bg-card p-1">
+          {filters.map((f) => (
+            <Link
+              key={f.value}
+              href={coopListHref({ q: query.q, show: f.value, page: 1 })}
+              aria-current={query.show === f.value ? "page" : undefined}
+              className={
+                query.show === f.value
+                  ? "flex min-h-11 items-center rounded-lg bg-brand px-3 text-sm font-bold text-on-brand"
+                  : "flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-muted-foreground hover:text-ink"
+              }
+            >
+              {f.label}
+            </Link>
+          ))}
+        </nav>
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {result.total} {result.total === 1 ? "co-op" : "co-ops"}
+          {query.q ? ` matching “${query.q}”` : ""}
+          {(query.q || query.show !== "all") && (
+            <>
+              {" · "}
+              <Link href="/admin" className="font-bold text-brand">
+                Clear
+              </Link>
+            </>
+          )}
+        </p>
+      </div>
+
+      {result.total === 0 && !listError && (
+        <p className="rounded-2xl border border-line bg-card p-6 text-center text-sm text-muted-foreground">
+          No co-ops match. Try another name or town.
+        </p>
+      )}
+
       <ul className="flex flex-col gap-3">
-        {coops.map((c) => (
+        {result.rows.map((c) => (
           <li key={c.id} className="rounded-2xl border border-line bg-card p-4 shadow-card">
             <div className="flex items-start gap-3">
               <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand">
@@ -117,6 +171,36 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
           </li>
         ))}
       </ul>
+
+      {result.pages > 1 && (
+        <nav aria-label="Pages" className="mt-4 flex items-center justify-between gap-3">
+          {result.page > 1 ? (
+            <Link href={coopListHref({ ...query, page: result.page - 1 })} className={buttonVariants({ variant: "outline" })}>
+              <ChevronLeft className="size-4" aria-hidden />
+              Previous
+            </Link>
+          ) : (
+            <span className={cn(buttonVariants({ variant: "outline" }), "pointer-events-none opacity-50")} aria-disabled="true">
+              <ChevronLeft className="size-4" aria-hidden />
+              Previous
+            </span>
+          )}
+          <span className="text-sm font-semibold text-muted-foreground">
+            Page {result.page} of {result.pages}
+          </span>
+          {result.page < result.pages ? (
+            <Link href={coopListHref({ ...query, page: result.page + 1 })} className={buttonVariants({ variant: "outline" })}>
+              Next
+              <ChevronRight className="size-4" aria-hidden />
+            </Link>
+          ) : (
+            <span className={cn(buttonVariants({ variant: "outline" }), "pointer-events-none opacity-50")} aria-disabled="true">
+              Next
+              <ChevronRight className="size-4" aria-hidden />
+            </span>
+          )}
+        </nav>
+      )}
 
       <form action={addCooperative} className="mt-8 flex flex-col gap-4 rounded-2xl border border-line bg-card p-5 shadow-card">
         <h2 className="text-lg font-extrabold text-ink">Add a cooperative</h2>
