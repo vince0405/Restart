@@ -11,11 +11,12 @@ import {
 import { Badge, PaidBadge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
 import { PriceHistory } from "@/components/rps/price-history";
-import { FeesByMonthChart, JobsByServiceChart } from "@/components/rps/money-charts";
+import { FeesChart, JobsByServiceChart } from "@/components/rps/money-charts";
 import { StatCard } from "@/components/rps/stat-card";
 import { ErrorNote } from "@/components/rps/error-note";
 import { jobRef, type LoadRow, moneyStats, moneySummary, parseStatsRange, type Payment, paymentMethodLabel, settlement, type StatsRange } from "@/lib/loads";
 import { canSeeMoney } from "@/lib/roles";
+import { pesoShort } from "@/lib/format";
 import { requireRole } from "@/lib/session";
 
 const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
@@ -47,14 +48,22 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
   const payments = (paymentRows ?? []) as (Payment & { load: { customer_name: string } | null })[];
 
   // Statistics for the chosen period (6 months by default).
-  const { range: rawRange } = await searchParams;
+  const { range: rawRange, chart: rawChart } = await searchParams;
   const range = parseStatsRange(rawRange);
+  const chart = rawChart === "line" ? "line" : "bar";
+  const statsHref = (r: StatsRange, c: "bar" | "line") => {
+    const params = new URLSearchParams();
+    if (r !== "month") params.set("range", r);
+    if (c !== "bar") params.set("chart", c);
+    const query = params.toString();
+    return query ? `/money?${query}` : "/money";
+  };
   const stats = moneyStats(loads, range);
   const t = stats.totals;
   const RANGES: { value: StatsRange; label: string }[] = [
-    { value: "6m", label: "6 months" },
-    { value: "12m", label: "12 months" },
-    { value: "all", label: "All" },
+    { value: "week", label: "Week" },
+    { value: "month", label: "Month" },
+    { value: "year", label: "Year" },
   ];
 
   const cards = [
@@ -124,7 +133,11 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
               Statistics
             </h2>
             <p className="text-sm text-muted-foreground">
-              Jobs grouped by the month they were logged.
+              {range === "week"
+                ? "The last 7 days, by the day each job was logged."
+                : range === "month"
+                  ? "The last 30 days, by the day each job was logged."
+                  : "The last 12 months, by the month each job was logged."}
             </p>
           </div>
           {/* One filter row, above everything it changes. */}
@@ -132,7 +145,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
             {RANGES.map((r) => (
               <Link
                 key={r.value}
-                href={r.value === "6m" ? "/money" : `/money?range=${r.value}`}
+                href={statsHref(r.value, chart)}
                 aria-current={range === r.value ? "page" : undefined}
                 className={
                   range === r.value
@@ -147,7 +160,7 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
         </div>
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard label="Fees for these jobs" value={peso.format(t.fees)} note={`${t.jobs} ${t.jobs === 1 ? "job" : "jobs"}`} icon={ReceiptText} />
+          <StatCard label="Fees for these jobs" value={pesoShort(t.fees)} note={`${peso.format(t.fees)} · ${t.jobs} ${t.jobs === 1 ? "job" : "jobs"}`} icon={ReceiptText} />
           {/* Collected share as a meter: same-colour track, filled part = collected. */}
           <div className="rounded-2xl border border-line bg-card p-4 shadow-card">
             <div className="text-sm font-semibold text-muted-foreground">Collected so far</div>
@@ -165,20 +178,42 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
               <div className="h-full rounded-full bg-chart-1" style={{ width: `${t.collectedShare * 100}%` }} />
             </div>
             <div className="mt-1.5 text-xs font-semibold text-muted-foreground">
-              {peso.format(t.collected)} of {peso.format(t.fees)}
+              {pesoShort(t.collected)} of {pesoShort(t.fees)}
             </div>
           </div>
-          <StatCard label="Average fee per job" value={peso.format(t.averageFee)} icon={Banknote} tone="blue" />
+          <StatCard label="Average fee per job" value={pesoShort(t.averageFee)} note={peso.format(t.averageFee)} icon={Banknote} tone="blue" />
           <StatCard label="Grain bought by the co-op" value={kg.format(t.boughtKg)} unit="kg" icon={Package} tone="amber" />
         </div>
 
         <div className="mt-4 grid gap-4 xl:grid-cols-[1.4fr_1fr]">
           <section aria-labelledby="fees-by-month" className="rounded-2xl border border-line bg-card p-4 shadow-card sm:p-5">
-            <h3 id="fees-by-month" className="text-base font-extrabold text-ink">
-              Fees per month
-            </h3>
-            <p className="mb-4 text-sm text-muted-foreground">Collected and still owed. Tap a month for details.</p>
-            <FeesByMonthChart months={stats.months} />
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 id="fees-by-month" className="text-base font-extrabold text-ink">
+                  Fees per {range === "year" ? "month" : "day"}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Collected and still owed. Tap a {range === "year" ? "month" : "day"} for exact amounts.
+                </p>
+              </div>
+              <nav aria-label="Chart type" className="flex gap-1 rounded-xl border border-line bg-surface p-1">
+                {(["bar", "line"] as const).map((c) => (
+                  <Link
+                    key={c}
+                    href={statsHref(range, c)}
+                    aria-current={chart === c ? "page" : undefined}
+                    className={
+                      chart === c
+                        ? "flex min-h-10 items-center rounded-lg bg-card px-3 text-sm font-bold text-ink shadow-card"
+                        : "flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold text-muted-foreground hover:text-ink"
+                    }
+                  >
+                    {c === "bar" ? "Bar" : "Line"}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+            <FeesChart points={stats.points} kind={chart} />
             <details className="mt-4">
               <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold text-brand">
                 Show as table
@@ -187,17 +222,17 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
                 <table className="mt-2 w-full text-sm">
                   <thead>
                     <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-muted-foreground">
-                      <th scope="col" className="py-2 pr-3 font-bold">Month</th>
+                      <th scope="col" className="py-2 pr-3 font-bold">{range === "year" ? "Month" : "Day"}</th>
                       <th scope="col" className="py-2 pr-3 text-right font-bold">Jobs</th>
                       <th scope="col" className="py-2 pr-3 text-right font-bold">Collected</th>
                       <th scope="col" className="py-2 text-right font-bold">Still owed</th>
                     </tr>
                   </thead>
                   <tbody className="tabular-nums">
-                    {stats.months.map((mo) => (
+                    {stats.points.map((mo) => (
                       <tr key={mo.key} className="border-b border-line/60 last:border-0">
                         <th scope="row" className="py-2 pr-3 text-left font-semibold text-ink">
-                          {mo.label} {mo.year}
+                          {mo.full}
                         </th>
                         <td className="py-2 pr-3 text-right text-ink">{mo.jobs}</td>
                         <td className="py-2 pr-3 text-right text-ink">{peso.format(mo.collected)}</td>
@@ -278,7 +313,10 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
                     {paymentMethodLabel(p.method)}
                     {p.reference ? ` · ${p.reference}` : ""}
                   </span>
-                  <span className="text-sm font-extrabold tabular-nums text-ink">{peso.format(Number(p.amount))}</span>
+                  <span className="text-sm font-extrabold tabular-nums text-ink" title={peso.format(Number(p.amount))}>
+                    {pesoShort(Number(p.amount))}
+                    <span className="sr-only"> ({peso.format(Number(p.amount))})</span>
+                  </span>
                 </Link>
               </li>
             ))}

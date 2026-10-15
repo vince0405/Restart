@@ -9,10 +9,11 @@
 // every number also available in a table.
 
 import { useState } from "react";
+import { formatShort } from "@/lib/format";
+import type { StatPoint } from "@/lib/loads";
 import { cn } from "@/lib/utils";
 
 const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 });
-const compact = new Intl.NumberFormat("en-PH", { notation: "compact", maximumFractionDigits: 1 });
 
 /** 0, then 3–4 round steps (1/2/5 × 10ⁿ) that cover the biggest value. */
 function niceTicks(max: number): number[] {
@@ -25,34 +26,44 @@ function niceTicks(max: number): number[] {
   return ticks;
 }
 
-export type MonthPoint = { key: string; label: string; year: number; collected: number; owed: number; jobs: number };
-
-/** Stacked columns: fees collected (bottom) and still owed (top), per month. */
-export function FeesByMonthChart({ months }: { months: MonthPoint[] }) {
+/**
+ * Fees collected and still owed per day or month (Ticket 37). Bars (stacked:
+ * collected at the bottom, owed on top) by default; a line chart on request.
+ * Amounts are shortened (1k, 10k, 1m); the tooltip and the table below the
+ * chart show the exact pesos.
+ */
+export function FeesChart({ points, kind = "bar" }: { points: StatPoint[]; kind?: "bar" | "line" }) {
   const [active, setActive] = useState<number | null>(null);
-  const ticks = niceTicks(Math.max(...months.map((m) => m.collected + m.owed)));
+  const ticks = niceTicks(
+    Math.max(...points.map((p) => (kind === "bar" ? p.collected + p.owed : Math.max(p.collected, p.owed)))),
+  );
   const top = ticks[ticks.length - 1];
   const pct = (v: number) => `${(v / top) * 100}%`;
-  const last = months.length - 1;
+  const last = points.length - 1;
+  const x = (i: number) => ((i + 0.5) / points.length) * 100;
+  const y = (v: number) => 100 - (v / top) * 100;
+  const line = (pick: (p: StatPoint) => number) => points.map((p, i) => `${x(i)},${y(pick(p))}`).join(" ");
+  // Thin bars when there are many (30 days): keep a small gap between them.
+  const gap = points.length > 14 ? "gap-0.5" : "gap-2";
 
   return (
     <figure>
       <figcaption className="sr-only">
-        Fees per month: collected and still owed. The same numbers are in the table below the chart.
+        Fees collected and still owed. The same numbers are in the table below the chart.
       </figcaption>
 
       {/* Legend: always shown for two series; text in ink, colour on the swatch. */}
       <div className="mb-3 flex flex-wrap gap-4 text-sm text-ink" aria-hidden>
         <span className="flex items-center gap-2">
-          <span className="size-3 rounded-sm bg-chart-1" /> Collected
+          <span className={cn("bg-chart-1", kind === "bar" ? "size-3 rounded-sm" : "h-0.5 w-4")} /> Collected
         </span>
         <span className="flex items-center gap-2">
-          <span className="size-3 rounded-sm bg-chart-2" /> Still owed
+          <span className={cn("bg-chart-2", kind === "bar" ? "size-3 rounded-sm" : "h-0.5 w-4")} /> Still owed
         </span>
       </div>
 
-      <div className="relative flex h-56 gap-2 pl-12">
-        {/* Y axis: round, comma'd ticks with hairline gridlines */}
+      <div className="relative h-56 pl-12">
+        {/* Y axis: round ticks (1k, 10k) with hairline gridlines */}
         {ticks.map((t) => (
           <div
             key={t}
@@ -60,84 +71,125 @@ export function FeesByMonthChart({ months }: { months: MonthPoint[] }) {
             style={{ bottom: pct(t), transform: "translateY(50%)" }}
             aria-hidden
           >
-            <span className="w-11 pr-2 text-right text-xs tabular-nums text-muted-foreground">
-              {t === 0 ? "0" : compact.format(t)}
-            </span>
+            <span className="w-11 pr-2 text-right text-xs tabular-nums text-muted-foreground">{formatShort(t)}</span>
             <span className="h-px flex-1 bg-line" />
           </div>
         ))}
 
-        {months.map((m, i) => {
-          const total = m.collected + m.owed;
-          const isActive = active === i;
-          return (
-            <button
-              key={m.key}
-              type="button"
-              onMouseEnter={() => setActive(i)}
-              onMouseLeave={() => setActive(null)}
-              onFocus={() => setActive(i)}
-              onBlur={() => setActive(null)}
-              aria-label={`${m.label} ${m.year}: collected ${peso.format(m.collected)}, still owed ${peso.format(m.owed)}, ${m.jobs} ${m.jobs === 1 ? "job" : "jobs"}`}
-              // The whole column slot is the hit target, not just the thin bar.
-              className="relative z-10 flex min-w-0 flex-1 cursor-default flex-col items-center justify-end rounded-lg focus-visible:outline-offset-0"
+        <div className={cn("relative flex h-full", gap)}>
+          {kind === "line" && (
+            <svg
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+              aria-hidden
             >
-              {/* Direct label on this month only — the rest live in the tooltip and table. */}
-              {i === last && total > 0 && (
-                <span className="mb-1 text-xs font-bold tabular-nums text-ink">{compact.format(total)}</span>
-              )}
-              <span
-                className={cn("flex w-full max-w-6 flex-col justify-end transition-opacity", active !== null && !isActive && "opacity-50")}
-                style={{ height: pct(total) }}
+              <polyline
+                points={line((p) => p.owed)}
+                fill="none"
+                stroke="var(--chart-2)"
+                strokeWidth={2}
+                vectorEffect="non-scaling-stroke"
+                strokeLinejoin="round"
+              />
+              <polyline
+                points={line((p) => p.collected)}
+                fill="none"
+                stroke="var(--chart-1)"
+                strokeWidth={2.5}
+                vectorEffect="non-scaling-stroke"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+
+          {points.map((p, i) => {
+            const total = p.collected + p.owed;
+            const isActive = active === i;
+            return (
+              <button
+                key={p.key}
+                type="button"
+                onMouseEnter={() => setActive(i)}
+                onMouseLeave={() => setActive(null)}
+                onFocus={() => setActive(i)}
+                onBlur={() => setActive(null)}
+                aria-label={`${p.full}: collected ${peso.format(p.collected)}, still owed ${peso.format(p.owed)}, ${p.jobs} ${p.jobs === 1 ? "job" : "jobs"}`}
+                // The whole column slot is the hit target, not just the thin bar.
+                className="relative z-10 flex min-w-0 flex-1 cursor-default flex-col items-center justify-end rounded-lg focus-visible:outline-offset-0"
               >
-                {m.owed > 0 && (
-                  <span
-                    className="block rounded-t bg-chart-2"
-                    style={{ height: `${(m.owed / (total || 1)) * 100}%` }}
-                  />
+                {/* Direct label on the latest bar only; the rest live in the tooltip and table. */}
+                {kind === "bar" && i === last && total > 0 && (
+                  <span className="mb-1 text-xs font-bold tabular-nums text-ink">{formatShort(total)}</span>
                 )}
-                {m.owed > 0 && m.collected > 0 && <span className="block h-0.5 shrink-0 bg-card" />}
-                {m.collected > 0 && (
+                {kind === "bar" ? (
                   <span
-                    className={cn("block bg-chart-1", m.owed === 0 && "rounded-t")}
-                    style={{ height: `${(m.collected / (total || 1)) * 100}%` }}
-                  />
+                    className={cn(
+                      "flex w-full max-w-6 flex-col justify-end transition-[height,opacity] duration-500",
+                      active !== null && !isActive && "opacity-50",
+                    )}
+                    style={{ height: pct(total) }}
+                  >
+                    {p.owed > 0 && (
+                      <span className="block rounded-t bg-chart-2" style={{ height: `${(p.owed / (total || 1)) * 100}%` }} />
+                    )}
+                    {p.owed > 0 && p.collected > 0 && <span className="block h-0.5 shrink-0 bg-card" />}
+                    {p.collected > 0 && (
+                      <span
+                        className={cn("block bg-chart-1", p.owed === 0 && "rounded-t")}
+                        style={{ height: `${(p.collected / (total || 1)) * 100}%` }}
+                      />
+                    )}
+                  </span>
+                ) : (
+                  isActive && (
+                    <>
+                      <span
+                        className="absolute left-1/2 size-2.5 -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-card bg-chart-2"
+                        style={{ bottom: pct(p.owed) }}
+                      />
+                      <span
+                        className="absolute left-1/2 size-3 -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-card bg-chart-1"
+                        style={{ bottom: pct(p.collected) }}
+                      />
+                    </>
+                  )
                 )}
-              </span>
-              {isActive && (
-                <span
-                  role="tooltip"
-                  className={cn(
-                    "pointer-events-none absolute bottom-full z-20 mb-2 w-max min-w-40 rounded-xl border border-line bg-card p-3 text-left text-sm shadow-card",
-                    // Open towards the middle so it never runs off the screen.
-                    i < months.length / 2 ? "left-0" : "right-0",
-                  )}
-                >
-                  <span className="block text-xs font-bold text-muted-foreground">
-                    {m.label} {m.year} · {m.jobs} {m.jobs === 1 ? "job" : "jobs"}
+                {isActive && (
+                  <span
+                    role="tooltip"
+                    className={cn(
+                      "pointer-events-none absolute bottom-full z-20 mb-2 w-max min-w-40 rounded-xl border border-line bg-card p-3 text-left text-sm shadow-card",
+                      // Open towards the middle so it never runs off the screen.
+                      i < points.length / 2 ? "left-0" : "right-0",
+                    )}
+                  >
+                    <span className="block text-xs font-bold text-muted-foreground">
+                      {p.full} · {p.jobs} {p.jobs === 1 ? "job" : "jobs"}
+                    </span>
+                    <span className="mt-1 flex items-center gap-2">
+                      <span className="h-0.5 w-3 bg-chart-1" />
+                      <strong className="tabular-nums text-ink">{peso.format(p.collected)}</strong>
+                      <span className="text-muted-foreground">collected</span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="h-0.5 w-3 bg-chart-2" />
+                      <strong className="tabular-nums text-ink">{peso.format(p.owed)}</strong>
+                      <span className="text-muted-foreground">still owed</span>
+                    </span>
                   </span>
-                  <span className="mt-1 flex items-center gap-2">
-                    <span className="h-0.5 w-3 bg-chart-1" />
-                    <strong className="tabular-nums text-ink">{peso.format(m.collected)}</strong>
-                    <span className="text-muted-foreground">collected</span>
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <span className="h-0.5 w-3 bg-chart-2" />
-                    <strong className="tabular-nums text-ink">{peso.format(m.owed)}</strong>
-                    <span className="text-muted-foreground">still owed</span>
-                  </span>
-                </span>
-              )}
-            </button>
-          );
-        })}
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* X axis: month names */}
-      <div className="mt-2 flex gap-2 pl-12" aria-hidden>
-        {months.map((m) => (
-          <span key={m.key} className="min-w-0 flex-1 truncate text-center text-xs text-muted-foreground">
-            {m.label}
+      {/* X axis: day or month names (Month shows every 5th day) */}
+      <div className={cn("mt-2 flex pl-12", gap)} aria-hidden>
+        {points.map((p) => (
+          <span key={p.key} className="min-w-0 flex-1 whitespace-nowrap text-center text-xs text-muted-foreground">
+            {p.tick ? p.label : ""}
           </span>
         ))}
       </div>
@@ -155,7 +207,9 @@ export function JobsByServiceChart({ rows }: { rows: { service: string; jobs: nu
         <li key={r.service}>
           <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
             <span className="font-semibold text-ink">{r.service}</span>
-            <span className="tabular-nums text-muted-foreground">{peso.format(r.fees)}</span>
+            <span className="tabular-nums text-muted-foreground" title={peso.format(r.fees)}>
+              ₱{formatShort(r.fees)}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             {/* The track takes the free width; the bar is a share of it. */}

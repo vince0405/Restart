@@ -517,36 +517,47 @@ describe("money statistics", () => {
     { ...base, id: "e", created_at: "2026-10-03T02:00:00Z", service_type: "Drying only", agreed_price: 7777, request_status: "rejected" },
   ];
 
-  it("shows the last six months, oldest first, ending this month", () => {
-    const s = moneyStats(loads, "6m", now);
-    expect(s.months.map((m) => m.key)).toEqual(["2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"]);
-    expect(s.months.at(-1)).toMatchObject({ collected: 0, owed: 5000, jobs: 1 });
-    expect(s.months.at(-2)).toMatchObject({ collected: 5000, owed: 0, jobs: 2 });
+  it("Year: the last 12 months, oldest first, ending this month", () => {
+    const s = moneyStats(loads, "year", now);
+    expect(s.points).toHaveLength(12);
+    expect(s.points[0].key).toBe("2025-11");
+    expect(s.points.at(-1)).toMatchObject({ key: "2026-10", collected: 0, owed: 5000, jobs: 1 });
+    expect(s.points.at(-2)).toMatchObject({ key: "2026-09", collected: 5000, owed: 0, jobs: 2 });
+    expect(s.totals.jobs).toBe(4);
   });
 
-  it("totals only what is in the range, counting buyout-covered fees as collected", () => {
-    const s = moneyStats(loads, "6m", now);
+  it("Month: the last 30 days by day, a label every 5th day", () => {
+    const s = moneyStats(loads, "month", now);
+    expect(s.points).toHaveLength(30);
+    expect(s.points[0].key).toBe("2026-09-16");
+    expect(s.points.at(-1)).toMatchObject({ key: "2026-10-15", label: "15", tick: true });
+    expect(s.points.filter((p) => p.tick)).toHaveLength(6);
+    // Only the October job and the 20 Sep job fall in the last 30 days.
     expect(s.totals).toEqual({
-      jobs: 3, fees: 10000, collected: 5000, owed: 5000, boughtKg: 300,
-      averageFee: 3333.33, collectedShare: 0.5,
+      jobs: 2, fees: 7000, collected: 2000, owed: 5000, boughtKg: 300,
+      averageFee: 3500, collectedShare: 2000 / 7000,
     });
   });
 
-  it("widens to 12 months, or back to the first job", () => {
-    expect(moneyStats(loads, "12m", now).months).toHaveLength(12);
-    expect(moneyStats(loads, "12m", now).totals.jobs).toBe(4);
-    expect(moneyStats(loads, "all", now).months[0].key).toBe("2026-03");
+  it("Week: the last 7 days, one bar per day", () => {
+    const s = moneyStats(loads, "week", now);
+    expect(s.points.map((p) => p.key)).toEqual([
+      "2026-10-09", "2026-10-10", "2026-10-11", "2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15",
+    ]);
+    expect(s.points.every((p) => p.tick)).toBe(true);
+    expect(s.totals.jobs).toBe(0);
   });
 
   it("lists every service, most jobs first", () => {
-    const s = moneyStats(loads, "6m", now);
+    const s = moneyStats(loads, "year", now);
     expect(s.byService.map((x) => x.service)).toHaveLength(4);
     expect(s.byService.find((x) => x.service === "Harvesting + Drying")).toEqual({ service: "Harvesting + Drying", jobs: 0, fees: 0 });
   });
 
-  it("treats an unknown range as six months", () => {
-    expect(parseStatsRange("nonsense")).toBe("6m");
-    expect(parseStatsRange("12m")).toBe("12m");
+  it("treats an unknown range as Month", () => {
+    expect(parseStatsRange("nonsense")).toBe("month");
+    expect(parseStatsRange("6m")).toBe("month");
+    expect(parseStatsRange("year")).toBe("year");
   });
 });
 

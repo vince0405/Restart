@@ -465,53 +465,89 @@ export function customerSummary(
   return summary;
 }
 
-/** How far back the Money statistics look. */
-export type StatsRange = "6m" | "12m" | "all";
+/** How far back the Money statistics look (Ticket 37). */
+export type StatsRange = "week" | "month" | "year";
 
 export function parseStatsRange(raw: unknown): StatsRange {
-  return raw === "12m" || raw === "all" ? raw : "6m";
+  return raw === "week" || raw === "year" ? raw : "month";
 }
 
+/** One bar (or point) of the Money chart. */
+export type StatPoint = {
+  key: string;
+  /** Short label under the bar: "Mon", "13" or "Oct". */
+  label: string;
+  /** Full label for the tooltip and table: "Mon, 13 Oct" or "Oct 2026". */
+  full: string;
+  /** Show the label under the bar? (Month shows every 5th day.) */
+  tick: boolean;
+  collected: number;
+  owed: number;
+  jobs: number;
+};
+
 /**
- * The Money statistics, from accepted jobs only. Grouped by the month the
- * job was LOGGED (Manila time) — the app does not record payment dates.
+ * The Money statistics, from accepted jobs only, grouped by the day (Week:
+ * last 7 days, Month: last 30 days) or month (Year: last 12 months) the
+ * job was LOGGED, in Manila time.
  *
  *   collected = fee - what the customer still owes
- *               (cash paid, or taken out of an approved buyout)
+ *               (paid, or taken out of an approved buyout)
  */
 export function moneyStats(loads: LoadRow[], range: StatsRange, now: Date = new Date()) {
-  const monthKey = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" }).slice(0, 7);
+  const dayKey = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
+  const keyOf = range === "year" ? (d: Date) => dayKey(d).slice(0, 7) : dayKey;
   const accepted = loads.filter((l) => !l.request_status || l.request_status === "accepted");
 
-  // The months to show, oldest first, ending with this month.
-  const thisMonth = monthKey(now);
-  let count = range === "12m" ? 12 : 6;
-  if (range === "all") {
-    const first = accepted.map((l) => monthKey(new Date(l.created_at))).sort()[0] ?? thisMonth;
-    const [fy, fm] = first.split("-").map(Number);
-    const [ty, tm] = thisMonth.split("-").map(Number);
-    count = Math.min(24, Math.max(1, (ty - fy) * 12 + (tm - fm) + 1));
+  const [ty, tm, td] = dayKey(now).split("-").map(Number);
+  let points: StatPoint[];
+  if (range === "year") {
+    points = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(Date.UTC(ty, tm - 1 - (11 - i), 1));
+      const label = d.toLocaleDateString("en-PH", { month: "short", timeZone: "UTC" });
+      return {
+        key: `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`,
+        label,
+        full: `${label} ${d.getUTCFullYear()}`,
+        tick: true,
+        collected: 0,
+        owed: 0,
+        jobs: 0,
+      };
+    });
+  } else {
+    const days = range === "week" ? 7 : 30;
+    points = Array.from({ length: days }, (_, i) => {
+      const d = new Date(Date.UTC(ty, tm - 1, td - (days - 1 - i)));
+      const opts = { timeZone: "UTC" } as const;
+      return {
+        key: d.toISOString().slice(0, 10),
+        label:
+          range === "week"
+            ? d.toLocaleDateString("en-PH", { ...opts, weekday: "short" })
+            : String(d.getUTCDate()),
+        full: d.toLocaleDateString("en-PH", { ...opts, weekday: "short", day: "numeric", month: "short" }),
+        // Month: a label every 5th day, ending today.
+        tick: range === "week" || (days - 1 - i) % 5 === 0,
+        collected: 0,
+        owed: 0,
+        jobs: 0,
+      };
+    });
   }
-  const [ty, tm] = thisMonth.split("-").map(Number);
-  const months = Array.from({ length: count }, (_, i) => {
-    const d = new Date(Date.UTC(ty, tm - 1 - (count - 1 - i), 1));
-    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleDateString("en-PH", { month: "short", timeZone: "UTC" });
-    return { key, label, year: d.getUTCFullYear(), collected: 0, owed: 0, jobs: 0 };
-  });
-  const byKey = new Map(months.map((m) => [m.key, m]));
+  const byKey = new Map(points.map((p) => [p.key, p]));
 
   const services = new Map<string, { service: string; jobs: number; fees: number }>();
   const totals = { jobs: 0, fees: 0, collected: 0, owed: 0, boughtKg: 0 };
 
   for (const load of accepted) {
-    const month = byKey.get(monthKey(new Date(load.created_at)));
-    if (!month) continue; // outside the chosen range
+    const point = byKey.get(keyOf(new Date(load.created_at)));
+    if (!point) continue; // outside the chosen range
     const s = settlement(load);
     const collected = round2(load.agreed_price - s.stillOwes);
-    month.collected = round2(month.collected + collected);
-    month.owed = round2(month.owed + s.stillOwes);
-    month.jobs++;
+    point.collected = round2(point.collected + collected);
+    point.owed = round2(point.owed + s.stillOwes);
+    point.jobs++;
 
     const svc = services.get(load.service_type) ?? { service: load.service_type, jobs: 0, fees: 0 };
     svc.jobs++;
@@ -526,7 +562,7 @@ export function moneyStats(loads: LoadRow[], range: StatsRange, now: Date = new 
   }
 
   return {
-    months,
+    points,
     // Every service, most jobs first (services with no jobs show as 0).
     byService: SERVICE_TYPES.map((name) => services.get(name) ?? { service: name, jobs: 0, fees: 0 }).sort(
       (a, b) => b.jobs - a.jobs,
