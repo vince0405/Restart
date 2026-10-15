@@ -30,13 +30,7 @@ import {
   stepsFor,
 } from "@/lib/loads";
 import { canApproveBuyout, canManage, canWork, isStaff } from "@/lib/roles";
-import {
-  DRYER_LOAD_FEE,
-  DRYER_LOAD_MAX_SACKS,
-  HARVEST_SHARE,
-  MILLING_FEE_PER_SACK,
-  priceListTotal,
-} from "@/lib/pricing";
+import { priceListTotal } from "@/lib/pricing";
 import { getSettings, requireRole } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import {
@@ -280,9 +274,9 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
               </div>
               <p className="text-xs text-muted-foreground">
                 {countStep === "harvesting"
-                  ? `The fee is worked out from these numbers: harvesting is ${HARVEST_SHARE * 100}% of the kg × the market price; drying is ${peso.format(DRYER_LOAD_FEE)} per dryer load of up to ${DRYER_LOAD_MAX_SACKS} sacks.`
+                  ? `The fee is worked out from these numbers: harvesting is ${settings.rates.harvest_share_percent}% of the kg × the market price; drying is ${peso.format(settings.rates.dryer_load_fee)} per dryer load of up to ${settings.rates.dryer_load_max_sacks} sacks.`
                   : load.service_type === "Package Deal"
-                    ? `Milling is ${peso.format(MILLING_FEE_PER_SACK)} per sack, counted now.`
+                    ? `Milling is ${peso.format(settings.rates.milling_fee_per_sack)} per sack, counted now.`
                     : null}
               </p>
               <SubmitButton size="lg" className="w-full sm:w-auto sm:self-start">
@@ -602,7 +596,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                   label={
                     Number(load.market_price_per_kg) > 0
                       ? `Harvesting: ${kg.format(Number(load.harvest_fee) / Number(load.market_price_per_kg))} kg × ${peso.format(Number(load.market_price_per_kg))}`
-                      : `Harvesting (${HARVEST_SHARE * 100}%)`
+                      : "Harvesting"
                   }
                   value={peso.format(Number(load.harvest_fee))}
                 />

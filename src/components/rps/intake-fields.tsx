@@ -2,12 +2,7 @@ import type { InputHTMLAttributes } from "react";
 import { Cog, Droplet, Leaf, Package, type LucideIcon } from "lucide-react";
 import { FORM_ERROR_ID } from "@/lib/errors";
 import { type ServiceType, stepsFor } from "@/lib/loads";
-import {
-  DRYER_LOAD_FEE,
-  DRYER_LOAD_MAX_SACKS,
-  HARVEST_SHARE,
-  MILLING_FEE_PER_SACK,
-} from "@/lib/pricing";
+import type { Rates } from "@/lib/pricing";
 
 // Pieces shared by the staff walk-in form and the customer request form.
 
@@ -182,18 +177,18 @@ export function PalayCountFields({
 const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 });
 
 /** The co-op's rates, so staff and customers know how the fee is made. */
-export function PriceList() {
+export function PriceList({ rates }: { rates: Rates }) {
   return (
     <div className="mt-4 rounded-xl bg-surface p-3 text-xs text-muted-foreground">
       <p className="font-bold text-ink">Price list</p>
       <ul className="mt-1 list-disc space-y-1 pl-4">
         <li>
-          Harvesting: {HARVEST_SHARE * 100}% of the harvested kg × the market price of palay that day
+          Harvesting: {rates.harvest_share_percent}% of the harvested kg × the market price of palay that day
         </li>
         <li>
-          Drying: {peso.format(DRYER_LOAD_FEE)} per dryer load (up to {DRYER_LOAD_MAX_SACKS} sacks)
+          Drying: {peso.format(rates.dryer_load_fee)} per dryer load (up to {rates.dryer_load_max_sacks} sacks)
         </li>
-        <li>Milling: {peso.format(MILLING_FEE_PER_SACK)} per sack, counted after drying</li>
+        <li>Milling: {peso.format(rates.milling_fee_per_sack)} per sack, counted after drying</li>
       </ul>
       <p className="mt-2">
         Leave the price empty to use the price list. Harvesting jobs get their fee after the

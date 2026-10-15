@@ -8,7 +8,7 @@ import { ErrorNote } from "@/components/rps/error-note";
 import { jobRef, needsHarvestAddress, isServiceType } from "@/lib/loads";
 import { feeAtIntake } from "@/lib/pricing";
 import { canManage } from "@/lib/roles";
-import { requireRole } from "@/lib/session";
+import { getSettings, requireRole } from "@/lib/session";
 import { acceptRequest, rejectRequest } from "../loads/actions";
 
 const kg = new Intl.NumberFormat("en-PH", { maximumFractionDigits: 2 });
@@ -34,6 +34,7 @@ type Request = {
 export default async function RequestsPage({ searchParams }: PageProps<"/requests">) {
   const { supabase, role } = await requireRole((r) => canManage(r) || r === "auditor");
   const { error } = await searchParams;
+  const { rates } = await getSettings();
   const manager = canManage(role);
 
   const { data, error: loadError } = await supabase
@@ -134,7 +135,7 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
                       inputMode="decimal"
                       min={0}
                       step={0.01}
-                      defaultValue={feeAtIntake(r.service_type, r.sacks)}
+                      defaultValue={feeAtIntake(r.service_type, r.sacks, rates)}
                       required
                       className="min-h-12 rounded-xl border border-field bg-card px-3 text-base text-ink focus-visible:border-brand md:text-sm"
                     />

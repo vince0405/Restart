@@ -14,11 +14,12 @@ import { buttonVariants } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ErrorNote } from "@/components/rps/error-note";
 import { canManage } from "@/lib/roles";
-import { requireRole } from "@/lib/session";
+import { getSettings, requireRole } from "@/lib/session";
 import { createLoad } from "../actions";
 
 export default async function NewLoadPage({ searchParams }: PageProps<"/loads/new">) {
   await requireRole(canManage);
+  const { rates } = await getSettings();
 
   const { error } = await searchParams;
 
@@ -69,7 +70,7 @@ export default async function NewLoadPage({ searchParams }: PageProps<"/loads/ne
             suffix="PHP"
           />
         </div>
-        <PriceList />
+        <PriceList rates={rates} />
 
         <div className="mt-8 flex items-center justify-between border-t border-line pt-5">
           <Link href="/loads" className={buttonVariants({ variant: "outline" })}>

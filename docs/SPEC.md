@@ -144,8 +144,17 @@ and `is_member`**.
 
 ### `settings` (new) — one row
 `coop_name`, `farmgate_price_per_kg`, `rice_lifeline_days` (30),
-`palay_lifeline_days` (90), `warning_days` (14). Everyone signed in reads;
-only the Chairperson edits.
+`palay_lifeline_days` (90), `warning_days` (14), and the price list
+(Ticket 25): `harvest_share_percent` (15), `dryer_load_fee` (9,000),
+`dryer_load_max_sacks` (130), `milling_fee_per_sack` (120). Everyone signed
+in reads; only the Chairperson edits. A rate change applies to the next
+count; fees already worked out stay as they are.
+
+### `audit_log` (new, Ticket 26) — one row per change
+`table_name`, `row_id`, `action` (insert / update / delete), `changed_by`,
+`changed_at`, `changes` (each changed column: before and after). Written
+only by database triggers on `loads`, `profiles` and `settings`. The
+Chairperson and the Auditor read it; **nobody can edit or delete it**.
 
 ### `loads` (existing, extended)
 Existing columns stay. New ones:

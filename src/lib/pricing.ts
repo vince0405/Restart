@@ -1,40 +1,52 @@
-// The co-op's price list (Ticket 24). The database works out the real fee
-// with the SAME rules (supabase/sql/009-service-pricing.sql), so if a rate
-// changes here, change it there too.
+// The co-op's price list (Tickets 24 and 25). The Chairperson sets the
+// rates in Settings; the database works out the real fee with the SAME
+// rules (supabase/sql/010-configurable-rates.sql). These functions are for
+// showing the numbers on screen.
 //
-//   harvesting = 15% of the harvested kg x market price of palay per kg
-//   drying     = P9,000 per dryer load (up to 130 sacks; fewer still costs
-//                a full load, more needs another load)
-//   milling    = P120 per sack, counted after drying
+//   harvesting = share % of the harvested kg x market price of palay per kg
+//   drying     = fee per dryer load (a load holds up to max sacks; fewer
+//                still costs a full load, more needs another load)
+//   milling    = fee per sack, counted after drying
 
-export const HARVEST_SHARE = 0.15;
-export const DRYER_LOAD_FEE = 9000;
-export const DRYER_LOAD_MAX_SACKS = 130;
-export const MILLING_FEE_PER_SACK = 120;
+export type Rates = {
+  /** Percent of the harvested kg, e.g. 15. */
+  harvest_share_percent: number;
+  dryer_load_fee: number;
+  dryer_load_max_sacks: number;
+  milling_fee_per_sack: number;
+};
+
+/** Today's rates, used until the settings row says otherwise. */
+export const DEFAULT_RATES: Rates = {
+  harvest_share_percent: 15,
+  dryer_load_fee: 9000,
+  dryer_load_max_sacks: 130,
+  milling_fee_per_sack: 120,
+};
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-/** 15% of the harvest, in kg. */
-export function harvestShareKg(kilos: number): number {
-  return round2(kilos * HARVEST_SHARE);
+/** The harvest share, in kg. */
+export function harvestShareKg(kilos: number, rates: Rates = DEFAULT_RATES): number {
+  return round2((kilos * rates.harvest_share_percent) / 100);
 }
 
-/** The harvesting fee in pesos: 15% of the kg x today's market price. */
-export function harvestFee(kilos: number, marketPricePerKg: number): number {
-  return round2(kilos * HARVEST_SHARE * marketPricePerKg);
+/** The harvesting fee in pesos: the share of the kg x today's market price. */
+export function harvestFee(kilos: number, marketPricePerKg: number, rates: Rates = DEFAULT_RATES): number {
+  return round2(((kilos * rates.harvest_share_percent) / 100) * marketPricePerKg);
 }
 
-/** Dryer loads needed: up to 130 sacks per load, at least one load. */
-export function dryerLoads(sacks: number): number {
-  return Math.max(1, Math.ceil(sacks / DRYER_LOAD_MAX_SACKS));
+/** Dryer loads needed: up to max sacks per load, at least one load. */
+export function dryerLoads(sacks: number, rates: Rates = DEFAULT_RATES): number {
+  return Math.max(1, Math.ceil(sacks / rates.dryer_load_max_sacks));
 }
 
-export function dryingFee(sacks: number): number {
-  return dryerLoads(sacks) * DRYER_LOAD_FEE;
+export function dryingFee(sacks: number, rates: Rates = DEFAULT_RATES): number {
+  return dryerLoads(sacks, rates) * rates.dryer_load_fee;
 }
 
-export function millingFee(sacks: number): number {
-  return round2(sacks * MILLING_FEE_PER_SACK);
+export function millingFee(sacks: number, rates: Rates = DEFAULT_RATES): number {
+  return round2(sacks * rates.milling_fee_per_sack);
 }
 
 /** The fee parts saved on a job (null = not worked out yet / not part of it). */
@@ -52,8 +64,33 @@ export function priceListTotal(parts: FeeParts): number {
 }
 
 /** The fee from the price list when a Drying only or Milling only job is logged. */
-export function feeAtIntake(service: string, sacks: number): number {
-  if (service === "Drying only") return dryingFee(sacks);
-  if (service === "Milling only") return millingFee(sacks);
+export function feeAtIntake(service: string, sacks: number, rates: Rates = DEFAULT_RATES): number {
+  if (service === "Drying only") return dryingFee(sacks, rates);
+  if (service === "Milling only") return millingFee(sacks, rates);
   return 0; // harvesting services: worked out after the harvest count
+}
+
+/**
+ * Reads the four rates from the Settings form. Returns null if any is
+ * missing or out of range (the database refuses the same values).
+ */
+export function parseRates(get: (name: string) => unknown): Rates | null {
+  const num = (name: string) => {
+    const raw = String(get(name) ?? "").trim();
+    return raw === "" ? NaN : Number(raw);
+  };
+  const rates: Rates = {
+    harvest_share_percent: num("harvest_share_percent"),
+    dryer_load_fee: num("dryer_load_fee"),
+    dryer_load_max_sacks: num("dryer_load_max_sacks"),
+    milling_fee_per_sack: num("milling_fee_per_sack"),
+  };
+  const ok =
+    rates.harvest_share_percent >= 0 &&
+    rates.harvest_share_percent <= 100 &&
+    rates.dryer_load_fee >= 0 &&
+    Number.isInteger(rates.dryer_load_max_sacks) &&
+    rates.dryer_load_max_sacks > 0 &&
+    rates.milling_fee_per_sack >= 0;
+  return ok ? rates : null;
 }

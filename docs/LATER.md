@@ -10,7 +10,6 @@ stays small enough to actually ship by Session 3.
   customers search registered co-ops
 - Admin dashboard: global rules (lifeline days, warning days, farmgate
   reference price) for every co-op
-- Audit log: who changed what and when, for the Auditor
 - Grain grading when evaluating a buyout; co-op cash ("liquidity") check
 
 ## Phase 3 — from the flowchart's Background Monitor

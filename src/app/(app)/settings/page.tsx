@@ -11,10 +11,12 @@ const MESSAGES: Record<string, string> = {
   price: "Enter a farmgate price of 0 or more.",
   name: "The co-op needs a name.",
   window: "The cancel window must be a whole number of hours from 1 to 24.",
+  rates:
+    "Check the price list: the harvest share is 0–100%, fees are 0 or more, and a dryer load holds at least 1 whole sack.",
   save: "Could not save. Only the Chairperson can change settings.",
 };
 
-// Chairperson only: the co-op's name and farmgate reference price.
+// Chairperson only: the co-op's name, prices and cancel window.
 export default async function SettingsPage({ searchParams }: PageProps<"/settings">) {
   await requireRole(canManagePeople);
   const settings = await getSettings();
@@ -53,9 +55,43 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
             required
           />
           <p className="text-xs text-muted-foreground">
-            Pre-fills the price when you approve a buyout. You can still change it per buyout.
+            Pre-fills the market price at the harvest count and when you approve a buyout. You
+            can still change it each time.
           </p>
         </div>
+
+        <fieldset className="flex flex-col gap-4 rounded-xl border border-line p-4">
+          <legend className="px-1 font-bold text-ink">Price list</legend>
+          <p className="text-xs text-muted-foreground">
+            Used for the next harvest or drying count. Fees already worked out stay as they are.
+          </p>
+          <RateField
+            name="harvest_share_percent"
+            label="Harvesting share (% of the harvested kg)"
+            value={settings.rates.harvest_share_percent}
+            max={100}
+            step={0.01}
+          />
+          <RateField
+            name="dryer_load_fee"
+            label="Drying (₱ per dryer load)"
+            value={settings.rates.dryer_load_fee}
+            step={0.01}
+          />
+          <RateField
+            name="dryer_load_max_sacks"
+            label="Sacks in one dryer load (most)"
+            value={settings.rates.dryer_load_max_sacks}
+            min={1}
+            step={1}
+          />
+          <RateField
+            name="milling_fee_per_sack"
+            label="Milling (₱ per sack)"
+            value={settings.rates.milling_fee_per_sack}
+            step={0.01}
+          />
+        </fieldset>
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="cancel_window_hours">Cancel window (hours)</Label>
@@ -85,6 +121,39 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           Save settings
         </SubmitButton>
       </form>
+    </div>
+  );
+}
+
+function RateField({
+  name,
+  label,
+  value,
+  min = 0,
+  max,
+  step,
+}: {
+  name: string;
+  label: string;
+  value: number;
+  min?: number;
+  max?: number;
+  step: number;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <Label htmlFor={name}>{label}</Label>
+      <Input
+        id={name}
+        name={name}
+        type="number"
+        inputMode={step === 1 ? "numeric" : "decimal"}
+        min={min}
+        max={max}
+        step={step}
+        defaultValue={value}
+        required
+      />
     </div>
   );
 }

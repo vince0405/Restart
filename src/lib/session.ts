@@ -2,6 +2,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { DEFAULT_LIFELINE, type Lifeline } from "@/lib/loads";
 import { formatPhMobile, isPhoneSignInEmail } from "@/lib/phone";
+import { DEFAULT_RATES, type Rates } from "@/lib/pricing";
 import { isRole, isStaff, type Role } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 
@@ -20,6 +21,8 @@ export type Settings = {
   warning_days: number;
   /** How long after asking a customer may cancel a pending request. */
   cancel_window_hours: number;
+  /** The price list the Chairperson sets (Ticket 25). */
+  rates: Rates;
 };
 
 /**
@@ -76,5 +79,11 @@ export const getSettings = cache(async (): Promise<Settings> => {
     },
     warning_days: data?.warning_days ?? 14,
     cancel_window_hours: data?.cancel_window_hours ?? 2,
+    rates: {
+      harvest_share_percent: Number(data?.harvest_share_percent ?? DEFAULT_RATES.harvest_share_percent),
+      dryer_load_fee: Number(data?.dryer_load_fee ?? DEFAULT_RATES.dryer_load_fee),
+      dryer_load_max_sacks: Number(data?.dryer_load_max_sacks ?? DEFAULT_RATES.dryer_load_max_sacks),
+      milling_fee_per_sack: Number(data?.milling_fee_per_sack ?? DEFAULT_RATES.milling_fee_per_sack),
+    },
   };
 });

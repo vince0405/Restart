@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { codeForDbError } from "@/lib/errors";
 import { parseAmountPaid } from "@/lib/loads";
 import { canManagePeople, isRole } from "@/lib/roles";
+import { parseRates } from "@/lib/pricing";
 import { requireRole } from "@/lib/session";
 import { normalizePhMobile, parseOptionalEmail, phoneSignInEmail } from "@/lib/phone";
 import { createAccount } from "@/lib/supabase/new-account";
@@ -31,7 +32,7 @@ export async function updatePerson(formData: FormData) {
   redirect("/people?saved=1");
 }
 
-/** Chairperson only (RLS on settings): co-op name, farmgate price, cancel window. */
+/** Chairperson only (RLS on settings): co-op name, prices, cancel window. */
 export async function updateSettings(formData: FormData) {
   const { supabase } = await requireRole(canManagePeople);
 
@@ -47,12 +48,16 @@ export async function updateSettings(formData: FormData) {
     redirect("/settings?error=window");
   }
 
+  const rates = parseRates((name) => formData.get(name));
+  if (!rates) redirect("/settings?error=rates");
+
   const { data, error } = await supabase
     .from("settings")
     .update({
       farmgate_price_per_kg: price.value,
       coop_name: coopName,
       cancel_window_hours: windowHours,
+      ...rates,
     })
     .eq("id", 1)
     .select("id");
