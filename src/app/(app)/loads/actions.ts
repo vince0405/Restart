@@ -48,7 +48,7 @@ export async function createLoad(formData: FormData) {
     redirect(`/loads/new?error=${encodeURIComponent(error.message)}`);
   }
 
-  redirect("/");
+  redirect("/loads");
 }
 
 /**

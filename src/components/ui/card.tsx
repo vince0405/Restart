@@ -7,7 +7,7 @@ export function Card({ className, ...props }: DivProps) {
   return (
     <div
       className={cn(
-        "rounded-[var(--radius)] border border-border bg-card text-card-foreground shadow-sm",
+        "rounded-2xl border border-border bg-card text-card-foreground shadow-card",
         className,
       )}
       {...props}
@@ -16,13 +16,13 @@ export function Card({ className, ...props }: DivProps) {
 }
 
 export function CardHeader({ className, ...props }: DivProps) {
-  return <div className={cn("flex flex-col gap-1.5 p-6", className)} {...props} />;
+  return <div className={cn("flex flex-col gap-1 p-5", className)} {...props} />;
 }
 
 export function CardTitle({ className, ...props }: DivProps) {
   return (
     <h3
-      className={cn("text-lg font-semibold leading-tight tracking-tight", className)}
+      className={cn("font-extrabold leading-tight text-ink", className)}
       {...props}
     />
   );
@@ -35,7 +35,7 @@ export function CardDescription({ className, ...props }: DivProps) {
 }
 
 export function CardContent({ className, ...props }: DivProps) {
-  return <div className={cn("p-6 pt-0", className)} {...props} />;
+  return <div className={cn("p-5 pt-0", className)} {...props} />;
 }
 
 export function CardFooter({ className, ...props }: DivProps) {

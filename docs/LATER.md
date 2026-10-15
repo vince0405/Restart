@@ -23,3 +23,18 @@ stays small enough to actually ship by Session 3.
 - Receipts and payment-gateway integration
 - Recording moisture per load
 - Editing a load's details after saving
+
+## From the Figma design (shown in the mock-up, not built)
+- Farmer / Operator / Admin role switcher and per-role dashboards
+- Warehouse bins with capacity bars (e.g. "Bin R-02 95% full")
+- Billing page: invoices, payment history, payment methods (cash, online,
+  card, GCash/Maya), reference numbers and printable receipts
+- Itemised prices per service step and per-kg rates
+- Reports page (income, palay processed, rice yield, charts)
+- Roles & permissions page, invite user
+- Customer profiles (phone number, barangay) and customer search
+- "Working offline" banner and sync status
+- Notifications bell
+- Extra intake fields: moisture %, palay variety, vehicle plate, notes
+- Drying and milling records (temperatures, target moisture, rice yield)
+- Multi-step intake wizard (the MVP uses one form with the same sections)

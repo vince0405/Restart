@@ -1,71 +1,61 @@
 @import "tailwindcss";
 
 /* Design tokens. Change these to re-skin the whole app at once —
-   every component below reads from them. */
+   every component reads from them. Colours come from the RPS1 design. */
 :root {
-  /* RPS1: rice-field green on a warm, paper-like background. */
-  --background: #f7f6f1;
-  --foreground: #1c1917;
+  /* RPS1 palette */
+  --brand: #1b5e20;
+  --brand-dark: #124517;
+  --brand-soft: #e8f3e8;
+  --gold: #f9a825;
+  --gold-dark: #9a6307;
+  --gold-soft: #fff4d8;
+  --canvas: #faf7f0;
+  --surface: #f7f5ef;
+  --ink: #20251f;
+  --line: #e7e5dc;
+  --danger: #c83b31;
+  --danger-soft: #fde9e7;
+  --info: #4489c7;
+  --info-dark: #2366a1;
+  --info-soft: #e8f1fa;
+
+  /* Names the UI building blocks in src/components/ui use */
+  --background: var(--canvas);
+  --foreground: var(--ink);
   --card: #ffffff;
-  --card-foreground: #1c1917;
-  --primary: #166534;
+  --card-foreground: var(--ink);
+  --primary: var(--brand);
   --primary-foreground: #ffffff;
-  --secondary: #efede4;
-  --secondary-foreground: #1c1917;
-  --muted: #efede4;
-  --muted-foreground: #6b675c;
-  --destructive: #b91c1c;
+  --secondary: var(--surface);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface);
+  --muted-foreground: #6f766e;
+  --destructive: var(--danger);
   --destructive-foreground: #ffffff;
-  --border: #e3e0d4;
-  --input: #d6d2c3;
-  --ring: #166534;
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--brand);
   --radius: 0.75rem;
-
-  /* Status colours for badges: soft background + strong text. */
-  --status-progress: #fef3c7;
-  --status-progress-foreground: #92400e;
-  --status-ready: #dcfce7;
-  --status-ready-foreground: #166534;
-  --status-stored: #dbeafe;
-  --status-stored-foreground: #1e40af;
-  --status-done: #e7e5e4;
-  --status-done-foreground: #44403c;
-  --status-alert: #fee2e2;
-  --status-alert-foreground: #991b1b;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #12110f;
-    --foreground: #f5f5f4;
-    --card: #1c1b18;
-    --card-foreground: #f5f5f4;
-    --primary: #4ade80;
-    --primary-foreground: #052e16;
-    --secondary: #2a2824;
-    --secondary-foreground: #f5f5f4;
-    --muted: #2a2824;
-    --muted-foreground: #a8a29e;
-    --destructive: #f87171;
-    --destructive-foreground: #1c1917;
-    --border: #2f2d28;
-    --input: #44403c;
-    --ring: #4ade80;
-
-    --status-progress: #451a03;
-    --status-progress-foreground: #fcd34d;
-    --status-ready: #052e16;
-    --status-ready-foreground: #86efac;
-    --status-stored: #172554;
-    --status-stored-foreground: #93c5fd;
-    --status-done: #292524;
-    --status-done-foreground: #d6d3d1;
-    --status-alert: #450a0a;
-    --status-alert-foreground: #fca5a5;
-  }
 }
 
 @theme inline {
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-soft: var(--brand-soft);
+  --color-gold: var(--gold);
+  --color-gold-dark: var(--gold-dark);
+  --color-gold-soft: var(--gold-soft);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-line: var(--line);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-dark: var(--info-dark);
+  --color-info-soft: var(--info-soft);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -81,18 +71,14 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-status-progress: var(--status-progress);
-  --color-status-progress-foreground: var(--status-progress-foreground);
-  --color-status-ready: var(--status-ready);
-  --color-status-ready-foreground: var(--status-ready-foreground);
-  --color-status-stored: var(--status-stored);
-  --color-status-stored-foreground: var(--status-stored-foreground);
-  --color-status-done: var(--status-done);
-  --color-status-done-foreground: var(--status-done-foreground);
-  --color-status-alert: var(--status-alert);
-  --color-status-alert-foreground: var(--status-alert-foreground);
   --radius-base: var(--radius);
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --shadow-card: 0 1px 2px rgb(31 41 31 / 4%), 0 8px 24px rgb(31 41 31 / 4%);
+  --shadow-logo: 0 6px 14px rgb(27 94 32 / 20%);
+  --shadow-up: 0 -6px 24px rgb(31 41 31 / 8%);
+
+  /* Inter is loaded in layout.tsx and exposed as --font-inter */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
@@ -100,4 +86,14 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Stops iPhones zooming in when a form field is tapped. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }

@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   daysLeft,
   expiryDate,
+  expiryLabel,
+  expiryTone,
   firstStage,
+  jobRef,
+  type LoadRow,
   nextStage,
   parseAmountPaid,
   parseLoadInput,
@@ -10,6 +14,7 @@ import {
   productFor,
   SERVICE_TYPES,
   stepsFor,
+  summarize,
 } from "./loads";
 
 describe("service steps", () => {
@@ -182,5 +187,53 @@ describe("storage", () => {
     expect(daysLeft(expiry, new Date("2026-11-08T02:00:00Z"))).toBe(7);
     expect(daysLeft(expiry, new Date("2026-11-14T20:00:00Z"))).toBe(1);
     expect(daysLeft(expiry, new Date("2026-11-17T02:00:00Z"))).toBe(-2);
+  });
+});
+
+describe("dashboard summary", () => {
+  const now = new Date("2026-10-15T04:00:00Z"); // midday in Manila
+  const base = {
+    created_at: "2026-10-01T02:00:00Z",
+    sacks: 10,
+    kilos: 500,
+    agreed_price: 1000,
+    is_paid: false,
+    amount_paid: null,
+    stored_at: null,
+  };
+  const loads: LoadRow[] = [
+    { ...base, id: "a", customer_name: "A", service_type: "Package Deal", stage: "Drying", created_at: "2026-10-15T01:00:00Z" },
+    { ...base, id: "b", customer_name: "B", service_type: "Milling only", stage: "Stored", stored_at: "2026-09-20T02:00:00Z", is_paid: true, amount_paid: 1000 },
+    { ...base, id: "c", customer_name: "C", service_type: "Drying only", stage: "Stored", stored_at: "2026-10-10T02:00:00Z", kilos: 800, sacks: 16 },
+    { ...base, id: "d", customer_name: "D", service_type: "Drying only", stage: "Released" },
+  ];
+
+  it("counts active jobs, storage, expiry and money owed", () => {
+    expect(summarize(loads, now)).toEqual({
+      activeJobs: 1,
+      addedToday: 1,
+      palayKg: 800,
+      palaySacks: 16,
+      riceKg: 500,
+      riceSacks: 10,
+      expiringSoon: 1, // the rice stored 20 Sep expires 20 Oct: 5 days left
+      unpaidTotal: 3000,
+      unpaidCount: 3,
+      releasedUnpaid: 1,
+    });
+  });
+
+  it("colours expiry red within a week, amber within two, green after", () => {
+    expect(expiryTone(-1)).toBe("red");
+    expect(expiryTone(7)).toBe("red");
+    expect(expiryTone(8)).toBe("amber");
+    expect(expiryTone(14)).toBe("amber");
+    expect(expiryTone(15)).toBe("green");
+    expect(expiryLabel(0)).toBe("Expired");
+    expect(expiryLabel(1)).toBe("1 day left");
+  });
+
+  it("makes a short job reference from the id", () => {
+    expect(jobRef("af8d1854-ba29-49ad-b813-5618fd3f68b1")).toBe("RPS-AF8D1");
   });
 });

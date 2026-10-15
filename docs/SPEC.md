@@ -66,7 +66,16 @@ Each load follows only the steps of its service:
 ## Screens
 - **Sign in** — the Monitor enters email and password. Nothing else in
   the app is visible without signing in.
-- **Loads list** — the home screen, newest first. Each row shows customer,
+- **Navigation** — a sidebar on laptops and a bottom tab bar on phones:
+  Dashboard, Jobs, New load, Storage. The look follows the team's Figma
+  design (green and gold, Inter font), built on real data only.
+- **Dashboard** — the home screen after signing in. Real counts: active
+  jobs, palay and rice in storage (kg), loads expiring soon, and the total
+  not yet paid; a job board with one column per step; alerts for stored
+  grain close to expiry and loads released but not paid; the latest loads.
+- **Storage** — every stored load as a lot card (customer, kg, age, sacks,
+  expiry badge), sorted by earliest expiry, filterable by palay or rice.
+- **Jobs (loads list)** — newest first. Each row shows customer,
   sacks, service, current step and a Paid / Not paid badge. Stored loads
   show "Expires in N days", highlighted when 7 days or fewer are left, and
   "Expired" once past. A big "+ New load" button at the top; "Sign out" at

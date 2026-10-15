@@ -109,8 +109,99 @@ export function daysLeft(expiry: Date, now: Date = new Date()): number {
   return Math.ceil((expiry.getTime() - now.getTime()) / 86_400_000);
 }
 
-/** Warn when this many days or fewer are left. */
+/** Urgent (red) when this many days or fewer are left, or expired. */
 export const EXPIRY_WARNING_DAYS = 7;
+
+/** Worth a heads-up (amber) when this many days or fewer are left. */
+export const EXPIRY_SOON_DAYS = 14;
+
+/** Red, amber or green for a stored load, by days left. */
+export function expiryTone(days: number): "red" | "amber" | "green" {
+  if (days <= EXPIRY_WARNING_DAYS) return "red";
+  if (days <= EXPIRY_SOON_DAYS) return "amber";
+  return "green";
+}
+
+/** "Expired", "1 day left", "12 days left". */
+export function expiryLabel(days: number): string {
+  if (days <= 0) return "Expired";
+  return `${days} ${days === 1 ? "day" : "days"} left`;
+}
+
+// ---- Job references and the dashboard ----------------------------------
+
+/** A short, readable job reference made from the database id. */
+export function jobRef(id: string): string {
+  return `RPS-${id.replace(/-/g, "").slice(0, 5).toUpperCase()}`;
+}
+
+/** The columns of a load the dashboard needs. */
+export type LoadRow = {
+  id: string;
+  created_at: string;
+  customer_name: string;
+  sacks: number;
+  kilos: number;
+  service_type: string;
+  stage: string;
+  agreed_price: number;
+  is_paid: boolean;
+  amount_paid: number | null;
+  stored_at: string | null;
+};
+
+/** Days left for a stored load, or null if it is not in storage. */
+export function storedDaysLeft(load: LoadRow, now: Date = new Date()): number | null {
+  if (load.stage !== "Stored" || !load.stored_at || !isServiceType(load.service_type)) {
+    return null;
+  }
+  return daysLeft(expiryDate(new Date(load.stored_at), load.service_type), now);
+}
+
+/** The headline numbers on the dashboard, worked out from real loads. */
+export function summarize(loads: LoadRow[], now: Date = new Date()) {
+  const manilaDay = (d: Date) =>
+    d.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
+  const today = manilaDay(now);
+
+  const summary = {
+    activeJobs: 0,
+    addedToday: 0,
+    palayKg: 0,
+    palaySacks: 0,
+    riceKg: 0,
+    riceSacks: 0,
+    expiringSoon: 0,
+    unpaidTotal: 0,
+    unpaidCount: 0,
+    releasedUnpaid: 0,
+  };
+
+  for (const load of loads) {
+    if (load.stage !== "Stored" && load.stage !== "Released") summary.activeJobs++;
+    if (manilaDay(new Date(load.created_at)) === today) summary.addedToday++;
+
+    if (load.stage === "Stored" && isServiceType(load.service_type)) {
+      if (productFor(load.service_type) === "rice") {
+        summary.riceKg += load.kilos;
+        summary.riceSacks += load.sacks;
+      } else {
+        summary.palayKg += load.kilos;
+        summary.palaySacks += load.sacks;
+      }
+      const left = storedDaysLeft(load, now);
+      if (left !== null && left <= EXPIRY_WARNING_DAYS) summary.expiringSoon++;
+    }
+
+    if (!load.is_paid) {
+      summary.unpaidTotal += load.agreed_price;
+      summary.unpaidCount++;
+      if (load.stage === "Released") summary.releasedUnpaid++;
+    }
+  }
+
+  return summary;
+}
 
 export type LoadInput = {
   customer_name: string;
