@@ -2,7 +2,14 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { isStage, nextStage, parseLoadInput, prevStage } from "@/lib/loads";
+import {
+  firstStage,
+  isServiceType,
+  isStage,
+  nextStage,
+  parseLoadInput,
+  prevStage,
+} from "@/lib/loads";
 
 /**
  * Runs on the server when the "New load" form is submitted. It checks the
@@ -32,7 +39,10 @@ export async function createLoad(formData: FormData) {
     redirect(`/loads/new?error=${encodeURIComponent(parsed.error)}`);
   }
 
-  const { error } = await supabase.from("loads").insert(parsed.value);
+  const { error } = await supabase.from("loads").insert({
+    ...parsed.value,
+    stage: firstStage(parsed.value.service_type),
+  });
   if (error) {
     redirect(`/loads/new?error=${encodeURIComponent(error.message)}`);
   }
@@ -41,20 +51,22 @@ export async function createLoad(formData: FormData) {
 }
 
 /**
- * Moves a load one stage forward or one stage back.
+ * Moves a load one step forward or one step back along its service's steps.
  *
- * The form sends the stage the Monitor was LOOKING AT ("from"), and the
- * update only happens if the load is still at that stage. So a double tap
+ * The form sends the step the Monitor was LOOKING AT ("from"), and the
+ * update only happens if the load is still at that step. So a double tap
  * on a slow phone moves the load once, not twice.
  */
 export async function moveStage(formData: FormData) {
   const id = String(formData.get("id") ?? "");
+  const service = String(formData.get("service") ?? "");
   const from = String(formData.get("from") ?? "");
   const direction = formData.get("direction");
 
-  if (!isStage(from)) redirect(`/loads/${id}`);
+  if (!isServiceType(service) || !isStage(from)) redirect(`/loads/${id}`);
 
-  const to = direction === "back" ? prevStage(from) : nextStage(from);
+  const to =
+    direction === "back" ? prevStage(service, from) : nextStage(service, from);
   if (!to) redirect(`/loads/${id}`);
 
   const supabase = await createClient();
@@ -62,6 +74,7 @@ export async function moveStage(formData: FormData) {
     .from("loads")
     .update({ stage: to })
     .eq("id", id)
+    .eq("service_type", service)
     .eq("stage", from);
 
   if (error) {

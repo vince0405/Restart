@@ -3,23 +3,34 @@
 
 export const SERVICE_TYPES = [
   "Package Deal",
+  "Harvesting + Drying",
   "Drying only",
   "Milling only",
 ] as const;
 
 export type ServiceType = (typeof SERVICE_TYPES)[number];
 
-// A load moves through these stages in order, forward or one back.
+// Every step a load can be at, across all services.
 export const STAGES = [
   "Received",
+  "Harvesting",
   "Drying",
-  "Dried",
   "Milling",
-  "Milled",
+  "Ready",
+  "Stored",
   "Released",
 ] as const;
 
 export type Stage = (typeof STAGES)[number];
+
+// The steps each service goes through, in order. Ready means the work is
+// done and the grain is waiting for the customer.
+const STEPS: Record<ServiceType, readonly Stage[]> = {
+  "Package Deal": ["Harvesting", "Drying", "Milling", "Ready", "Released"],
+  "Harvesting + Drying": ["Harvesting", "Drying", "Ready", "Released"],
+  "Drying only": ["Received", "Drying", "Ready", "Released"],
+  "Milling only": ["Received", "Milling", "Ready", "Released"],
+};
 
 export function isServiceType(value: string): value is ServiceType {
   return (SERVICE_TYPES as readonly string[]).includes(value);
@@ -29,16 +40,28 @@ export function isStage(value: string): value is Stage {
   return (STAGES as readonly string[]).includes(value);
 }
 
-/** The stage after this one, or null if this is the last (Released). */
-export function nextStage(stage: Stage): Stage | null {
-  const i = STAGES.indexOf(stage);
-  return i >= 0 && i < STAGES.length - 1 ? STAGES[i + 1] : null;
+/** The steps this service goes through, in order. */
+export function stepsFor(service: ServiceType): readonly Stage[] {
+  return STEPS[service];
 }
 
-/** The stage before this one, or null if this is the first (Received). */
-export function prevStage(stage: Stage): Stage | null {
-  const i = STAGES.indexOf(stage);
-  return i > 0 ? STAGES[i - 1] : null;
+/** Where a new load of this service starts. */
+export function firstStage(service: ServiceType): Stage {
+  return STEPS[service][0];
+}
+
+/** The step after this one for this service, or null at the end. */
+export function nextStage(service: ServiceType, stage: Stage): Stage | null {
+  const steps = STEPS[service];
+  const i = steps.indexOf(stage);
+  return i >= 0 && i < steps.length - 1 ? steps[i + 1] : null;
+}
+
+/** The step before this one for this service, or null at the start. */
+export function prevStage(service: ServiceType, stage: Stage): Stage | null {
+  const steps = STEPS[service];
+  const i = steps.indexOf(stage);
+  return i > 0 ? steps[i - 1] : null;
 }
 
 export type LoadInput = {

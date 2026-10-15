@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { isStage, nextStage, prevStage, STAGES } from "@/lib/loads";
+import { isServiceType, isStage, nextStage, prevStage, stepsFor } from "@/lib/loads";
 import { createClient } from "@/lib/supabase/server";
 import { moveStage } from "../actions";
 
@@ -28,10 +28,13 @@ export default async function LoadDetailPage({
     .select("*")
     .eq("id", id)
     .maybeSingle();
-  if (!load || !isStage(load.stage)) notFound();
+  if (!load || !isServiceType(load.service_type) || !isStage(load.stage)) {
+    notFound();
+  }
 
-  const next = nextStage(load.stage);
-  const prev = prevStage(load.stage);
+  const steps = stepsFor(load.service_type);
+  const next = nextStage(load.service_type, load.stage);
+  const prev = prevStage(load.service_type, load.stage);
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-8">
@@ -49,17 +52,17 @@ export default async function LoadDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Stage: {load.stage}</CardTitle>
+          <CardTitle>Step: {load.stage}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <ol className="flex flex-wrap gap-2 text-xs">
-            {STAGES.map((stage, i) => (
+            {steps.map((stage, i) => (
               <li
                 key={stage}
                 className={
                   stage === load.stage
                     ? "rounded-full bg-primary px-3 py-1 font-medium text-primary-foreground"
-                    : i < STAGES.indexOf(load.stage)
+                    : i < steps.indexOf(load.stage)
                       ? "rounded-full border border-border px-3 py-1"
                       : "rounded-full px-3 py-1 text-muted-foreground"
                 }
@@ -72,6 +75,7 @@ export default async function LoadDetailPage({
           {next ? (
             <form action={moveStage}>
               <input type="hidden" name="id" value={load.id} />
+              <input type="hidden" name="service" value={load.service_type} />
               <input type="hidden" name="from" value={load.stage} />
               <input type="hidden" name="direction" value="next" />
               <Button type="submit" size="lg" className="w-full">
@@ -80,17 +84,18 @@ export default async function LoadDetailPage({
             </form>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Released. This load has finished every stage.
+              Released. This load has finished every step.
             </p>
           )}
 
           {prev && (
             <form action={moveStage}>
               <input type="hidden" name="id" value={load.id} />
+              <input type="hidden" name="service" value={load.service_type} />
               <input type="hidden" name="from" value={load.stage} />
               <input type="hidden" name="direction" value="back" />
               <Button type="submit" variant="outline" size="sm">
-                Back one stage (to {prev})
+                Back one step (to {prev})
               </Button>
             </form>
           )}

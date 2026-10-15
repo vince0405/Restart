@@ -14,13 +14,13 @@ This replaces the fixed six stages from ticket 05.
 
 **Status:** todo
 
-- [ ] A numbered SQL file updates the database: the four services, the
+- [x] A numbered SQL file updates the database: the four services, the
       new step names, a `stored_at` column, and any existing loads moved
       to the nearest new step. The team has run it in Supabase.
-- [ ] The New load form offers all four services
-- [ ] A new load starts at the first step of its service
-- [ ] The detail screen shows only that service's steps, and "Move to"
+- [x] The New load form offers all four services
+- [x] A new load starts at the first step of its service
+- [x] The detail screen shows only that service's steps, and "Move to"
       and "Back one step" follow them
-- [ ] A Drying only load never shows Harvesting or Milling
-- [ ] The list shows the service and current step for each load
+- [x] A Drying only load never shows Harvesting or Milling
+- [x] The list shows the service and current step for each load
 - [ ] Works on the live URL — on a phone

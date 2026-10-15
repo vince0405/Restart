@@ -1,29 +1,55 @@
 import { describe, expect, it } from "vitest";
 import {
+  firstStage,
   nextStage,
   parseAmountPaid,
   parseLoadInput,
   prevStage,
-  type Stage,
+  SERVICE_TYPES,
+  stepsFor,
 } from "./loads";
 
-describe("stage order", () => {
-  it("moves forward through every stage and stops at Released", () => {
-    expect(nextStage("Received")).toBe("Drying");
-    expect(nextStage("Milling")).toBe("Milled");
-    expect(nextStage("Milled")).toBe("Released");
-    expect(nextStage("Released")).toBeNull();
+describe("service steps", () => {
+  it("starts each service at its own first step", () => {
+    expect(firstStage("Package Deal")).toBe("Harvesting");
+    expect(firstStage("Harvesting + Drying")).toBe("Harvesting");
+    expect(firstStage("Drying only")).toBe("Received");
+    expect(firstStage("Milling only")).toBe("Received");
   });
 
-  it("moves back one stage and stops at Received", () => {
-    expect(prevStage("Drying")).toBe("Received");
-    expect(prevStage("Released")).toBe("Milled");
-    expect(prevStage("Received")).toBeNull();
+  it("walks a Package Deal through every step and stops at Released", () => {
+    expect(nextStage("Package Deal", "Harvesting")).toBe("Drying");
+    expect(nextStage("Package Deal", "Drying")).toBe("Milling");
+    expect(nextStage("Package Deal", "Milling")).toBe("Ready");
+    expect(nextStage("Package Deal", "Ready")).toBe("Released");
+    expect(nextStage("Package Deal", "Released")).toBeNull();
   });
 
-  it("round-trips a stage", () => {
-    for (const stage of ["Drying", "Dried", "Milling", "Milled"] as Stage[]) {
-      expect(prevStage(nextStage(stage)!)).toBe(stage);
+  it("skips steps a service does not have", () => {
+    expect(nextStage("Harvesting + Drying", "Drying")).toBe("Ready");
+    expect(nextStage("Drying only", "Received")).toBe("Drying");
+    expect(nextStage("Milling only", "Received")).toBe("Milling");
+    expect(stepsFor("Drying only")).not.toContain("Harvesting");
+    expect(stepsFor("Drying only")).not.toContain("Milling");
+    expect(stepsFor("Milling only")).not.toContain("Drying");
+  });
+
+  it("moves back one step and stops at the first", () => {
+    expect(prevStage("Package Deal", "Drying")).toBe("Harvesting");
+    expect(prevStage("Milling only", "Ready")).toBe("Milling");
+    expect(prevStage("Drying only", "Received")).toBeNull();
+  });
+
+  it("has no next or back for a step the service does not have", () => {
+    expect(nextStage("Drying only", "Milling")).toBeNull();
+    expect(prevStage("Drying only", "Milling")).toBeNull();
+  });
+
+  it("round-trips every middle step of every service", () => {
+    for (const service of SERVICE_TYPES) {
+      for (const stage of stepsFor(service).slice(0, -1)) {
+        expect(prevStage(service, nextStage(service, stage)!)).toBe(stage);
+      }
     }
   });
 });

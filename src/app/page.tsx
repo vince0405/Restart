@@ -19,7 +19,7 @@ export default async function LoadsPage() {
   // back the signed-in Monitor's own loads.
   const { data: loads, error } = await supabase
     .from("loads")
-    .select("id, customer_name, sacks, stage, is_paid")
+    .select("id, customer_name, sacks, service_type, stage, is_paid")
     .order("created_at", { ascending: false });
 
   return (
@@ -55,7 +55,7 @@ export default async function LoadsPage() {
                     <div className="flex flex-col gap-1">
                       <span className="font-medium">{load.customer_name}</span>
                       <span className="text-sm text-muted-foreground">
-                        {load.sacks} sacks · {load.stage}
+                        {load.sacks} sacks · {load.service_type} · {load.stage}
                       </span>
                     </div>
                     <span
