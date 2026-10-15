@@ -8,6 +8,7 @@ import { Timeline } from "@/components/rps/timeline";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ErrorNote } from "@/components/rps/error-note";
 import {
+  describeCount,
   cancelDeadline,
   customerStatus,
   expiryDate,
@@ -92,7 +93,7 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
       <PageTitle
         eyebrow="My job"
         title={`#${jobRef(load.id)}`}
-        description={`${load.service_type} · ${load.sacks} sacks · ${kg.format(load.kilos)} kg`}
+        description={`${load.service_type} · ${describeCount(load)}`}
         action={<Badge tone={status.tone}>{status.label}</Badge>}
       />
 
@@ -241,7 +242,7 @@ export default async function MyJobPage({ params, searchParams }: PageProps<"/my
               <h2 className="font-extrabold text-ink">Weight breakdown</h2>
             </div>
             <div className="mt-4 space-y-3 text-sm">
-              <Row label="Palay brought in" value={`${kg.format(load.kilos)} kg`} />
+              <Row label="Palay (latest count)" value={load.sacks || load.kilos ? `${load.sacks} sacks · ${kg.format(load.kilos)} kg` : "Counted after harvest"} />
               <Row
                 label={`${product === "rice" ? "Rice" : "Palay"} out`}
                 value={load.output_kg != null ? `${kg.format(load.output_kg)} kg` : "Not weighed yet"}

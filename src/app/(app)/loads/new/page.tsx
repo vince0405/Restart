@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import {
   Field,
   HarvestAddressField,
+  PalayCountFields,
   SectionHeading,
   ServicePicker,
 } from "@/components/rps/intake-fields";
@@ -28,7 +29,7 @@ export default async function NewLoadPage({ searchParams }: PageProps<"/loads/ne
 
       <form
         action={createLoad}
-        className="rounded-2xl border border-line bg-white p-5 shadow-card md:p-8"
+        className="group rounded-2xl border border-line bg-white p-5 shadow-card md:p-8"
       >
         <ErrorNote code={error} />
 
@@ -50,29 +51,8 @@ export default async function NewLoadPage({ searchParams }: PageProps<"/loads/ne
         <div className="my-8 border-t border-line" />
 
         <SectionHeading title="Intake details" text="Record the palay received and the agreed price." />
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Field
-            label="Number of sacks"
-            name="sacks"
-            type="number"
-            inputMode="numeric"
-            min={0}
-            step={1}
-            placeholder="25"
-            suffix="sacks"
-            required
-          />
-          <Field
-            label="Total weight"
-            name="kilos"
-            type="number"
-            inputMode="decimal"
-            min={0}
-            step={0.01}
-            placeholder="1250"
-            suffix="kg"
-            required
-          />
+        <PalayCountFields weightLabel="Total weight" />
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field
             label="Agreed price"
             name="agreed_price"

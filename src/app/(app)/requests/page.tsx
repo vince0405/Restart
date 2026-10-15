@@ -103,11 +103,11 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
                 </div>
                 <div className="border-x border-line">
                   <div className="text-[10px] font-bold uppercase text-muted-foreground">Sacks</div>
-                  <div className="mt-1 text-xs font-extrabold text-ink">{r.sacks}</div>
+                  <div className="mt-1 text-xs font-extrabold text-ink">{r.sacks || r.kilos ? r.sacks : "After harvest"}</div>
                 </div>
                 <div>
                   <div className="text-[10px] font-bold uppercase text-muted-foreground">Est. weight</div>
-                  <div className="mt-1 text-xs font-extrabold text-ink">{kg.format(r.kilos)} kg</div>
+                  <div className="mt-1 text-xs font-extrabold text-ink">{r.sacks || r.kilos ? `${kg.format(r.kilos)} kg` : "After harvest"}</div>
                 </div>
               </div>
 

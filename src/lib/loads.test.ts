@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   cancelDeadline,
+  countsAfter,
+  describeCount,
   customerSummary,
   customerStatus,
   daysLeft,
@@ -14,6 +16,7 @@ import {
   needsHarvestAddress,
   nextStage,
   parseAmountPaid,
+  parseCount,
   parseLoadInput,
   prevStage,
   productFor,
@@ -110,14 +113,14 @@ describe("parseLoadInput", () => {
   });
 
   it("rejects empty, negative or fractional sacks", () => {
-    expect(parseLoadInput({ ...valid, sacks: "" }).ok).toBe(false);
+    expect(parseLoadInput({ ...valid, service_type: "Drying only", sacks: "" }).ok).toBe(false);
     expect(parseLoadInput({ ...valid, sacks: "-1" }).ok).toBe(false);
     expect(parseLoadInput({ ...valid, sacks: "1.5" }).ok).toBe(false);
     expect(parseLoadInput({ ...valid, sacks: "abc" }).ok).toBe(false);
   });
 
   it("rejects empty or negative kilos", () => {
-    expect(parseLoadInput({ ...valid, kilos: "" }).ok).toBe(false);
+    expect(parseLoadInput({ ...valid, service_type: "Drying only", kilos: "" }).ok).toBe(false);
     expect(parseLoadInput({ ...valid, kilos: "-3" }).ok).toBe(false);
   });
 
@@ -447,5 +450,39 @@ describe("harvest address", () => {
     expect(parseHarvestAddress("Package Deal", "").ok).toBe(false);
     expect(parseHarvestAddress("Harvesting + Drying", "x".repeat(301)).ok).toBe(false);
     expect(parseHarvestAddress("Drying only", "Purok 3")).toEqual({ ok: true, value: null });
+  });
+});
+
+describe("counting sacks after harvesting and drying", () => {
+  const request = { customer_name: "Mang Tonio", sacks: "", kilos: "", agreed_price: 0 };
+
+  it("lets a harvesting request leave sacks and weight empty", () => {
+    const r = parseLoadInput({ ...request, service_type: "Package Deal" });
+    expect(r.ok && r.value.sacks).toBe(0);
+    expect(r.ok && r.value.kilos).toBe(0);
+  });
+
+  it("still requires them when the customer brings the palay", () => {
+    expect(parseLoadInput({ ...request, service_type: "Drying only" }).ok).toBe(false);
+  });
+
+  it("asks for a new count after harvesting and after drying only", () => {
+    expect(countsAfter("Harvesting")).toBe("harvesting");
+    expect(countsAfter("Drying")).toBe("drying");
+    expect(countsAfter("Milling")).toBeNull();
+    expect(countsAfter("Received")).toBeNull();
+  });
+
+  it("says 'to be counted' before the harvest, and the count after", () => {
+    expect(describeCount({ sacks: 0, kilos: 0, service_type: "Package Deal" })).toBe("To be counted after harvest");
+    expect(describeCount({ sacks: 38, kilos: 1850.5, service_type: "Package Deal" })).toBe("38 sacks · 1,850.5 kg");
+    expect(describeCount({ sacks: 1, kilos: 50, service_type: "Drying only" })).toBe("1 sack · 50 kg");
+  });
+
+  it("checks the recorded count", () => {
+    expect(parseCount("38", "1850.5")).toEqual({ ok: true, value: { sacks: 38, kilos: 1850.5 } });
+    expect(parseCount("", "10").ok).toBe(false);
+    expect(parseCount("3.5", "10").ok).toBe(false);
+    expect(parseCount("3", "-1").ok).toBe(false);
   });
 });

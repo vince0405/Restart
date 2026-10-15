@@ -15,6 +15,7 @@ import { PageTitle } from "@/components/rps/page-title";
 import { buttonVariants } from "@/components/ui/button";
 import { ErrorNote } from "@/components/rps/error-note";
 import {
+  describeCount,
   customerStatus,
   customerSummary,
   expiryLabel,
@@ -204,7 +205,7 @@ export default async function MyJobsPage() {
                     </div>
                   )}
                   <div className="mt-auto text-xs text-muted-foreground">
-                    {load.sacks} sacks · {kg.format(load.kilos)} kg ·{" "}
+                    {describeCount(load)} ·{" "}
                     {formatDate(load.created_at)}
                   </div>
                 </Link>

@@ -4,7 +4,7 @@ import { ExpiryBadge, PaidBadge, StageBadge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
 import { buttonVariants } from "@/components/ui/button";
 import { ErrorNote } from "@/components/rps/error-note";
-import { jobRef, type LoadRow, storedDaysLeft } from "@/lib/loads";
+import { describeCount, jobRef, type LoadRow, storedDaysLeft } from "@/lib/loads";
 import { canManage, isStaff } from "@/lib/roles";
 import { getSettings, requireRole } from "@/lib/session";
 
@@ -80,7 +80,7 @@ export default async function JobsPage() {
                     <div className="flex items-center justify-between md:block">
                       <span className="text-xs font-bold text-brand">#{jobRef(load.id)}</span>
                       <span className="text-xs text-muted-foreground md:hidden">
-                        {load.sacks} sacks · {kg.format(load.kilos)} kg
+                        {describeCount(load)}
                       </span>
                     </div>
                     <span className="truncate text-sm font-bold text-ink">{load.customer_name}</span>

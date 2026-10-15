@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorNote } from "@/components/rps/error-note";
 import {
+  describeCount,
+  countsAfter,
   daysLeft,
   expiryDate,
   isServiceType,
@@ -142,6 +144,8 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
   // split choice. Storing also needs something kept. (The database and the
   // server actions refuse these too.)
   const canAdvance = worker && !closed && next !== null && (!atReady || (weighed && chosen));
+  // After harvesting and after drying, moving on needs the new count.
+  const countStep = countsAfter(load.stage);
   const canStore = worker && atReady && !stored && weighed && chosen && money.keptKg > 0;
 
   const product = productFor(load.service_type);
@@ -183,7 +187,8 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
         title={`#${jobRef(load.id)}`}
         description={`${load.service_type} · Created ${formatDate(new Date(load.created_at))}`}
         action={
-          canAdvance && (
+          canAdvance &&
+          !countStep && (
             <form action={moveStage}>
               {stageFields("next")}
               <Button type="submit" size="lg" className="w-full sm:w-auto">
@@ -231,7 +236,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
           </div>
           <div className="text-xs text-muted-foreground">
             {walkIn ? "Walk-in (no account)" : load.customer?.phone || "Has an account"} ·{" "}
-            {load.sacks} sacks · {kg.format(load.kilos)} kg
+            {describeCount(load)}
           </div>
         </div>
         <div className="ml-auto flex flex-wrap gap-2">
@@ -253,6 +258,60 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
           </div>
 
           <Timeline steps={steps} current={load.stage} />
+
+          {canAdvance && countStep && (
+            <form
+              action={moveStage}
+              className="mt-6 flex flex-col gap-4 rounded-2xl border-2 border-gold bg-gold-soft/40 p-4"
+            >
+              {stageFields("next")}
+              <div>
+                <h3 className="font-extrabold text-ink">
+                  {countStep === "harvesting" ? "Harvest done? Count and weigh" : "Drying done? Count and weigh again"}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {countStep === "harvesting"
+                    ? "Record how many sacks were harvested and their total weight."
+                    : "Dried palay is lighter and may fill fewer sacks — record the new numbers."}
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="count_sacks">
+                    Sacks after {countStep === "harvesting" ? "harvesting" : "drying"}
+                  </Label>
+                  <Input
+                    id="count_sacks"
+                    name="sacks"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    step={1}
+                    defaultValue={load.sacks || undefined}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="count_kilos">
+                    Weight after {countStep === "harvesting" ? "harvesting" : "drying"} (kg)
+                  </Label>
+                  <Input
+                    id="count_kilos"
+                    name="kilos"
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step={0.01}
+                    defaultValue={load.kilos || undefined}
+                    required
+                  />
+                </div>
+              </div>
+              <Button type="submit" size="lg" className="w-full sm:w-auto sm:self-start">
+                Save count and move to {next}
+              </Button>
+            </form>
+          )}
 
           {worker && atReady && weighed && !chosen && (
             <p className="mt-5 rounded-xl border-l-4 border-gold bg-gold-soft p-3 text-sm text-ink">
@@ -509,8 +568,8 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
           <Panel>
             <PanelHead icon={Scale} tone="bg-brand-soft text-brand" title="Intake summary" />
             <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
-              <Fact label="Sacks" value={`${load.sacks} sacks`} />
-              <Fact label="Weight in" value={`${kg.format(load.kilos)} kg`} />
+              <Fact label="Sacks" value={load.sacks || load.kilos ? `${load.sacks} sacks` : "Not counted yet"} />
+              <Fact label="Weight" value={load.sacks || load.kilos ? `${kg.format(load.kilos)} kg` : "Not weighed yet"} />
               <Fact label="Service" value={load.service_type} />
               <Fact
                 label="Logged"

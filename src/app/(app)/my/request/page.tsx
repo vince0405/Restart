@@ -3,6 +3,7 @@ import { ArrowRight, Building2 } from "lucide-react";
 import {
   Field,
   HarvestAddressField,
+  PalayCountFields,
   SectionHeading,
   ServicePicker,
 } from "@/components/rps/intake-fields";
@@ -31,7 +32,7 @@ export default async function RequestServicePage({ searchParams }: PageProps<"/m
 
       <form
         action={requestService}
-        className="rounded-2xl border border-line bg-white p-5 shadow-card md:p-8"
+        className="group rounded-2xl border border-line bg-white p-5 shadow-card md:p-8"
       >
         <ErrorNote code={error} />
 
@@ -61,29 +62,8 @@ export default async function RequestServicePage({ searchParams }: PageProps<"/m
           title="Your palay"
           text="Your best estimate is fine. The co-op weighs it properly."
         />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label="Number of sacks"
-            name="sacks"
-            type="number"
-            inputMode="numeric"
-            min={0}
-            step={1}
-            placeholder="25"
-            suffix="sacks"
-            required
-          />
-          <Field
-            label="Estimated weight"
-            name="kilos"
-            type="number"
-            inputMode="decimal"
-            min={0}
-            step={0.01}
-            placeholder="1250"
-            suffix="kg"
-            required
-          />
+        <PalayCountFields />
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Preferred date" name="preferred_date" type="date" min={today} />
           <Field
             label="Note for the co-op (optional)"

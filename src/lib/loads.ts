@@ -71,6 +71,34 @@ export function parseHarvestAddress(
   return { ok: true, value: address };
 }
 
+/**
+ * Leaving these steps, staff must record the new sacks and weight: after
+ * harvesting (first count) and after drying (palay shrinks as it dries).
+ */
+export function countsAfter(stage: Stage): "harvesting" | "drying" | null {
+  if (stage === "Harvesting") return "harvesting";
+  if (stage === "Drying") return "drying";
+  return null;
+}
+
+/** Sacks and weight as people should read them ("not counted yet" = 0 / 0). */
+export function describeCount(load: { sacks: number; kilos: number; service_type: string }): string {
+  if (load.sacks === 0 && load.kilos === 0 && isServiceType(load.service_type) && needsHarvestAddress(load.service_type)) {
+    return "To be counted after harvest";
+  }
+  const kg = new Intl.NumberFormat("en-PH", { maximumFractionDigits: 2 }).format(load.kilos);
+  return `${load.sacks} ${load.sacks === 1 ? "sack" : "sacks"} · ${kg} kg`;
+}
+
+/** The sacks and weight staff record after harvesting or drying. */
+export function parseCount(rawSacks: unknown, rawKilos: unknown): ParseResult<{ sacks: number; kilos: number }> {
+  const sacks = parseNumber(rawSacks);
+  if (sacks === null || !Number.isInteger(sacks) || sacks < 0) return { ok: false, error: "sacks_invalid" };
+  const kilos = parseNumber(rawKilos);
+  if (kilos === null || kilos < 0) return { ok: false, error: "kilos_invalid" };
+  return { ok: true, value: { sacks, kilos } };
+}
+
 /** Where a new load of this service starts. */
 export function firstStage(service: ServiceType): Stage {
   return STEPS[service][0];
@@ -471,19 +499,24 @@ export function parseLoadInput(raw: {
     return { ok: false, error: "name_required" };
   }
 
-  const sacks = parseNumber(raw.sacks);
+  const service_type = String(raw.service_type ?? "");
+  if (!isServiceType(service_type)) {
+    return { ok: false, error: "service_invalid" };
+  }
+
+  // Before harvesting nobody knows the sacks or weight yet: the co-op counts
+  // them after harvesting. 0 means "not counted yet".
+  const harvests = needsHarvestAddress(service_type);
+  const blank = (v: unknown) => String(v ?? "").trim() === "";
+
+  const sacks = harvests && blank(raw.sacks) ? 0 : parseNumber(raw.sacks);
   if (sacks === null || !Number.isInteger(sacks) || sacks < 0) {
     return { ok: false, error: "sacks_invalid" };
   }
 
-  const kilos = parseNumber(raw.kilos);
+  const kilos = harvests && blank(raw.kilos) ? 0 : parseNumber(raw.kilos);
   if (kilos === null || kilos < 0) {
     return { ok: false, error: "kilos_invalid" };
-  }
-
-  const service_type = String(raw.service_type ?? "");
-  if (!isServiceType(service_type)) {
-    return { ok: false, error: "service_invalid" };
   }
 
   const agreed_price = parseNumber(raw.agreed_price);

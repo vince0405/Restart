@@ -10,11 +10,13 @@
 import { redirect } from "next/navigation";
 import { codeForDbError, type ErrorCode } from "@/lib/errors";
 import {
+  countsAfter,
   firstStage,
   isServiceType,
   isStage,
   nextStage,
   parseAmountPaid,
+  parseCount,
   parseDisposition,
   parseHarvestAddress,
   parseLoadInput,
@@ -82,8 +84,16 @@ export async function moveStage(formData: FormData) {
   const to = forward ? nextStage(service, from, stored) : prevStage(service, from, stored);
   if (!to) redirect(jobPath(id, "not_changed"));
 
-  const changes =
+  let changes: Record<string, unknown> =
     from === "Stored" && to === "Ready" ? { stage: to, stored_at: null } : { stage: to };
+
+  // Leaving Harvesting or Drying forwards: the new sacks and weight are
+  // required (after drying the palay is lighter and may fill fewer sacks).
+  if (forward && countsAfter(from)) {
+    const count = parseCount(formData.get("sacks"), formData.get("kilos"));
+    if (!count.ok) redirect(jobPath(id, count.error));
+    changes = { ...changes, ...count.value };
+  }
 
   let query = supabase
     .from("loads")

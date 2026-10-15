@@ -112,3 +112,48 @@ export function HarvestAddressField() {
     </div>
   );
 }
+
+// The surrounding <form> needs className="group". These classes hide the
+// sacks and weight boxes when a harvesting service is picked (nobody knows
+// them before the harvest), and show a note instead — plain CSS, no script.
+const HARVEST_PICKED_HIDE =
+  "group-has-[input[value='Package_Deal']:checked]:hidden group-has-[input[value='Harvesting_+_Drying']:checked]:hidden";
+const HARVEST_PICKED_SHOW =
+  "hidden group-has-[input[value='Package_Deal']:checked]:flex group-has-[input[value='Harvesting_+_Drying']:checked]:flex";
+
+/**
+ * Sacks and weight. Required for Drying only and Milling only (checked on
+ * the server); for harvesting services they are counted after the harvest.
+ */
+export function PalayCountFields({ weightLabel = "Estimated weight" }: { weightLabel?: string }) {
+  return (
+    <>
+      <div className={`grid gap-4 sm:grid-cols-2 ${HARVEST_PICKED_HIDE}`}>
+        <Field
+          label="Number of sacks"
+          name="sacks"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          step={1}
+          placeholder="25"
+          suffix="sacks"
+        />
+        <Field
+          label={weightLabel}
+          name="kilos"
+          type="number"
+          inputMode="decimal"
+          min={0}
+          step={0.01}
+          placeholder="1250"
+          suffix="kg"
+        />
+      </div>
+      <p className={`${HARVEST_PICKED_SHOW} items-start gap-2 rounded-xl bg-gold-soft p-3 text-sm text-ink`}>
+        The co-op counts the sacks and weighs the palay after harvesting, and again after
+        drying.
+      </p>
+    </>
+  );
+}
