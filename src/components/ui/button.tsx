@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
   // Focus uses the app-wide ring in globals.css. Pressed: a small squeeze.
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-[background-color,color,transform,opacity] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60 aria-busy:cursor-progress",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-[background-color,color,transform,opacity,box-shadow] duration-150 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.96] disabled:pointer-events-none disabled:opacity-60 aria-busy:cursor-progress",
   {
     variants: {
       variant: {

@@ -25,8 +25,8 @@
       button opens it
 - [x] Settings: a note that forgotten passwords are reset by the
       Chairperson (self-service password change stays as it is)
-- [ ] Look: a warm rice-paddy background, earth tones, light and dark
-- [ ] Buttons press in when tapped; loading screens while pages load
+- [x] Look: a warm rice-paddy background, earth tones, light and dark
+- [x] Buttons press in when tapped; loading screens while pages load
 - [ ] Basic security checks: inputs, sessions, RLS on new tables
 - [ ] Main workflows tested again after the changes
 - [ ] Works on the live URL, on a phone

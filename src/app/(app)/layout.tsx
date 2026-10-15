@@ -29,7 +29,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   }
 
   return (
-    <div className="min-h-screen bg-canvas text-ink">
+    <div className="min-h-screen text-ink">
       <Sidebar name={profile.full_name} role={profile.role} isMember={profile.is_member} />
       <div className="lg:pl-64">
         <TopBar role={profile.role} />
