@@ -213,6 +213,8 @@ export type LoadRow = {
   harvest_fee?: number | null;
   drying_fee?: number | null;
   milling_fee?: number | null;
+  /** Staff's change to the price list, kept across counts (negative = discount). */
+  fee_adjustment?: number | null;
 };
 
 /** Days left for a stored load, or null if it is not in storage. */

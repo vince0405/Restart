@@ -4,6 +4,7 @@ import {
   dryerLoads,
   dryingFee,
   feeAtIntake,
+  feeWithAdjustment,
   harvestFee,
   harvestShareKg,
   millingFee,
@@ -79,5 +80,17 @@ describe("price list", () => {
     expect(parseRates(form({ ...good, dryer_load_max_sacks: "12.5" }))).toBeNull();
     expect(parseRates(form({ ...good, milling_fee_per_sack: "" }))).toBeNull();
     expect(parseRates(form({ ...good, dryer_load_fee: "-1" }))).toBeNull();
+  });
+
+  it("keeps a discount after the next count", () => {
+    // Harvest count: list says P27,000; staff make it P26,000 (-1,000).
+    const adjustment = 26000 - priceListTotal({ harvest_fee: 18000, drying_fee: 9000 });
+    expect(adjustment).toBe(-1000);
+    // After drying, milling adds P11,400: the discount is still there.
+    const list = priceListTotal({ harvest_fee: 18000, drying_fee: 9000, milling_fee: 11400 });
+    expect(feeWithAdjustment(list, adjustment)).toBe(37400);
+    // An extra charge works the same way, and the fee never goes below zero.
+    expect(feeWithAdjustment(list, 500)).toBe(38900);
+    expect(feeWithAdjustment(1000, -5000)).toBe(0);
   });
 });

@@ -94,3 +94,12 @@ export function parseRates(get: (name: string) => unknown): Rates | null {
     rates.milling_fee_per_sack >= 0;
   return ok ? rates : null;
 }
+
+/**
+ * The fee after a count (Ticket 27): the new price-list total plus the
+ * saved adjustment (negative = discount), never below zero. Same rule as
+ * the database (supabase/sql/012-discounts-stay.sql).
+ */
+export function feeWithAdjustment(listTotal: number, adjustment: number): number {
+  return Math.max(0, round2(listTotal + adjustment));
+}

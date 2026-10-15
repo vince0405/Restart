@@ -133,7 +133,9 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
   // The fee parts the price list has worked out so far (supabase/sql/009).
   const hasParts = load.harvest_fee != null || load.drying_fee != null || load.milling_fee != null;
   const listTotal = priceListTotal(load);
-  const adjusted = hasParts && listTotal !== Number(load.agreed_price);
+  // Staff's discount or extra charge, kept across counts (supabase/sql/012).
+  const adjustment = hasParts ? Number(load.agreed_price) - listTotal : 0;
+  const adjusted = adjustment !== 0;
   const storedAt = stored ? new Date(load.stored_at as string) : null;
   const expires = storedAt ? expiryDate(storedAt, load.service_type, settings.lifeline) : null;
   const left = expires ? daysLeft(expires) : null;
@@ -653,7 +655,10 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
               {load.drying_fee != null && <MoneyRow label="Drying" value={peso.format(Number(load.drying_fee))} />}
               {load.milling_fee != null && <MoneyRow label="Milling" value={peso.format(Number(load.milling_fee))} />}
               {adjusted && (
-                <MoneyRow label="Changed by staff" value={peso.format(Number(load.agreed_price) - listTotal)} />
+                <MoneyRow
+                  label={adjustment < 0 ? "Discount" : "Extra charge"}
+                  value={peso.format(adjustment)}
+                />
               )}
               <MoneyRow label="Processing fee" value={peso.format(load.agreed_price)} strong />
               <MoneyRow label="Paid in cash" value={peso.format(money.paidCash)} />
@@ -719,7 +724,9 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    The next count (after harvesting or drying) works the fee out again from the price list.
+                    {hasParts
+                      ? "A discount or extra charge is kept: the next count adds the new price-list amounts and keeps the same difference."
+                      : "This job has no price-list amounts yet. The harvest count will work the fee out from the price list."}
                   </p>
                   <SubmitButton variant="outline">Save fee</SubmitButton>
                 </form>

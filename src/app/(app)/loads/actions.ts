@@ -165,8 +165,9 @@ export async function markPaid(formData: FormData) {
 }
 
 /**
- * Change the processing fee, e.g. for a discount. The price list fills it
- * in; this overrides it until the next count re-applies the price list.
+ * Change the processing fee, e.g. for a discount. The database remembers
+ * the difference from the price list and keeps it at the next count
+ * (supabase/sql/012).
  */
 export async function updateFee(formData: FormData) {
   const { supabase } = await requireRole(canManage);

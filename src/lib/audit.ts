@@ -36,6 +36,7 @@ const FIELD_LABELS: Record<string, string> = {
   harvest_fee: "Harvesting fee",
   drying_fee: "Drying fee",
   milling_fee: "Milling fee",
+  fee_adjustment: "Discount (−) or extra (+)",
   harvest_address: "Harvest address",
   full_name: "Name",
   phone: "Mobile number",
