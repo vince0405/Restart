@@ -15,7 +15,7 @@
 - [x] Dashboard: recent jobs in a clearer, grouped layout
 - [x] Money: Week / Month / Year filters, bar chart by default with an
       optional line chart, amounts shortened (1k, 10k, 1m)
-- [ ] History: simple filters, pages, easier to read
+- [x] History: simple filters, pages, easier to read
 - [ ] People: search, pages, role filter
 - [ ] Storage: the co-op's own rice and palay supply — goes up with
       approved buyouts (and palay harvest shares), staff add or take out
