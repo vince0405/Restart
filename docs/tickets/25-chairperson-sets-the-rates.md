@@ -6,7 +6,7 @@ Settings, where only the Chairperson can change it.
 
 **Blocked by:** 24
 
-**Status:** built — waiting for 010 to be run in Supabase
+**Status:** done
 
 - [x] Four new `settings` columns with safe defaults and checks (010)
 - [x] The database price trigger reads the rates from `settings`
@@ -16,8 +16,8 @@ Settings, where only the Chairperson can change it.
 - [x] The price list on the intake form and the job screen show the
       current rates
 - [x] A rate change does not change fees already worked out
-- [ ] The team has run 010 in Supabase
-- [ ] Works on the live URL, on a phone
+- [x] The team has run 010 in Supabase
+- [x] Works on the live URL, on a phone
 
 Already done in Ticket 24: the harvest count's market price starts filled
 in with the farmgate reference price from Settings.
