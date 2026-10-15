@@ -25,6 +25,7 @@ import {
   SERVICE_TYPES,
   parseDisposition,
   parseHarvestAddress,
+  parseJobDetails,
   parseStatsRange,
   settlement,
   stepsFor,
@@ -555,5 +556,65 @@ describe("release needs the fee settled", () => {
     expect(canRelease({ ...job, is_paid: true, amount_paid: 5000 })).toBe(true);
     expect(canRelease({ ...job, keep_percent: 50, buyout_status: "approved", price_per_kg: 20 })).toBe(true);
     expect(canRelease({ ...job, agreed_price: 0 })).toBe(true);
+  });
+});
+
+describe("editing a job's details (Ticket 35)", () => {
+  const form = {
+    customer_name: " Mang Tonio ",
+    service_type: "Package Deal",
+    harvest_address: "Purok 3",
+    customer_note: "  ",
+    sacks: "",
+    kilos: "",
+  };
+  const atStart = { service_type: "Package Deal" as const, stage: "Harvesting" as const };
+
+  it("fixes the name, address and note without touching the service", () => {
+    expect(parseJobDetails(form, atStart)).toEqual({
+      ok: true,
+      value: { customer_name: "Mang Tonio", harvest_address: "Purok 3", customer_note: null },
+    });
+  });
+
+  it("changes the service at the first step and moves to the new first step", () => {
+    const r = parseJobDetails({ ...form, service_type: "Drying only", sacks: "20", kilos: "1000" }, atStart);
+    expect(r).toEqual({
+      ok: true,
+      value: {
+        customer_name: "Mang Tonio",
+        harvest_address: null,
+        customer_note: null,
+        service_type: "Drying only",
+        stage: "Received",
+        sacks: 20,
+        kilos: 1000,
+      },
+    });
+  });
+
+  it("needs the sacks and kg when switching to drying or milling only", () => {
+    expect(parseJobDetails({ ...form, service_type: "Milling only" }, atStart).ok).toBe(false);
+  });
+
+  it("resets the count when switching to a harvesting service", () => {
+    const r = parseJobDetails(
+      { ...form, service_type: "Harvesting + Drying" },
+      { service_type: "Drying only", stage: "Received" },
+    );
+    expect(r.ok && [r.value.stage, r.value.sacks, r.value.kilos]).toEqual(["Harvesting", 0, 0]);
+  });
+
+  it("refuses a service change after work started", () => {
+    const r = parseJobDetails({ ...form, service_type: "Drying only", sacks: "1", kilos: "1" }, {
+      service_type: "Package Deal",
+      stage: "Drying",
+    });
+    expect(r).toEqual({ ok: false, error: "service_locked" });
+  });
+
+  it("still needs a name and, for harvesting, an address", () => {
+    expect(parseJobDetails({ ...form, customer_name: " " }, atStart).ok).toBe(false);
+    expect(parseJobDetails({ ...form, harvest_address: "" }, atStart).ok).toBe(false);
   });
 });

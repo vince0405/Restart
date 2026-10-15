@@ -19,6 +19,7 @@ import {
   parseCount,
   parseDisposition,
   parseHarvestAddress,
+  parseJobDetails,
   parseLoadInput,
   prevStage,
 } from "@/lib/loads";
@@ -347,6 +348,51 @@ export async function markPayoutDone(formData: FormData) {
     .eq("id", id)
     .eq("buyout_status", "approved")
     .is("payout_done_at", null)
+    .select("id");
+  if (error || !data?.length) redirect(jobPath(id, codeForDbError(error)));
+
+  redirect(jobPath(id));
+}
+
+/**
+ * Fix a job's details after saving (Ticket 35): name, farm address, note,
+ * and the service while the job is still at its first step. Monitors and
+ * the Chairperson only; the database checks the same (supabase/sql/014)
+ * and prices a changed service again from the price list.
+ */
+export async function updateDetails(formData: FormData) {
+  const { supabase } = await requireRole(canManage);
+  const id = String(formData.get("id") ?? "");
+
+  const { data: current } = await supabase
+    .from("loads")
+    .select("service_type, stage")
+    .eq("id", id)
+    .maybeSingle();
+  if (!current || !isServiceType(current.service_type) || !isStage(current.stage)) {
+    redirect(jobPath(id, "not_changed"));
+  }
+
+  const parsed = parseJobDetails(
+    {
+      customer_name: formData.get("customer_name"),
+      service_type: formData.get("service_type") ?? current.service_type,
+      harvest_address: formData.get("harvest_address"),
+      customer_note: formData.get("customer_note"),
+      sacks: formData.get("sacks"),
+      kilos: formData.get("kilos"),
+    },
+    { service_type: current.service_type, stage: current.stage },
+  );
+  if (!parsed.ok) redirect(`${jobPath(id, parsed.error)}&edit=1`);
+
+  // Only if nobody moved the job on in the meantime.
+  const { data, error } = await supabase
+    .from("loads")
+    .update(parsed.value)
+    .eq("id", id)
+    .eq("service_type", current.service_type)
+    .eq("stage", current.stage)
     .select("id");
   if (error || !data?.length) redirect(jobPath(id, codeForDbError(error)));
 

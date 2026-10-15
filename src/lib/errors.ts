@@ -36,6 +36,7 @@ export const ERROR_MESSAGES = {
   unpaid_release: "The customer still owes money. Record the payment first, then release.",
   not_allowed: "Your role is not allowed to do that.",
   not_changed: "Nothing changed. The job may have moved on already — refresh and try again.",
+  service_locked: "The service can only be changed before work starts on the job.",
   cancel_closed:
     "This request can no longer be cancelled — the co-op may already be working on it, or the time to cancel has passed.",
 
@@ -64,6 +65,7 @@ export function codeForDbError(error: { message?: string } | null): ErrorCode {
   if (m.includes("Nothing was kept")) return "nothing_kept";
   if (m.includes("must pay before release")) return "unpaid_release";
   if (m.includes("can no longer be cancelled")) return "cancel_closed";
+  if (m.includes("can only be changed before work starts")) return "service_locked";
   if (m.includes("cannot") || m.includes("Only the") || m.includes("permission denied")) {
     return "not_allowed";
   }

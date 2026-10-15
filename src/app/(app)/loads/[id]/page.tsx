@@ -12,11 +12,14 @@ import { buttonVariants } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { ErrorNote } from "@/components/rps/error-note";
 import {
   canRelease,
   describeCount,
   countsAfter,
+  firstStage,
   daysLeft,
   expiryDate,
   isServiceType,
@@ -26,6 +29,7 @@ import {
   nextStage,
   prevStage,
   productFor,
+  SERVICE_TYPES,
   settlement,
   stepsFor,
 } from "@/lib/loads";
@@ -46,6 +50,7 @@ import {
   recordOutput,
   setDisposition,
   storeLoad,
+  updateDetails,
   updateFee,
 } from "../actions";
 
@@ -67,7 +72,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
   const { supabase, role } = await requireRole(isStaff);
   const settings = await getSettings();
   const { id } = await params;
-  const { error, confirm } = await searchParams;
+  const { error, confirm, edit } = await searchParams;
   const confirmingDelete = confirm === "delete";
 
   // RLS: staff see every job. A made-up id is simply "not found".
@@ -142,6 +147,8 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
   const expires = storedAt ? expiryDate(storedAt, load.service_type, settings.lifeline) : null;
   const left = expires ? daysLeft(expires) : null;
   const walkIn = !load.customer_id;
+  // The service can only change before work starts (Ticket 35, supabase/sql/014).
+  const atFirstStep = load.stage === firstStage(load.service_type);
   const name = load.customer?.full_name || load.customer_name;
   const initials = name
     .split(/\s+/)
@@ -576,7 +583,7 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
           )}
 
           <Panel>
-            <details className="group/details">
+            <details open={edit === "1"} className="group/details">
               <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
                 <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand">
                   <Scale className="size-5" aria-hidden />
@@ -615,6 +622,75 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
                 )}
                 {load.customer_note && <p className="mt-1 text-ink">&ldquo;{load.customer_note}&rdquo;</p>}
               </div>
+            )}
+            {manager && !closed && (
+              <details open={edit === "1"} className="mt-5 border-t border-line pt-4">
+                <summary className="min-h-11 cursor-pointer text-sm font-bold text-brand">
+                  Edit details
+                </summary>
+                <form action={updateDetails} className="mt-2 flex flex-col gap-4">
+                  <input type="hidden" name="id" value={load.id} />
+                  {walkIn ? (
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="edit_name">Customer name</Label>
+                      <Input id="edit_name" name="customer_name" defaultValue={load.customer_name} maxLength={120} required />
+                    </div>
+                  ) : (
+                    <input type="hidden" name="customer_name" value={load.customer_name} />
+                  )}
+                  {atFirstStep ? (
+                    <>
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="edit_service">Service</Label>
+                        <Select id="edit_service" name="service_type" defaultValue={load.service_type}>
+                          {SERVICE_TYPES.map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          A new service starts again at its first step, and the fee is worked out
+                          again from the price list.
+                        </p>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="flex flex-col gap-2">
+                          <Label htmlFor="edit_sacks">Sacks</Label>
+                          <Input id="edit_sacks" name="sacks" type="number" inputMode="numeric" min={0} step={1} defaultValue={load.sacks || undefined} />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Label htmlFor="edit_kilos">Weight (kg)</Label>
+                          <Input id="edit_kilos" name="kilos" type="number" inputMode="decimal" min={0} step={0.01} defaultValue={load.kilos || undefined} />
+                        </div>
+                        <p className="text-xs text-muted-foreground sm:col-span-2">
+                          Only used when changing to Drying only or Milling only. Harvesting
+                          services are counted after the harvest.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      The service can&rsquo;t be changed: work on this job has started.
+                    </p>
+                  )}
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="edit_address">Farm address (harvesting services)</Label>
+                    <Input id="edit_address" name="harvest_address" defaultValue={load.harvest_address ?? ""} maxLength={300} />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="edit_note">Note</Label>
+                    <Textarea id="edit_note" name="customer_note" defaultValue={load.customer_note ?? ""} maxLength={1000} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Counts, fees and payments are changed in their own places. Every edit is kept in
+                    the history.
+                  </p>
+                  <SubmitButton variant="outline" className="sm:self-start">
+                    Save details
+                  </SubmitButton>
+                </form>
+              </details>
             )}
             </details>
           </Panel>

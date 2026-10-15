@@ -627,3 +627,62 @@ export function parseAmountPaid(raw: unknown): ParseResult<number> {
   }
   return { ok: true, value: n };
 }
+
+/** The details staff may fix after a job is saved (Ticket 35). */
+export type JobDetails = {
+  customer_name: string;
+  harvest_address: string | null;
+  customer_note: string | null;
+  /** Only when the service changes: the new service, its first step and its intake count. */
+  service_type?: ServiceType;
+  stage?: Stage;
+  sacks?: number;
+  kilos?: number;
+};
+
+/**
+ * Checks the "Edit details" form against the job as it is now. The service
+ * can only change while the job is at its first step; the job then moves
+ * to the new service's first step. A harvesting service is counted after
+ * the harvest (0 / 0); Drying only and Milling only need the sacks and kg.
+ * The database checks the same rules (supabase/sql/014).
+ */
+export function parseJobDetails(
+  raw: {
+    customer_name: unknown;
+    service_type: unknown;
+    harvest_address: unknown;
+    customer_note: unknown;
+    sacks: unknown;
+    kilos: unknown;
+  },
+  current: { service_type: ServiceType; stage: Stage },
+): ParseResult<JobDetails> {
+  const customer_name = String(raw.customer_name ?? "").trim();
+  if (!customer_name || customer_name.length > 120) return { ok: false, error: "name_required" };
+
+  const service = String(raw.service_type ?? current.service_type);
+  if (!isServiceType(service)) return { ok: false, error: "service_invalid" };
+
+  const address = parseHarvestAddress(service, raw.harvest_address);
+  if (!address.ok) return address;
+
+  const note = String(raw.customer_note ?? "").trim().slice(0, 1000);
+  const details: JobDetails = { customer_name, harvest_address: address.value, customer_note: note || null };
+
+  if (service !== current.service_type) {
+    if (current.stage !== firstStage(current.service_type)) return { ok: false, error: "service_locked" };
+    details.service_type = service;
+    details.stage = firstStage(service);
+    if (needsHarvestAddress(service)) {
+      details.sacks = 0;
+      details.kilos = 0;
+    } else {
+      const count = parseCount(raw.sacks, raw.kilos);
+      if (!count.ok) return count;
+      details.sacks = count.value.sacks;
+      details.kilos = count.value.kilos;
+    }
+  }
+  return { ok: true, value: details };
+}
