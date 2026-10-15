@@ -6,7 +6,7 @@ saves. The load appears at the top of the list as Received / Not paid.
 
 **Blocked by:** 03
 
-**Status:** todo
+**Status:** done
 
 - [x] The team has confirmed the service-type list (see "Assumptions to
       check" in the spec)
@@ -16,4 +16,4 @@ saves. The load appears at the top of the list as Received / Not paid.
 - [x] A saved load appears at the top of the list showing customer, sacks,
       stage "Received" and a "Not paid" badge
 - [x] The load is still there after refreshing the page
-- [ ] Works on the live URL — on a phone
+- [x] Works on the live URL — on a phone

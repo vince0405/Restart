@@ -12,7 +12,7 @@ This replaces the fixed six stages from ticket 05.
 
 **Blocked by:** 05
 
-**Status:** todo
+**Status:** done
 
 - [x] A numbered SQL file updates the database: the four services, the
       new step names, a `stored_at` column, and any existing loads moved
@@ -23,4 +23,4 @@ This replaces the fixed six stages from ticket 05.
       and "Back one step" follow them
 - [x] A Drying only load never shows Harvesting or Milling
 - [x] The list shows the service and current step for each load
-- [ ] Works on the live URL — on a phone
+- [x] Works on the live URL — on a phone

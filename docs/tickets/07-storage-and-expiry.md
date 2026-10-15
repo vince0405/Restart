@@ -6,7 +6,7 @@ or store it at the mill. Stored palay keeps 3 months and stored rice keeps
 
 **Blocked by:** 06
 
-**Status:** todo
+**Status:** done
 
 - [x] At Ready, the detail screen offers "Release" and "Store at the mill"
 - [x] Storing records the date and moves the load to Stored
@@ -17,4 +17,4 @@ or store it at the mill. Stored palay keeps 3 months and stored rice keeps
 - [x] The list shows "Expires in N days" for stored loads, highlighted at
       7 days or fewer, and "Expired" once past
 - [x] A stored load can be released
-- [ ] Works on the live URL — on a phone
+- [x] Works on the live URL — on a phone
