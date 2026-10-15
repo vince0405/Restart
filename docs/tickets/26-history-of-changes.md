@@ -6,11 +6,11 @@ and the Auditor can read it; nobody can edit or delete it.
 
 **Blocked by:** 25
 
-**Status:** todo
+**Status:** built — waiting for 011 to be run in Supabase
 
-- [ ] `audit_log` table, written only by database triggers (011)
-- [ ] RLS: Chairperson and Auditor read; no role can insert, update or delete
-- [ ] A History page listing the latest changes, newest first
-- [ ] Each job screen shows that job's history (staff)
+- [x] `audit_log` table, written only by database triggers (011)
+- [x] RLS: Chairperson and Auditor read; no role can insert, update or delete
+- [x] A History page listing the latest changes, newest first
+- [x] Each job screen shows that job's history (Chairperson and Auditor)
 - [ ] The team has run 011 in Supabase
 - [ ] Works on the live URL, on a phone

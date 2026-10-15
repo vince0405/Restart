@@ -11,6 +11,7 @@ import { usePathname } from "next/navigation";
 import {
   BadgeCheck,
   CircleUser,
+  History,
   ClipboardList,
   Inbox,
   LayoutGrid,
@@ -28,6 +29,7 @@ import { signOut } from "@/app/actions";
 import {
   canManage,
   canManagePeople,
+  canSeeHistory,
   canSeeMoney,
   isStaff,
   ROLE_LABELS,
@@ -60,6 +62,9 @@ function navFor(role: Role): NavItem[] {
   if (canSeeMoney(role)) {
     items.push({ label: "Money", href: "/money", icon: ReceiptText, mobile: false });
   }
+  if (canSeeHistory(role)) {
+    items.push({ label: "History", href: "/history", icon: History, mobile: false });
+  }
   if (canManagePeople(role)) {
     items.push(
       { label: "People", href: "/people", icon: Users, mobile: false },
@@ -89,6 +94,7 @@ function titleFor(pathname: string) {
   if (pathname.startsWith("/money")) return "Money";
   if (pathname.startsWith("/people")) return "People";
   if (pathname.startsWith("/settings")) return "Settings";
+  if (pathname.startsWith("/history")) return "History";
   if (pathname.startsWith("/more")) return "More";
   if (pathname.startsWith("/account")) return "Account";
   return "RPS1";

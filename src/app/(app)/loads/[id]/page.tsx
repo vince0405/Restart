@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Notice } from "@/components/rps/notice";
 import { notFound, redirect } from "next/navigation";
-import { BadgeCheck, HandCoins, Scale, Trash2, Warehouse } from "lucide-react";
+import { BadgeCheck, HandCoins, History, Scale, Trash2, Warehouse } from "lucide-react";
 import { Badge, ExpiryBadge, PaidBadge, StageBadge } from "@/components/rps/badge";
 import { HarvestAddress } from "@/components/rps/harvest-address";
 import { Breadcrumbs } from "@/components/rps/breadcrumbs";
@@ -29,7 +29,9 @@ import {
   settlement,
   stepsFor,
 } from "@/lib/loads";
-import { canApproveBuyout, canManage, canWork, isStaff } from "@/lib/roles";
+import { canApproveBuyout, canManage, canSeeHistory, canWork, isStaff } from "@/lib/roles";
+import type { AuditEntry } from "@/lib/audit";
+import { AuditList } from "@/components/rps/audit-list";
 import { priceListTotal } from "@/lib/pricing";
 import { getSettings, requireRole } from "@/lib/session";
 import { cn } from "@/lib/utils";
@@ -77,6 +79,26 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
   const load = data as Job | null;
   if (!load || !isServiceType(load.service_type) || !isStage(load.stage)) notFound();
   if (load.request_status === "pending") redirect("/requests");
+
+  // This job's history of changes (Chairperson and Auditor; supabase/sql/011).
+  const showHistory = canSeeHistory(role);
+  let history: AuditEntry[] = [];
+  let historyNames = new Map<string, string>();
+  if (showHistory) {
+    const { data: log } = await supabase
+      .from("audit_log")
+      .select("*")
+      .eq("table_name", "loads")
+      .eq("row_id", id)
+      .order("changed_at", { ascending: false })
+      .limit(50);
+    history = (log ?? []) as AuditEntry[];
+    const who = [...new Set(history.map((e) => e.changed_by).filter((v): v is string => !!v))];
+    if (who.length) {
+      const { data: people } = await supabase.from("profiles").select("id, full_name").in("id", who);
+      historyNames = new Map((people ?? []).map((p) => [p.id as string, (p.full_name as string) || "Unnamed"]));
+    }
+  }
 
   // Which buttons this person gets. The database enforces the same rules.
   const worker = canWork(role);
@@ -585,6 +607,33 @@ export default async function LoadDetailPage({ params, searchParams }: PageProps
             )}
             </details>
           </Panel>
+
+          {showHistory && (
+            <Panel>
+              <details className="group/history">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand">
+                    <History className="size-5" aria-hidden />
+                  </span>
+                  <span className="text-base font-extrabold text-ink">History ({history.length})</span>
+                  <span className="ml-auto text-sm font-bold text-brand">
+                    <span className="group-open/history:hidden">Show</span>
+                    <span className="hidden group-open/history:inline">Hide</span>
+                  </span>
+                </summary>
+                <div className="mt-5">
+                  {history.length ? (
+                    <AuditList entries={history} names={historyNames} showTarget={false} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No changes recorded yet. Changes are recorded from the day the history was
+                      switched on.
+                    </p>
+                  )}
+                </div>
+              </details>
+            </Panel>
+          )}
         </div>
 
         {!closed && (

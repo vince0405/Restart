@@ -37,3 +37,6 @@ export const canManagePeople = (r: Role) => r === "chairperson";
 /** See the money summary. */
 export const canSeeMoney = (r: Role) =>
   r === "chairperson" || r === "monitor" || r === "auditor";
+
+/** Read the history of changes (audit log). Same rule as the database (011). */
+export const canSeeHistory = (r: Role) => r === "chairperson" || r === "auditor";
