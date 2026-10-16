@@ -51,10 +51,11 @@ export async function signUp(formData: FormData) {
   // The one password rule, like everywhere else in RPS1 (src/lib/password.ts).
   if (passwordProblem(String(formData.get("password") ?? ""), phone)) redirect("/signup?error=weak_password");
 
-  // Which co-op they are a customer of (Ticket 34). The database keeps it
-  // only if it is a real co-op.
+  // Which co-op they are a customer of (Ticket 34). Optional: someone who
+  // skips it chooses on /no-coop after signing in (supabase/sql/026). The
+  // database keeps it only if it is a real co-op.
   const coopId = String(formData.get("coop_id") ?? "");
-  if (!/^[0-9a-f-]{36}$/i.test(coopId)) redirect("/signup?error=coop");
+  if (coopId && !/^[0-9a-f-]{36}$/i.test(coopId)) redirect("/signup?error=coop");
 
   // The account signs in with its mobile number (as an internal name). The
   // name, phone and optional email travel as "metadata"; the database copies
@@ -64,7 +65,7 @@ export async function signUp(formData: FormData) {
     email: phoneSignInEmail(phone),
     password: String(formData.get("password") ?? ""),
     options: {
-      data: { full_name: fullName.slice(0, 120), phone, contact_email: contactEmail, coop_id: coopId },
+      data: { full_name: fullName.slice(0, 120), phone, contact_email: contactEmail, coop_id: coopId || null },
     },
   });
 

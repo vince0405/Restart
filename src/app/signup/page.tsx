@@ -55,11 +55,9 @@ export default async function SignUpPage({ searchParams }: PageProps<"/signup">)
         <CardContent>
           <form action={signUp} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="coop_id">Your cooperative</Label>
-              <Select id="coop_id" name="coop_id" required defaultValue={cooperatives.length === 1 ? cooperatives[0].id : ""}>
-                <option value="" disabled>
-                  Choose…
-                </option>
+              <Label htmlFor="coop_id">Your cooperative (optional)</Label>
+              <Select id="coop_id" name="coop_id" defaultValue={cooperatives.length === 1 ? cooperatives[0].id : ""}>
+                <option value="">Choose later</option>
                 {cooperatives.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -67,6 +65,9 @@ export default async function SignUpPage({ searchParams }: PageProps<"/signup">)
                   </option>
                 ))}
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Not sure yet? You can choose it after you sign in. You need one to request a service.
+              </p>
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="full_name">Full name</Label>
