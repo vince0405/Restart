@@ -8,6 +8,7 @@ import { listHref, pageInfo, parsePage, parseSearch } from "@/lib/list";
 import { matchesPerson } from "@/lib/people";
 import { Badge } from "@/components/rps/badge";
 import { PageTitle } from "@/components/rps/page-title";
+import { PasswordInput } from "@/components/rps/password-input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -111,10 +112,9 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="add-password">Starting password</Label>
-            <Input
+            <PasswordInput
               id="add-password"
               name="password"
-              type="text"
               minLength={8}
               autoComplete="off"
               placeholder={PASSWORD_RULE}

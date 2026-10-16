@@ -20,6 +20,7 @@ import { EmptyState } from "@/components/rps/empty-state";
 import { Logo } from "@/components/rps/logo";
 import { Notice } from "@/components/rps/notice";
 import { PageTitle } from "@/components/rps/page-title";
+import { PasswordInput } from "@/components/rps/password-input";
 import { Panel, PanelHead } from "@/components/rps/panel";
 import { StatCard } from "@/components/rps/stat-card";
 import { ThemeButton } from "@/components/rps/theme-toggle";
@@ -91,10 +92,9 @@ function ChairFields({ prefix }: { prefix: string }) {
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor={`${prefix}_password`}>Starting password</Label>
-        <Input
+        <PasswordInput
           id={`${prefix}_password`}
           name="password"
-          type="text"
           minLength={8}
           autoComplete="off"
           spellCheck={false}
