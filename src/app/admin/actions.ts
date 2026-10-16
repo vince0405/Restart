@@ -46,7 +46,11 @@ async function addChair(coopId: string, formData: FormData): Promise<string | nu
     target: data.user.id,
     coop: coopId,
   });
-  return roleError ? "role_failed" : null;
+  if (roleError) return "role_failed";
+
+  // They must choose their own password at first sign-in (supabase/sql/025).
+  const { error: flagError } = await supabase.rpc("mark_starting_password", { target: data.user.id });
+  return flagError ? "flag_failed" : null;
 }
 
 /** A new cooperative, with its first Chairperson. */

@@ -14,6 +14,10 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   // An account not linked to any co-op can't see or do anything yet.
   if (!profile.coop_id) redirect("/no-coop");
 
+  // Still on the starting password the Chairperson chose: pick your own
+  // first (supabase/sql/025).
+  if (profile.must_change_password) redirect("/change-password");
+
   return (
     <div className="min-h-screen text-ink">
       <Sidebar name={profile.full_name} role={profile.role} isMember={profile.is_member} />

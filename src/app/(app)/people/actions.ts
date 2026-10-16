@@ -157,5 +157,9 @@ export async function addPerson(formData: FormData) {
     if (roleError) redirect("/people?error=role_failed");
   }
 
+  // They must choose their own password at first sign-in (supabase/sql/025).
+  const { error: flagError } = await supabase.rpc("mark_starting_password", { target: data.user.id });
+  if (flagError) redirect("/people?error=flag_failed");
+
   redirect("/people?added=1");
 }

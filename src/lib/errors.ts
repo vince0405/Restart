@@ -39,6 +39,8 @@ export const ERROR_MESSAGES = {
   phone_taken: "That mobile number already has an account. Find it in the list below and change its role there.",
   password_short: `That password is too easy to guess. ${PASSWORD_RULE} Not a well-known one like password1, and not the mobile number.`,
   password_mismatch: "The two passwords don't match.",
+  password_same: "Choose a password different from the one you have now.",
+  flag_failed: "The account was made, but it won't be asked to change its starting password. Ask them to change it under Account.",
   signup_disabled: "Sign-ups are switched off in Supabase, so accounts can't be created. Turn them back on first.",
   too_many_tries: "Too many accounts created in a short time. Wait a few minutes and try again.",
   role_failed: "The account was created as a Customer, but its role could not be set. Set it in the list below.",

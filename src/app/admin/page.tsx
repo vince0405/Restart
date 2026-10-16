@@ -50,6 +50,7 @@ const MESSAGES: Record<string, string> = {
   email_invalid: "That email address doesn't look right.",
   password_short: `That starting password is too easy to guess. ${PASSWORD_RULE} Not a well-known one like password1, and not the mobile number.`,
   role_failed: "The account was made, but could not be made Chairperson.",
+  flag_failed: "The Chairperson was added, but won't be asked to change the starting password. Ask them to change it under Account.",
   save_failed: "Could not save. Please try again.",
 };
 

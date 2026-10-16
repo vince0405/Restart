@@ -14,6 +14,8 @@ export type Profile = {
   is_member: boolean;
   /** The cooperative this person belongs to (Ticket 34). Null for the Admin. */
   coop_id: string | null;
+  /** Still on the starting password someone else chose (security fix 3). */
+  must_change_password: boolean;
 };
 
 export type Settings = {
@@ -46,7 +48,7 @@ export const getSession = cache(async () => {
 
   const { data } = await supabase
     .from("profiles")
-    .select("id, full_name, phone, role, is_member, coop_id")
+    .select("id, full_name, phone, role, is_member, coop_id, must_change_password")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -64,6 +66,7 @@ export const getSession = cache(async () => {
     role: isRole(data?.role) ? data.role : "customer",
     is_member: data?.is_member ?? false,
     coop_id: (data?.coop_id as string | null) ?? null,
+    must_change_password: data?.must_change_password ?? false,
   };
 
   return { supabase, user, profile, role: profile.role, isAdmin: !!admin };
