@@ -7,6 +7,7 @@ import { canManagePeople, isRole } from "@/lib/roles";
 import { parseRates } from "@/lib/pricing";
 import { requireRole } from "@/lib/session";
 import { normalizePhMobile, parseOptionalEmail, phoneSignInEmail } from "@/lib/phone";
+import { passwordProblem } from "@/lib/password";
 import { createAccount } from "@/lib/supabase/new-account";
 
 /**
@@ -114,7 +115,7 @@ export async function addPerson(formData: FormData) {
   if (!fullName || fullName.length > 120) redirect("/people?error=name_missing");
   if (!phone) redirect("/people?error=phone_invalid");
   if (contactEmail === false) redirect("/people?error=email_invalid");
-  if (password.length < 8) redirect("/people?error=password_short");
+  if (passwordProblem(password, phone)) redirect("/people?error=password_short");
   if (!isRole(role)) redirect("/people?error=role_invalid");
 
   // They sign in with their mobile number; the email is for contact only.

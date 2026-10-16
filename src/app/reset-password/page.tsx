@@ -5,11 +5,12 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PASSWORD_RULE } from "@/lib/password";
 import { createClient } from "@/lib/supabase/server";
 import { setNewPassword } from "../login/actions";
 
 const MESSAGES: Record<string, string> = {
-  short: "The password must be at least 8 characters.",
+  short: `That password is too easy to guess. ${PASSWORD_RULE} Not a well-known one like password1.`,
   mismatch: "The two passwords don't match.",
   same: "Choose a password different from your old one.",
   other: "Could not save the new password. Ask for a new link and try again.",
@@ -41,6 +42,7 @@ export default async function ResetPasswordPage({ searchParams }: PageProps<"/re
               <div className="flex flex-col gap-2">
                 <Label htmlFor="password">New password</Label>
                 <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required />
+                <p className="text-xs text-muted-foreground">{PASSWORD_RULE}</p>
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="confirm">Type it again</Label>

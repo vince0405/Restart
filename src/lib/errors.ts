@@ -1,3 +1,5 @@
+import { PASSWORD_RULE } from "./password";
+
 // Error messages shown to people, looked up by a short code.
 //
 // Server actions redirect with ?error=<code>, never with the message
@@ -35,7 +37,7 @@ export const ERROR_MESSAGES = {
   contact_name_required: "Enter the name the co-op should ask for (up to 120 characters).",
   contact_phone_invalid: "Enter a mobile number the co-op can call, like 0917 123 4567.",
   phone_taken: "That mobile number already has an account. Find it in the list below and change its role there.",
-  password_short: "The password must be at least 8 characters.",
+  password_short: `That password is too easy to guess. ${PASSWORD_RULE} Not a well-known one like password1, and not the mobile number.`,
   password_mismatch: "The two passwords don't match.",
   signup_disabled: "Sign-ups are switched off in Supabase, so accounts can't be created. Turn them back on first.",
   too_many_tries: "Too many accounts created in a short time. Wait a few minutes and try again.",

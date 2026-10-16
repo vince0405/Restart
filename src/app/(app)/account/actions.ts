@@ -2,6 +2,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+import { passwordProblem } from "@/lib/password";
 import { getSession } from "@/lib/session";
 
 /** Anyone signed in: change your own password (e.g. the starting one). */
@@ -12,7 +13,7 @@ export async function changePassword(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
 
-  if (password.length < 8) redirect("/account?error=password_short");
+  if (passwordProblem(password)) redirect("/account?error=password_short");
   if (password !== confirm) redirect("/account?error=password_mismatch");
 
   // Prove it's really them (Ticket 42): someone who picks up a phone that

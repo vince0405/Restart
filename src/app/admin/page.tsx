@@ -36,6 +36,7 @@ import {
   parseCoopQuery,
   searchCoops,
 } from "@/lib/admin";
+import { PASSWORD_RULE } from "@/lib/password";
 import { getSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import { signOut } from "../actions";
@@ -47,7 +48,7 @@ const MESSAGES: Record<string, string> = {
   phone_invalid: "Enter a Philippine mobile number, like 0917 123 4567.",
   phone_taken: "That mobile number already has an account.",
   email_invalid: "That email address doesn't look right.",
-  password_short: "The starting password must be at least 8 characters.",
+  password_short: `That starting password is too easy to guess. ${PASSWORD_RULE} Not a well-known one like password1, and not the mobile number.`,
   role_failed: "The account was made, but could not be made Chairperson.",
   save_failed: "Could not save. Please try again.",
 };
@@ -98,7 +99,7 @@ function ChairFields({ prefix }: { prefix: string }) {
           spellCheck={false}
           required
         />
-        <p className="text-xs text-muted-foreground">At least 8 characters. Share it privately.</p>
+        <p className="text-xs text-muted-foreground">{PASSWORD_RULE} Share it privately.</p>
       </div>
     </div>
   );

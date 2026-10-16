@@ -5,6 +5,7 @@ import { ThemeChoice } from "@/components/rps/theme-toggle";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PASSWORD_RULE } from "@/lib/password";
 import { formatPhMobile, isPhoneSignInEmail } from "@/lib/phone";
 import { ROLE_LABELS } from "@/lib/roles";
 import { getSession } from "@/lib/session";
@@ -71,6 +72,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         <div className="flex flex-col gap-2">
           <Label htmlFor="password">New password</Label>
           <Input id="password" name="password" type="password" minLength={8} autoComplete="new-password" required />
+          <p className="text-xs text-muted-foreground">{PASSWORD_RULE}</p>
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="confirm">Type it again</Label>

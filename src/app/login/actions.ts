@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { normalizePhMobile, parseOptionalEmail, phoneSignInEmail, signInEmailFor } from "@/lib/phone";
+import { passwordProblem } from "@/lib/password";
 import { createClient } from "@/lib/supabase/server";
 
 // A server action: this runs on the server when the sign-in form is
@@ -47,8 +48,8 @@ export async function signUp(formData: FormData) {
   const contactEmail = parseOptionalEmail(formData.get("email"));
   if (contactEmail === false) redirect("/signup?error=email_address_invalid");
 
-  // At least 8 characters, like everywhere else in RPS1 (Ticket 42).
-  if (String(formData.get("password") ?? "").length < 8) redirect("/signup?error=weak_password");
+  // The one password rule, like everywhere else in RPS1 (src/lib/password.ts).
+  if (passwordProblem(String(formData.get("password") ?? ""), phone)) redirect("/signup?error=weak_password");
 
   // Which co-op they are a customer of (Ticket 34). The database keeps it
   // only if it is a real co-op.
@@ -104,7 +105,7 @@ export async function requestPasswordReset(formData: FormData) {
 /** Choose a new password, from the reset link's short-lived session. */
 export async function setNewPassword(formData: FormData) {
   const password = String(formData.get("password") ?? "");
-  if (password.length < 8) redirect("/reset-password?error=short");
+  if (passwordProblem(password)) redirect("/reset-password?error=short");
   if (password !== String(formData.get("confirm") ?? "")) redirect("/reset-password?error=mismatch");
 
   const supabase = await createClient();

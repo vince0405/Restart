@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorNote } from "@/components/rps/error-note";
 import { canManagePeople, isRole, ROLE_LABELS, ROLES } from "@/lib/roles";
+import { PASSWORD_RULE } from "@/lib/password";
 import { formatPhMobile } from "@/lib/phone";
 import { requireRole } from "@/lib/session";
 import { addPerson, updatePerson } from "./actions";
@@ -116,7 +117,7 @@ export default async function PeoplePage({ searchParams }: PageProps<"/people">)
               type="text"
               minLength={8}
               autoComplete="off"
-              placeholder="At least 8 characters"
+              placeholder={PASSWORD_RULE}
               required
             />
           </div>

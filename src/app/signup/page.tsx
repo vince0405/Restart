@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { PASSWORD_RULE } from "@/lib/password";
 import { createClient } from "@/lib/supabase/server";
 import { signUp } from "../login/actions";
 
@@ -14,7 +15,7 @@ const MESSAGES: Record<string, string> = {
   name: "Please enter your name.",
   phone_taken: "That mobile number already has an account. Sign in instead.",
   phone_invalid: "Enter a Philippine mobile number, like 0917 123 4567.",
-  weak_password: "Choose a longer password (at least 8 characters).",
+  weak_password: `That password is too easy to guess. ${PASSWORD_RULE} Not a well-known one like password1, and not your mobile number.`,
   signup_disabled: "Sign-ups are switched off right now. Please ask the co-op.",
   email_address_invalid: "That email address doesn't look right.",
   coop: "Choose your cooperative.",
@@ -98,6 +99,7 @@ export default async function SignUpPage({ searchParams }: PageProps<"/signup">)
                 minLength={8}
                 required
               />
+              <p className="text-xs text-muted-foreground">{PASSWORD_RULE}</p>
             </div>
 
             {message && (

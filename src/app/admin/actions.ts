@@ -7,6 +7,7 @@
 
 import { redirect } from "next/navigation";
 import { normalizePhMobile, parseOptionalEmail, phoneSignInEmail } from "@/lib/phone";
+import { passwordProblem } from "@/lib/password";
 import { getSession } from "@/lib/session";
 import { createAccount } from "@/lib/supabase/new-account";
 
@@ -28,7 +29,7 @@ async function addChair(coopId: string, formData: FormData): Promise<string | nu
   if (!fullName || fullName.length > 120) return "name_missing";
   if (!phone) return "phone_invalid";
   if (contactEmail === false) return "email_invalid";
-  if (password.length < 8) return "password_short";
+  if (passwordProblem(password, phone)) return "password_short";
 
   const { data, error } = await createAccount({
     signInEmail: phoneSignInEmail(phone),
