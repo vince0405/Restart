@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Notice } from "@/components/rps/notice";
 import { redirect } from "next/navigation";
+import { BackLink } from "@/components/rps/back-link";
 import { Logo } from "@/components/rps/logo";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +39,7 @@ export default async function SignUpPage({ searchParams }: PageProps<"/signup">)
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-12">
+      <BackLink />
       <div className="flex justify-center">
         <Link href="/" aria-label="RPS1 home — what is RPS1?">
           <Logo />
