@@ -8,24 +8,30 @@ import {
   Hourglass,
   Plus,
   Scale,
+  Search,
   Warehouse,
   type LucideIcon,
 } from "lucide-react";
 import { Badge, ExpiryBadge } from "@/components/rps/badge";
+import { FilterSelect, FilterTabs, SearchBox } from "@/components/rps/list-controls";
 import { PageTitle } from "@/components/rps/page-title";
 import { buttonVariants } from "@/components/ui/button";
 import { ErrorNote } from "@/components/rps/error-note";
+import { listHref, parseChoice, parseSearch } from "@/lib/list";
 import {
   describeCount,
   customerStatus,
   customerSummary,
   expiryLabel,
   expiryTone,
+  isServiceType,
   jobRef,
   type LoadRow,
+  SERVICE_TYPES,
   settlement,
   storedDaysLeft,
 } from "@/lib/loads";
+import { matchesMyTransaction, MY_GROUP_LABELS, MY_GROUPS, myGroup } from "@/lib/my-transactions";
 import { cn } from "@/lib/utils";
 import { isStaff } from "@/lib/roles";
 import { getSettings, requireRole } from "@/lib/session";
@@ -37,9 +43,15 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-PH", { timeZone: "Asia/Manila", dateStyle: "medium" });
 }
 
-// A customer's home screen: their requests and jobs, newest first.
-export default async function MyJobsPage() {
+// A customer's home screen: their requests and jobs, newest first. A search
+// box, a service choice and tabs (the same groups as the tiles) narrow the
+// list; all of it lives in the address (?q=&service=&show=).
+export default async function MyJobsPage({ searchParams }: PageProps<"/my">) {
   const { supabase, profile } = await requireRole((r) => !isStaff(r));
+  const { q: rawQ, service: rawService, show: rawShow } = await searchParams;
+  const q = parseSearch(rawQ);
+  const service = typeof rawService === "string" && isServiceType(rawService) ? rawService : "";
+  const show = parseChoice(rawShow, MY_GROUPS);
   const { coop_name, lifeline, warning_days } = await getSettings();
 
   // RLS only ever returns this customer's own rows.
@@ -51,6 +63,14 @@ export default async function MyJobsPage() {
     .order("created_at", { ascending: false });
   const loads = (data ?? []) as LoadRow[];
   const sum = customerSummary(loads, new Date(), lifeline);
+
+  // One customer's own list is small: search and filters are worked out here.
+  const searched = loads.filter((l) => matchesMyTransaction(l, q) && (!service || l.service_type === service));
+  const shown = show === "all" ? searched : searched.filter((l) => myGroup(l) === show);
+  const count = (g: string) => searched.filter((l) => myGroup(l) === g).length;
+  const href = (changes: Record<string, string>) =>
+    listHref("/my", { q, service, show, ...changes }, { show: "all" });
+  const filtering = Boolean(q || service || show !== "all");
 
   // My dashboard: what is happening with my palay, and my money.
   const tiles: { label: string; value: string; note: string; icon: LucideIcon; tone: string; highlight?: boolean }[] = [
@@ -146,6 +166,46 @@ export default async function MyJobsPage() {
         </div>
       )}
 
+      {loads.length > 0 && (
+        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-line bg-card p-4 shadow-card sm:p-5">
+          <h2 className="font-extrabold text-ink">My transactions</h2>
+          <SearchBox
+            action="/my"
+            q={q}
+            placeholder="RPS- number, service or status"
+            label="Search my transactions by reference number, service or status"
+            keep={show !== "all" ? { show } : {}}
+          >
+            <FilterSelect
+              name="service"
+              label="Service"
+              value={service}
+              options={[{ value: "", label: "All services" }, ...SERVICE_TYPES.map((s) => ({ value: s, label: s }))]}
+            />
+          </SearchBox>
+          <FilterTabs
+            label="Show"
+            tabs={MY_GROUPS
+              // Empty tabs are left out to keep the row short on a phone.
+              .filter((g) => g === "all" || g === show || count(g) > 0)
+              .map((g) => ({
+                label: MY_GROUP_LABELS[g],
+                href: href({ show: g }),
+                active: show === g,
+                count: g === "all" ? searched.length : count(g),
+              }))}
+          />
+          {filtering && (
+            <p className="text-xs text-muted-foreground" aria-live="polite">
+              Showing {shown.length} of {loads.length}.{" "}
+              <Link href="/my" className="font-bold text-brand underline">
+                Show all
+              </Link>
+            </p>
+          )}
+        </div>
+      )}
+
       {loads.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
@@ -159,9 +219,21 @@ export default async function MyJobsPage() {
         >
           Ask the co-op to dry or mill your palay. You can follow every step from here.
         </EmptyState>
+      ) : shown.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          title="Nothing matches"
+          action={
+            <Link href="/my" className={buttonVariants({ variant: "outline" })}>
+              Clear search
+            </Link>
+          }
+        >
+          Try another number, service or tab.
+        </EmptyState>
       ) : (
         <ul className="grid gap-3 md:grid-cols-2">
-          {loads.map((load) => {
+          {shown.map((load) => {
             const status = customerStatus(load);
             const left = storedDaysLeft(load, new Date(), lifeline);
             const money = settlement(load);
