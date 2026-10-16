@@ -119,10 +119,13 @@ export default async function MyJobsPage({ searchParams }: PageProps<"/my">) {
         title={`Hello, ${profile.full_name.split(" ")[0] || "there"}`}
         description="Your requests and transactions at the mill."
         action={
-          <Link href="/my/request" className={buttonVariants({ size: "lg" })}>
-            <Plus className="size-5" aria-hidden />
-            Request a service
-          </Link>
+          // With nothing yet, the empty box below has the button instead.
+          loads.length > 0 && (
+            <Link href="/my/request" className={buttonVariants({ size: "lg" })}>
+              <Plus className="size-5" aria-hidden />
+              Request a service
+            </Link>
+          )
         }
       />
 

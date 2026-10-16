@@ -170,7 +170,9 @@ export function Sidebar({
 
 export function TopBar({ role }: { role: Role }) {
   const pathname = usePathname();
-  const newHref = isStaff(role) ? (canManage(role) ? "/loads/new" : null) : "/my/request";
+  // A customer's My transactions page has its own "Request a service"
+  // button, so the top bar leaves it out there (no doubled buttons).
+  const newHref = isStaff(role) ? (canManage(role) ? "/loads/new" : null) : pathname === "/my" ? null : "/my/request";
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 px-4 py-3 backdrop-blur-md md:px-8 lg:px-10">
       <div className="mx-auto flex max-w-screen-2xl items-center gap-2">
