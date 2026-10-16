@@ -1,13 +1,18 @@
-import { BadgeCheck, CalendarDays, Inbox, Phone } from "lucide-react";
+import Link from "next/link";
+import { BadgeCheck, CalendarDays, Inbox, Phone, Search } from "lucide-react";
 import { EmptyState } from "@/components/rps/empty-state";
 import { Badge } from "@/components/rps/badge";
 import { HarvestAddress } from "@/components/rps/harvest-address";
+import { FilterSelect, FilterTabs, SearchBox } from "@/components/rps/list-controls";
 import { PageTitle } from "@/components/rps/page-title";
+import { buttonVariants } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ErrorNote } from "@/components/rps/error-note";
-import { jobRef, needsHarvestAddress, isServiceType } from "@/lib/loads";
+import { listHref, parseChoice, parseSearch } from "@/lib/list";
+import { jobRef, needsHarvestAddress, isServiceType, SERVICE_TYPES } from "@/lib/loads";
 import { feeAtIntake } from "@/lib/pricing";
 import { formatPhMobile } from "@/lib/phone";
+import { matchesRequest, WHO } from "@/lib/requests";
 import { canManage } from "@/lib/roles";
 import { getSettings, requireRole } from "@/lib/session";
 import { acceptRequest, rejectRequest } from "../loads/actions";
@@ -32,10 +37,15 @@ type Request = {
   customer: { full_name: string; phone: string; is_member: boolean } | null;
 };
 
-// Incoming requests: members first, then oldest first.
+// Incoming requests: members first, then oldest first. Search, a service
+// tab and members / non-members narrow the list; all of it lives in the
+// address (?q=&service=&who=), so Back and shared links keep the view.
 export default async function RequestsPage({ searchParams }: PageProps<"/requests">) {
   const { supabase, role } = await requireRole((r) => canManage(r) || r === "auditor");
-  const { error } = await searchParams;
+  const { error, q: rawQ, service: rawService, who: rawWho } = await searchParams;
+  const q = parseSearch(rawQ);
+  const service = typeof rawService === "string" && isServiceType(rawService) ? rawService : "";
+  const who = parseChoice(rawWho, WHO);
   const { rates } = await getSettings();
   const manager = canManage(role);
 
@@ -47,9 +57,22 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
     .eq("request_status", "pending")
     .order("created_at", { ascending: true });
 
-  const requests = ((data ?? []) as unknown as Request[]).sort(
+  const waiting = ((data ?? []) as unknown as Request[]).sort(
     (a, b) => Number(b.customer?.is_member ?? false) - Number(a.customer?.is_member ?? false),
   );
+
+  // Only one co-op's waiting requests (RLS, and at most 3 per customer), so
+  // the list is small: search and filters are worked out here.
+  const searched = waiting.filter(
+    (r) =>
+      matchesRequest(r, q) &&
+      (who === "all" || (who === "members") === Boolean(r.customer?.is_member)),
+  );
+  const requests = service ? searched.filter((r) => r.service_type === service) : searched;
+  const count = (s: string) => searched.filter((r) => r.service_type === s).length;
+  const href = (changes: Record<string, string>) =>
+    listHref("/requests", { q, service, who, ...changes }, { who: "all" });
+  const filtering = Boolean(q || service || who !== "all");
 
   return (
     <div>
@@ -57,17 +80,67 @@ export default async function RequestsPage({ searchParams }: PageProps<"/request
         eyebrow="Incoming"
         title="Requests"
         description={
-          requests.length > 0
-            ? `${requests.length} waiting. Members are listed first.`
+          waiting.length > 0
+            ? `${waiting.length} waiting. Members are listed first.`
             : "Service requests from customers appear here."
         }
       />
 
       <ErrorNote code={loadError ? "load_failed" : error} />
 
-      {requests.length === 0 ? (
+      {waiting.length > 0 && (
+        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-line bg-card p-4 shadow-card sm:p-5">
+          <SearchBox
+            action="/requests"
+            q={q}
+            placeholder="Name, mobile, RPS- number, farm or note"
+            label="Search requests by name, mobile number, reference, farm address or note"
+            keep={service ? { service } : {}}
+          >
+            <FilterSelect
+              name="who"
+              label="Who"
+              value={who}
+              options={[
+                { value: "all", label: "Everyone" },
+                { value: "members", label: "Members" },
+                { value: "others", label: "Non-members" },
+              ]}
+            />
+          </SearchBox>
+          <FilterTabs
+            label="Service"
+            tabs={[
+              { label: "All services", href: href({ service: "" }), active: !service, count: searched.length },
+              ...SERVICE_TYPES.map((s) => ({ label: s, href: href({ service: s }), active: service === s, count: count(s) })),
+            ]}
+          />
+          {filtering && (
+            <p className="text-xs text-muted-foreground" aria-live="polite">
+              Showing {requests.length} of {waiting.length}.{" "}
+              <Link href="/requests" className="font-bold text-brand underline">
+                Show all
+              </Link>
+            </p>
+          )}
+        </div>
+      )}
+
+      {waiting.length === 0 ? (
         <EmptyState icon={Inbox} title="No requests waiting">
           You&rsquo;re all caught up. New requests from customers appear here.
+        </EmptyState>
+      ) : requests.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          title="No request matches"
+          action={
+            <Link href="/requests" className={buttonVariants({ variant: "outline" })}>
+              Clear search
+            </Link>
+          }
+        >
+          Try another name, number or service.
         </EmptyState>
       ) : (
         <ul className="grid gap-4 lg:grid-cols-2">
