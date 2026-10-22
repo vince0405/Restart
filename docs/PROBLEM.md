@@ -1,14 +1,10 @@
 # RPS1
 
-## Who
-My mother — the chairperson of the farmers' cooperative that owns the rice
-mill. She is the one who monitors the mill's operations for the co-op.
-
 ## The struggle
-She spends extra time and money just keeping track of every load: which
+People spend extra time and money just keeping track of every load: which
 service it is, what step it's at, whether palay or rice is being stored and
-when it will go bad, and whether the customer has paid. She watches the
-loads, but the records don't keep up with them.
+when it will go bad, and whether the customer has paid. Records don't keep
+up with the loads, which causes time and money to be lost.
 
 ## Today's workaround
 A notebook at intake, plus memory and loose slips, plus asking staff. To
